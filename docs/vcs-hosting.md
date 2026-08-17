@@ -13,7 +13,7 @@ tags:
 
 本章比较 GitHub、GitLab 和 Bitbucket。产品功能、套餐与托管区域会变化，选型时应以当前官方文档、合同和实际验证为准。
 
-## 学习目标
+## 学习目标 {#learning-objectives}
 
 完成本章后，你应当能够：
 
@@ -23,15 +23,15 @@ tags:
 - 按部署模式、集成生态、安全治理、可靠性、成本和迁移能力比较三个平台。
 - 制定平台备份、故障降级、审计、保留和退出计划。
 
-## 前置知识
+## 前置知识 {#prerequisites}
 
 - 应先完成[版本控制系统](version-control-systems.md)，理解提交、分支、远端、合并和标签。
 - 熟悉[终端知识](terminal-knowledge.md)中的退出码、参数引用和文本输出。
 - 后续流水线会运行程序和容器，可按需复习[学习一种编程语言](learn-a-programming-language.md)与[容器](containers.md)。
 
-## 核心原理
+## 核心原理 {#core-principles}
 
-### Git 数据面与协作控制面
+### Git 数据面与协作控制面 {#git-data-plane-and-collaboration-control-plane}
 
 Git 原生传输提交对象和引用，托管平台在其上实施身份认证、授权和变更策略。一次典型合并经过以下边界：
 
@@ -56,7 +56,7 @@ flowchart LR
 
 因此“仓库有镜像”不等于“平台可恢复”。恢复目标必须说明哪些数据要保留、可接受丢失多久（RPO），以及平台不可用后多久恢复服务（RTO）。
 
-### 身份认证与授权
+### 身份认证与授权 {#authentication-and-authorization}
 
 人员可通过组织身份提供方使用单点登录和多因素认证，再通过 HTTPS 凭据或 SSH 密钥执行 Git 操作。自动化不应共享个人令牌，而应使用平台应用、项目或仓库级令牌、部署密钥，或者由流水线身份联合换取云端短期凭据。
 
@@ -65,7 +65,7 @@ flowchart LR
 !!! warning "分支保护不是完整安全边界"
     能修改流水线定义、依赖脚本或评审规则的人可能间接获得流水线令牌。保护规则必须同时覆盖工作流文件、代码所有者、运行器、环境机密和管理员绕过权限。
 
-### 评审与状态检查
+### 评审与状态检查 {#reviews-and-status-checks}
 
 GitHub 使用拉取请求（Pull Request），GitLab 使用合并请求（Merge Request），Bitbucket 使用 Pull Request。名称不同，但核心都是比较来源与目标分支，承载讨论、审批和自动检查，再更新目标引用。
 
@@ -77,7 +77,7 @@ GitHub 使用拉取请求（Pull Request），GitLab 使用合并请求（Merge 
 - 管理员绕过、紧急合并和失败重试有审计与事后复核；
 - 外部分支或派生仓库触发流水线时，不向不可信代码暴露机密。
 
-### 流水线、运行器与制品
+### 流水线、运行器与制品 {#pipelines-runners-and-artifacts}
 
 平台通常把事件转换为任务图，再把作业调度到托管或自托管运行器。运行器会执行仓库中的代码，因此是高风险计算边界。
 
@@ -88,76 +88,76 @@ GitHub 使用拉取请求（Pull Request），GitLab 使用合并请求（Merge 
 
 流水线具体工具将在[CI/CD 工具](ci-cd-tools.md)章节展开；这里的重点是托管平台如何控制源码变更和执行身份。
 
-## GitHub
+## GitHub {#github}
 
 **重点掌握**。GitHub 提供公共与私有仓库、Pull Request、Issues、Actions、Packages、安全能力和应用生态。GitHub.com 由厂商托管；GitHub Enterprise Server 可部署在组织管理的基础设施中，两种部署模式的升级、功能发布时间和运维责任不同。
 
-### 协作与治理
+### 协作与治理 {#github-collaboration-and-governance}
 
 - Pull Request 支持草稿、逐行评论、建议变更、评审和自动合并。合并提交、squash 与 rebase 三种方式会形成不同 Git 历史，仓库应统一允许的方式。
 - Rulesets 和分支保护可要求 Pull Request、状态检查、签名提交、线性历史和限制推送。规则优先级、绕过名单和适用引用需在测试仓库验证。
 - `CODEOWNERS` 根据路径请求评审；它表达平台审批责任，不代表实际运行责任或文件权限。
 - Issues、Projects、Discussions 和 Wiki 可承载规划与知识，但关键运行手册最好与代码一起版本化，以便离线恢复和同变更审查。
 
-### 自动化与安全
+### 自动化与安全 {#github-automation-and-security}
 
 - GitHub Actions 工作流位于 `.github/workflows/`。`GITHUB_TOKEN` 权限应在工作流或作业级显式收窄，外部 Action 固定到不可变提交并审查来源。
 - GitHub Apps 以安装方式获得精细权限，通常比共享个人访问令牌更适合组织集成。部署密钥一般面向单仓库，是否允许写入应严格限制。
 - Dependabot、代码扫描和秘密扫描可提供供应链信号，但覆盖语言、套餐和公开性约束应查当前文档；告警必须有分派、时限和例外流程。
 - Environments 可为部署配置审批、分支限制和机密。云部署优先使用 OpenID Connect（OIDC）换取短期身份，避免长期云密钥。
 
-### 运维边界
+### 运维边界 {#github-operational-boundaries}
 
 GitHub.com 的可用性、备份和升级主要由厂商负责，客户仍负责组织配置、账户恢复、数据导出和业务连续性。Enterprise Server 则需要组织承担容量、升级、备份、恢复和高可用设计，并遵循官方支持矩阵。
 
-## GitLab
+## GitLab {#gitlab}
 
 **重点掌握**。GitLab 把仓库、Merge Request、Issues、CI/CD、包与容器注册表及安全能力集成在同一产品中。GitLab.com 是托管服务；GitLab Self-Managed 与 Dedicated 等部署选择对应不同责任模型，版本和功能以当前官方产品说明为准。
 
-### 协作与治理
+### 协作与治理 {#gitlab-collaboration-and-governance}
 
 - Merge Request 支持讨论、审批、代码所有者、合并列车等协作能力。项目、组和子组形成继承层级，适合按组织边界统一变量、运行器和策略，也可能因继承过深而难以审计。
 - Protected branches 和 protected tags 限制推送、合并与创建标签的角色。环境、变量和运行器也有保护属性，必须一起检查。
 - GitLab 权限以角色和资源层级组合。自定义角色、外部用户和组共享行为会随产品版本演进，敏感项目应通过测试账号验证实际授权。
 - Issues、Epics、Milestones 与 Wiki 可连接计划和交付；导出与迁移时要确认这些元数据是否完整覆盖。
 
-### 自动化与安全
+### 自动化与安全 {#gitlab-automation-and-security}
 
 - GitLab CI/CD 主要由 `.gitlab-ci.yml` 及可包含配置描述。包含外部模板时固定不可变引用并审查模板的作业、镜像和变量访问。
 - GitLab Runner 可使用多种执行器。共享 Runner 上运行不可信代码时必须确保执行器隔离；特权容器、宿主机 socket 和持久 Shell executor 都会扩大逃逸后的影响。
 - 作业令牌、部署令牌、项目访问令牌和组访问令牌适用范围不同，应选择最窄资源与最短有效期，并限制哪些项目可使用作业令牌访问本项目。
 - 集成的依赖、容器、静态与动态扫描能力依版本和订阅而异。扫描结果要结合可利用性和资产暴露面治理，不能只追求告警归零。
 
-### 运维边界
+### 运维边界 {#gitlab-operational-boundaries}
 
 Self-Managed GitLab 包含数据库、Git 存储、对象存储、缓存、队列、注册表与搜索等多个状态组件。升级必须遵循官方要求的升级路径，并对备份版本兼容性、对象存储内容和机密配置执行恢复演练。不能只复制仓库目录就认为平台完整备份。
 
-## Bitbucket
+## Bitbucket {#bitbucket}
 
 **替代方案**。Bitbucket Cloud 与 Jira、Confluence 等 Atlassian Cloud 产品集成紧密，适合已采用 Atlassian 工作流的团队。Bitbucket Data Center 面向自托管企业环境；历史产品名称和支持状态可能变化，选型时应确认当前受支持部署方式。
 
-### 协作与治理
+### 协作与治理 {#bitbucket-collaboration-and-governance}
 
 - Pull Request 提供讨论、审批、合并检查和任务。默认评审者与 `CODEOWNERS` 类路径责任能力的具体支持方式应依据所用产品验证。
 - Branch permissions / branch restrictions 可限制写入、删除、合并和历史重写。自托管版与 Cloud 的设置名称和能力不完全相同。
 - Jira 议题键、开发面板和自动化可把需求、提交、构建与发布关联起来。关联便利不应迫使仓库权限继承过宽，Jira 项目权限与代码权限需分别审计。
 - 合并策略会影响历史形态；与其他平台一样，应在仓库级限定并为发布工具验证兼容性。
 
-### 自动化与安全
+### 自动化与安全 {#bitbucket-automation-and-security}
 
 - Bitbucket Pipelines 使用仓库中的 `bitbucket-pipelines.yml`，由 Cloud 基础设施或 self-hosted runner 执行。步骤镜像、缓存、部署变量和并发配额需要显式治理。
 - Repository / project / workspace access token、API token、SSH 密钥等凭据模型各有范围。Bitbucket Cloud 的 App password 已由 API token 取代；新集成应优先采用当前官方推荐的细粒度方式，不共享个人凭据。
 - 部署环境可隔离变量和权限；不可信 Pull Request 的流水线不得读取部署机密。
 - 与 Jira、Compass、第三方 Marketplace 应用集成时，审查应用可访问的仓库、用户数据、Webhook 内容和卸载后的数据保留。
 
-### 运维边界
+### 运维边界 {#bitbucket-operational-boundaries}
 
 Cloud 模式下要关注服务状态、数据驻留、导出能力与组织账户恢复。Data Center 模式需自行维护应用节点、数据库、共享存储、搜索组件、负载均衡和升级路径，并按照官方文档验证备份一致性。
 
 ??? note "平台产品名称为何必须带部署模式"
     “GitHub”“GitLab”“Bitbucket”都可能指云服务或自托管产品。两者在功能、升级节奏、日志可见性、数据控制和责任模型上不同。架构记录应写明产品、部署模式、版本或服务层级，而不是只写品牌。
 
-## 选型比较
+## 选型比较 {#selection-comparison}
 
 | 维度 | GitHub | GitLab | Bitbucket |
 | --- | --- | --- | --- |
@@ -177,11 +177,11 @@ Cloud 模式下要关注服务状态、数据驻留、导出能力与组织账�
 6. **总成本**：许可证或席位、运行器计算、存储与流量、自托管人员、审计保留和迁移投入是多少？
 7. **厂商与合规**：数据处理、分包商、删除周期、加密、区域和认证是否经过组织评估？
 
-### 云托管还是自托管
+### 云托管还是自托管 {#cloud-hosted-or-self-hosted}
 
 云托管通常更快获得安全修复并减少平台组件运维，但组织仍需治理账户、规则、数据和集成。自托管提供网络和升级控制，却把补丁、高可用、数据库、对象存储、备份、监控和应急全部转为自身责任。只有明确的法规、网络、集成或成本需求足以覆盖长期运维能力时，才应选择自托管。
 
-### 降低迁移成本
+### 降低迁移成本 {#reducing-migration-cost}
 
 - 以标准 Git 保存源码和标签，以仓库内文件保存流水线、所有者和贡献说明。
 - 制品遵循 OCI、Maven、npm 等开放协议，并保留来源与摘要，不让发布只能从平台界面恢复。
@@ -189,7 +189,7 @@ Cloud 模式下要关注服务状态、数据驻留、导出能力与组织账�
 - 自动化封装平台 API 边界，避免业务脚本依赖易变的页面或未声明字段。
 - 在正式迁移前盘点大小写冲突、LFS、子模块、用户映射、Webhook、环境机密和外部应用。
 
-## 最小实践：在本地模拟受控协作
+## 最小实践：在本地模拟受控协作 {#minimal-practice-simulate-governed-collaboration-locally}
 
 该练习不需要平台账户，也不连接网络。一个裸仓库模拟服务端，两个克隆模拟贡献者和评审者；所有内容位于临时目录。
 
@@ -232,7 +232,7 @@ rm -rf -- "$practice_dir"
 
 本地模拟展示了“推送来源分支、按目标分支查看差异、集成、更新受控分支”的数据流，但没有真正实施审批、必需检查或权限。实际平台中应禁止贡献者直接更新受保护分支，由平台在审批和检查通过后执行合并。
 
-### 平台试点清单
+### 平台试点清单 {#platform-pilot-checklist}
 
 在三个平台任意一个测试组织中进行试点时，可用以下安全流程：
 
@@ -243,37 +243,37 @@ rm -rf -- "$practice_dir"
 5. 执行合并后导出审计事件，并记录规则实际效果。
 6. 删除测试凭据、运行器和仓库，确认外部应用授权也已撤销。
 
-## 生产实践
+## 生产实践 {#production-practices}
 
-### 组织与权限
+### 组织与权限 {#organization-and-permissions}
 
 - 所有人员使用组织管理身份，强制多因素认证；加入、调岗和离职通过身份生命周期自动同步。
 - 团队而非个人直接获得仓库权限，定期审查外部协作者、机器人、部署密钥、应用和绕过者。
 - 默认分支、发布标签、所有者文件与流水线配置使用更严格规则。管理员也通过正常评审路径操作。
 - 紧急访问采用限时授权、双人确认和完整审计，使用后自动撤销并复盘。
 
-### 流水线隔离
+### 流水线隔离 {#pipeline-isolation}
 
 - 不可信代码使用一次性运行器、只读或无令牌权限、受限网络和资源配额；可信发布作业使用独立运行器池。
 - 工作流默认令牌设为只读，按作业提升单项权限。生产身份由 OIDC 等联合机制按仓库、分支和环境声明换取。
 - 第三方 Actions、CI 模板、容器镜像和插件固定到不可变摘要或提交，升级通过评审和测试。
 - 日志自动遮盖只作为补充，脚本不得主动打印环境变量、认证头或完整云响应。
 
-### 可靠性与连续性
+### 可靠性与连续性 {#reliability-and-continuity}
 
 - 监控平台状态、API 限额、Webhook 投递、Runner 队列、作业失败率、存储增长和备份结果。
 - 定义平台不可用时的冻结规则：本地可继续提交和评审补丁，但未经等效控制不得直接部署生产。
 - 定期导出 Git 与平台元数据，在隔离环境验证恢复，记录恢复后的 URL、用户映射和签名状态变化。
 - 自托管平台使用厂商支持的备份与升级路径，数据库、对象存储、Git 数据和机密配置保持一致恢复点。
 
-### 成本与维护
+### 成本与维护 {#cost-and-maintenance}
 
 - 对席位、CI 分钟、并发、日志、缓存、制品、LFS 和网络流量设置预算与保留策略。
 - 取消的流水线及时终止下游作业；使用依赖缓存前衡量命中率与污染风险。
 - 归档无人维护仓库前保留所有者和安全联系人，禁止归档状态成为漏洞无人处理的理由。
 - 每季度验证保护规则和恢复，不只检查配置存在。平台更新可能改变继承、默认值和 API 行为。
 
-## 常见误区
+## 常见误区 {#common-misconceptions}
 
 - **认为代码已托管就完成备份**：云服务故障、误删、账户锁定和恶意管理员仍需独立恢复方案。
 - **让所有仓库管理员绕过保护**：保护只约束普通开发者会形成虚假控制，绕过必须最小化并审计。
@@ -285,7 +285,7 @@ rm -rf -- "$practice_dir"
 - **相信安全扫描结果绝对正确**：告警会误报和漏报，需要结合威胁模型、暴露面与修复时限。
 - **默认所有平台同名功能语义一致**：保护继承、令牌范围和流水线事件必须在具体部署模式中验证。
 
-## 动手练习
+## 动手练习 {#hands-on-exercises}
 
 1. 完成本地受控协作实践，解释裸仓库中保存了什么、没有保存什么平台元数据。
 2. 在测试组织创建保护规则，用普通账户验证直接推送失败、评审合并成功，并保存不含敏感信息的审计证据。
@@ -295,7 +295,7 @@ rm -rf -- "$practice_dir"
 6. 为平台不可用两小时设计降级流程：哪些工作可继续、哪些必须冻结、恢复后如何对账。
 7. 估算一个月的席位、流水线计算、制品存储与网络费用，并提出一项不会降低审计能力的优化。
 
-## 完成检查
+## 完成检查 {#completion-checklist}
 
 - [ ] 能区分 Git 对象与平台协作、执行和审计元数据。
 - [ ] 能解释 GitHub、GitLab、Bitbucket 的协作模型与部署选择。
@@ -306,7 +306,7 @@ rm -rf -- "$practice_dir"
 - [ ] 能制定覆盖 Git、LFS、平台元数据和制品的恢复计划。
 - [ ] 能说明云托管与自托管各自的责任边界。
 
-## 官方延伸阅读
+## 官方延伸阅读 {#official-further-reading}
 
 - [GitHub 文档](https://docs.github.com/)、[关于受保护分支](https://docs.github.com/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches)与[GitHub Actions 安全加固](https://docs.github.com/actions/security-for-github-actions/security-guides/security-hardening-for-github-actions)
 - [GitHub Apps 文档](https://docs.github.com/apps)、[OIDC 安全加固](https://docs.github.com/actions/security-for-github-actions/security-hardening-your-deployments/about-security-hardening-with-openid-connect)与[GitHub Enterprise Server 备份服务](https://docs.github.com/en/enterprise-server@latest/admin/backing-up-and-restoring-your-instance/about-the-backup-service-for-github-enterprise-server)

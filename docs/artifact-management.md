@@ -14,7 +14,7 @@ tags:
 
 **重点掌握**：不可变制品、摘要寻址、代理仓库、构建一次后逐级晋级，以及最小权限发布。
 
-## 学习目标
+## 学习目标 {#learning-objectives}
 
 完成本章后，你应能够：
 
@@ -25,16 +25,16 @@ tags:
 - 在本机 Nexus Repository 中发布并校验一个不可覆盖的测试制品。
 - 为生产仓库设计权限、晋级、保留、签名、审计和灾难恢复策略。
 
-## 前置知识
+## 前置知识 {#prerequisites}
 
 - 熟悉 [版本控制系统](version-control-systems.md) 中的 Git 提交与标签。
 - 理解 [CI/CD 工具](ci-cd-tools.md) 中的构建流水线和环境晋级。
 - 若管理容器镜像，应先学习 [容器](containers.md) 与 [容器编排](container-orchestration.md)。
 - 生产凭据应采用 [机密管理](secret-management.md) 中的方法，不写入仓库或流水线脚本。
 
-## 核心原理
+## 核心原理 {#core-principles}
 
-### 制品是已验证的构建结果
+### 制品是已验证的构建结果 {#artifacts-are-verified-build-outputs}
 
 一次交付通常涉及四类对象：
 
@@ -56,7 +56,7 @@ flowchart LR
     Staging --> Production[生产环境]
 ```
 
-### 名称、版本与摘要各司其职
+### 名称、版本与摘要各司其职 {#names-versions-and-digests}
 
 制品坐标通常包含命名空间、名称、版本和格式，例如 Maven 的组、模块和版本，或 OCI 的仓库名与标签。版本便于人类沟通，但版本或标签可能被错误地覆盖；内容摘要则由字节计算得出，内容变化时摘要必然变化。
 
@@ -70,7 +70,7 @@ flowchart LR
 !!! note "标签不是不可变标识"
     `latest`、`stable` 或环境标签适合作为可移动指针，不适合作为审计证据。部署记录应保存实际解析出的摘要；回退时也应选择已验证摘要，而不是重新解析旧标签。
 
-### 三类仓库形成依赖边界
+### 三类仓库形成依赖边界 {#three-repository-types}
 
 制品平台通常提供以下逻辑仓库：
 
@@ -80,7 +80,7 @@ flowchart LR
 
 客户端只访问聚合入口，可以减少配置漂移；平台管理员则能明确依赖从哪个上游进入。代理缓存提升可用性，但不能自动保证上游内容可信。首次下载仍需校验签名、摘要、许可证和恶意内容，缓存命中也不能替代持续漏洞评估。
 
-### 发布、晋级和删除是状态机
+### 发布、晋级和删除是状态机 {#publish-promote-and-delete-state-machine}
 
 成熟的制品生命周期不是“上传后永久保留”，而是一组受控状态：
 
@@ -92,15 +92,15 @@ flowchart LR
 
 晋级可以表现为元数据状态变化、仓库间服务端复制，或为同一 OCI 清单增加标签。关键不在具体动作，而在于不能重新打包，也不能丢失摘要与证据的关联。
 
-### 完整性不等于真实性
+### 完整性不等于真实性 {#integrity-is-not-authenticity}
 
 摘要能发现内容是否改变，却不能证明内容由可信构建者产生。签名把身份与摘要关联，来源证明记录构建过程，SBOM 描述包含的组件。验证方应依据策略检查这些证据，而不是仅确认“仓库里存在这个文件”。
 
 可信链还取决于构建器、身份系统、密钥、仓库管理员和部署端。仓库是其中一个控制点，不是供应链安全的全部。
 
-## 制品平台
+## 制品平台 {#artifact-platforms}
 
-### JFrog Artifactory
+### JFrog Artifactory {#jfrog-artifactory}
 
 **替代方案**。Artifactory 是支持多种软件包格式的制品平台。其常见抽象是本地仓库、远程仓库和虚拟仓库，分别对应组织制品、上游代理和统一入口。构建信息可以把模块、依赖、环境和流水线关联起来；漏洞分析与策略能力通常还会与 JFrog 平台中的其他组件配合。
 
@@ -112,7 +112,7 @@ flowchart LR
 
 选型时不要只比较“支持多少格式”。还应验证高可用方式、对象存储一致性、跨站点复制、权限模型、API 限额、插件或平台组件的授权边界，以及元数据导出能力。
 
-### Sonatype Nexus Repository
+### Sonatype Nexus Repository {#sonatype-nexus-repository}
 
 **重点掌握**。Nexus Repository 使用托管、代理和组仓库组织多格式制品。它易于用单节点启动，适合学习依赖代理和内部发布，也可按官方支持范围构建生产部署。
 
@@ -122,7 +122,7 @@ flowchart LR
 - Community Edition 与商业版、不同版本之间的高可用和治理能力可能不同，应以拟采用版本的官方文档为准。当前 Community Edition 还设有组件数和每日请求数限制，超过限制会暂停新增组件；选型与容量测试必须核对届时条款和限额。
 - JVM、Blob 存储和数据库的容量规划是独立问题；只监控磁盘总量不足以发现元数据或垃圾回收瓶颈。
 
-### Cloudsmith
+### Cloudsmith {#cloudsmith}
 
 **按需学习**。Cloudsmith 是托管式制品管理服务，提供多格式仓库、上游代理、访问控制和策略能力。团队不必运行仓库控制面，适合希望减少自托管负担、需要向外部分发软件，或成员分布较广的场景。
 
@@ -134,7 +134,7 @@ flowchart LR
 - 身份联合、短期令牌、客户访问授权和离职回收是否能自动化。
 - 包元数据、审计记录和制品能否按迁移计划完整导出。
 
-## 选型比较
+## 选型比较 {#selection-comparison}
 
 | 维度 | Artifactory | Nexus Repository | Cloudsmith |
 | --- | --- | --- | --- |
@@ -149,14 +149,14 @@ flowchart LR
 ??? tip "迁移成本如何实测"
     选择一个包含快照版、正式版、签名、SBOM 和删除标记的小型数据集。分别验证上传、代理缓存、搜索、权限拒绝、导出和重新导入，记录客户端配置变化及摘要是否保持一致。这样比只迁移几个普通文件更容易暴露格式元数据和权限映射问题。
 
-## 最小实践：在本机发布不可覆盖制品
+## 最小实践：在本机发布不可覆盖制品 {#minimal-practice-publish-an-immutable-artifact-locally}
 
 本实践在 Docker 中运行单节点 Nexus Repository，只监听回环地址。它用于理解托管仓库、发布身份和摘要校验，不是生产部署方案。
 
 !!! warning "仅用于隔离实验"
     Nexus 首次启动会生成管理员密码。不要把 `8081` 暴露到公共网络，不要复用真实密码，也不要把本节的单节点和本地卷配置用于生产。镜像固定到已核验摘要以使实验可重复；实际使用前应选择仍受支持并完成安全评审的版本。
 
-### 1. 启动 Nexus
+### 1. 启动 Nexus {#start-nexus}
 
 准备至少约 4 GiB 可用内存，然后执行：
 
@@ -196,7 +196,7 @@ docker exec roadmap-nexus cat /nexus-data/admin.password
 
 具体权限名称会随版本显示为类似 `nx-repository-view-raw-lab-raw-browse`、`read` 和 `add`。不要给任一用户 `delete`、`edit` 或全局管理权限。
 
-### 2. 发布并验证
+### 2. 发布并验证 {#publish-and-verify}
 
 在临时目录创建测试内容，通过受限用户上传。`curl --user lab-publisher` 会交互式读取密码，避免把密码写进命令历史或 URL。
 
@@ -218,7 +218,7 @@ printf 'verified: %s\n' "$(shasum -a 256 "${LAB_DIR}/downloaded.txt" | cut -d ' 
 
 再次执行上传命令应收到拒绝覆盖的响应；这正是正式版本需要的保护。快照制品若确有覆盖需求，应放到独立仓库，使用独立保留规则，不能降低正式仓库策略。
 
-### 3. 清理
+### 3. 清理 {#cleanup}
 
 先在 Nexus 界面删除两个临时用户，再清理只属于本实验的资源：
 
@@ -231,9 +231,9 @@ docker volume rm roadmap-nexus-data
 
 删除卷会永久删除本实验的 Nexus 数据，执行前应确认名称为 `roadmap-nexus-data` 且不包含其他用途的数据。
 
-## 生产实践
+## 生产实践 {#production-practices}
 
-### 仓库与权限分层
+### 仓库与权限分层 {#repository-and-permission-layers}
 
 - 按格式、信任级别和生命周期划分仓库，不要只按团队任意拆分。
 - 将读取、代理管理、发布、晋级、删除和平台管理拆成不同角色。
@@ -241,7 +241,7 @@ docker volume rm roadmap-nexus-data
 - 生产部署身份只有读取已晋级制品的权限，不能上传或删除。
 - 外部客户下载使用独立授权、到期时间和速率限制，不能共享内部构建令牌。
 
-### 固定依赖与受控上游
+### 固定依赖与受控上游 {#pinned-dependencies-and-controlled-upstreams}
 
 - 使用依赖锁文件并校验摘要；代理仓库只是稳定入口，不是版本锁。
 - 明确允许的上游域名，阻止客户端绕过代理直接访问公共仓库。
@@ -249,7 +249,7 @@ docker volume rm roadmap-nexus-data
 - 对新包、异常发布者、许可证变化和已知漏洞实施策略，但保留有审批和时限的例外流程。
 - 为上游故障定义行为：是只允许已缓存内容，还是在审计后开放临时通道。
 
-### 晋级与可追溯性
+### 晋级与可追溯性 {#promotion-and-traceability}
 
 每个生产摘要至少应能追溯到：
 
@@ -262,13 +262,13 @@ docker volume rm roadmap-nexus-data
 
 证据应引用制品摘要，而不是只引用可能移动的版本标签。重新扫描发现新漏洞时，更新评估结果即可，不应修改旧制品内容。
 
-### 容量、保留与成本
+### 容量、保留与成本 {#capacity-retention-and-cost}
 
 容量模型至少考虑：平均制品大小、每日新增版本、复制因子、代理命中率、保留时间、垃圾回收延迟和备份增量。保留策略应区分正式版、快照版、拉取缓存和法律保留对象。
 
 删除一般分为标记、元数据清理和 Blob 回收多个阶段。仓库显示已删除，不代表存储立即释放；反之，直接删除对象存储中的 Blob 可能破坏元数据。必须通过产品支持的 API 和任务执行清理。
 
-### 可靠性、备份与恢复
+### 可靠性、备份与恢复 {#reliability-backup-and-recovery}
 
 - 高可用节点若共享同一数据库、对象存储和身份服务，这些依赖仍是共同故障点。
 - 同时备份 Blob 与元数据，并使用产品规定的一致性方法；两者时间点不一致可能无法恢复。
@@ -276,7 +276,7 @@ docker volume rm roadmap-nexus-data
 - 为仓库定义 RPO 与 RTO。代理缓存通常可重建，内部唯一制品则可能要求异地副本。
 - 升级前检查格式迁移、数据库兼容和回退限制，先用生产数据规模的副本演练。
 
-### 可观测性
+### 可观测性 {#observability}
 
 除 CPU、内存和磁盘外，还应监控：
 
@@ -288,33 +288,33 @@ docker volume rm roadmap-nexus-data
 
 告警必须关联用户影响和处置动作。例如“可用空间将在保留窗口内耗尽”比固定的磁盘 80% 告警更可操作。
 
-## 常见误区
+## 常见误区 {#common-misconceptions}
 
-### 把 Git 仓库当二进制仓库
+### 把 Git 仓库当二进制仓库 {#using-git-as-a-binary-repository}
 
 大文件会膨胀克隆和历史，Git 也缺少包格式索引、代理缓存和保留语义。Git LFS 可缓解部分大文件问题，但不能替代制品供应链治理。
 
-### 每个环境重新构建
+### 每个环境重新构建 {#rebuilding-for-each-environment}
 
 这样会让测试对象与生产对象不同。应晋级同一摘要，并把环境差异放在部署配置中。
 
-### 依赖 `latest` 回退
+### 依赖 `latest` 回退 {#depending-on-latest-for-rollback}
 
 移动标签无法证明过去指向什么。部署记录与回退清单应保存摘要。
 
-### 允许发布用户覆盖正式版本
+### 允许发布用户覆盖正式版本 {#allowing-release-users-to-overwrite-versions}
 
 覆盖会使相同版本代表不同字节，破坏缓存、审计和回退。需要修复时发布新版本；快照覆盖应与正式仓库隔离。
 
-### 只做漏洞扫描
+### 只做漏洞扫描 {#only-scanning-for-vulnerabilities}
 
 扫描器可能有漏报、数据库延迟和上下文误判。还需要来源、签名、依赖锁定、最小权限、审计和响应流程。
 
-### 备份了对象存储就认为可恢复
+### 备份了对象存储就认为可恢复 {#assuming-object-storage-backups-ensure-recovery}
 
 缺少数据库、配置、密钥和一致性时间点时，Blob 集合通常不能直接还原成可用仓库。恢复演练才是备份有效性的证据。
 
-## 动手练习
+## 动手练习 {#hands-on-exercises}
 
 1. **设计仓库拓扑**：为一个同时使用 Maven、npm 和 OCI 的团队画出托管、代理、聚合入口及允许的流向。结果应确保开发机不能直接访问公共上游，生产身份只能读取已晋级摘要。
 2. **验证不可变性**：完成最小实践后修改 `hello.txt`，尝试覆盖 `1.0.0`，再发布为 `1.0.1`。记录两个版本的 SHA-256 和服务器响应。
@@ -322,7 +322,7 @@ docker volume rm roadmap-nexus-data
 4. **恢复抽样**：在隔离实例恢复一次备份，随机选择五个制品，对比坐标、摘要、签名和权限。结果应形成可重复的恢复记录，而不只是“服务能启动”。
 5. **做一次产品验证**：用同一小型数据集分别验证候选平台的代理、拒绝覆盖、权限审计和导出，记录功能依赖的版本或授权，避免只依据宣传页面评分。
 
-## 完成检查
+## 完成检查 {#completion-checklist}
 
 - [ ] 能解释版本标签与内容摘要的差异。
 - [ ] 能区分托管、代理和聚合仓库。
@@ -333,7 +333,7 @@ docker volume rm roadmap-nexus-data
 - [ ] 能把生产制品追溯到提交、构建、SBOM、签名和验证结果。
 - [ ] 已为容量、保留、监控、备份和恢复定义可验证方法。
 
-## 官方延伸阅读
+## 官方延伸阅读 {#official-further-reading}
 
 - [OCI Distribution Specification](https://github.com/opencontainers/distribution-spec/blob/main/spec.md)：OCI 内容上传、拉取和摘要校验的开放规范。
 - [SLSA Specification](https://slsa.dev/spec/v1.2/)：软件供应链完整性与构建来源证明框架。

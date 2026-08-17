@@ -12,7 +12,7 @@ tags:
 
 本章覆盖 Bash、PowerShell、进程监控、性能监控、网络工具、文本处理，以及 Vim、Nano、Emacs 三类编辑器。
 
-## 学习目标
+## 学习目标 {#learning-objectives}
 
 完成本章后，你应当能够：
 
@@ -23,15 +23,15 @@ tags:
 - 在 Vim、Nano 或 Emacs 中完成紧急查看、搜索、修改和退出，并能选择默认编辑器。
 - 将一次性排障命令整理为可复现、低风险且不泄露敏感信息的记录。
 
-## 前置知识
+## 前置知识 {#prerequisites}
 
 - 建议先阅读[操作系统](operating-system.md)，理解进程、文件权限和网络栈。
 - 需要把命令升级为可测试工具时，参见[学习一种编程语言](learn-a-programming-language.md)。
 - 本章不要求管理员权限。示例只访问当前用户创建的临时数据或公开示例域名。
 
-## 核心原理
+## 核心原理 {#core-principles}
 
-### 终端、Shell 与命令
+### 终端、Shell 与命令 {#terminal-shell-and-commands}
 
 终端模拟器负责显示字符和传递键盘输入；Shell 读取一行文本，完成引用、变量展开、重定向和管道连接，再启动内建命令或外部程序。SSH、终端复用器和容器执行接口常分配伪终端（PTY），让远端程序表现得像连接了交互终端。
 
@@ -50,7 +50,7 @@ flowchart LR
 !!! warning "Shell 会先解析，再执行"
     空格、通配符、分号、美元符号和重定向符都可能改变命令结构。不可信输入不能拼接成命令字符串；应使用参数数组、正确引用或语言提供的进程 API。
 
-### 观测应从现象到资源
+### 观测应从现象到资源 {#observe-from-symptoms-to-resources}
 
 排障的目标不是尽快运行“修复命令”，而是用最少侵入的观测区分假设：
 
@@ -62,11 +62,11 @@ flowchart LR
 
 单个瞬时数值通常不足以下结论。例如负载平均值不等于 CPU 使用率，空闲内存少不一定是内存不足，`ping` 失败也不证明 HTTP 服务不可达。
 
-## Bash
+## Bash {#bash}
 
 **重点掌握**。Bash 广泛存在于 Linux 和许多 Unix 类管理环境中。它适合组合成熟命令和编写较短的胶水脚本；数据结构复杂、错误恢复困难或需要大量测试时，应转用通用编程语言。
 
-### 解析、引用与展开
+### 解析、引用与展开 {#parsing-quoting-and-expansion}
 
 - 单引号保留其中字符的字面意义；双引号允许变量和命令替换，但阻止分词与路径名展开。
 - 变量引用通常写成 `"${name}"`。未引用的空值、空格和 `*` 可能改变参数个数。
@@ -82,7 +82,7 @@ files=("alpha.txt" "two words.txt")
 printf '<%s>\n' "${files[@]}"
 ```
 
-### 错误与组合
+### 错误与组合 {#errors-and-composition}
 
 - `&&` 只在前一命令成功时执行后一命令，`||` 只在失败时执行；二者适合表达条件，不应用来隐藏错误。
 - 管道退出码默认常取最后一个命令。脚本可启用 `set -o pipefail`，让管道中的前序失败可见。
@@ -106,11 +106,11 @@ wc -c < "${work_dir}/input.txt"
 
 脚本应由 ShellCheck 等工具检查，并在目标 Bash 版本上测试。`sh` 不一定是 Bash；以 `#!/bin/sh` 声明的脚本不能假设数组、`[[ ... ]]` 或 `pipefail` 可用。
 
-## PowerShell
+## PowerShell {#powershell}
 
 **重点掌握**。PowerShell 可用于 Windows、Linux 和 macOS，核心差异是管道传递 .NET 对象，而不是只传文本行。对象保留属性和类型，筛选、排序与导出时不必先解析屏幕格式。
 
-### 对象管道
+### 对象管道 {#object-pipeline}
 
 ```powershell
 Get-Process |
@@ -121,7 +121,7 @@ Get-Process |
 
 `Format-Table` 和 `Format-List` 只应放在交互输出末端。格式化后管道中是展示指令而非原始业务对象，继续导出会得到意外数据。需要机器读取时使用 `ConvertTo-Json`、`Export-Csv` 等明确格式。
 
-### 参数、错误与作用域
+### 参数、错误与作用域 {#parameters-errors-and-scope}
 
 - 单引号字符串通常不展开变量，双引号字符串会展开。复杂表达式在插值中写作 `$($value.Property)`。
 - 调用 PowerShell 命令时使用命名参数；调用本机程序时要分别传递参数，避免 `Invoke-Expression`。
@@ -150,7 +150,7 @@ catch {
 
 Windows PowerShell 5.1 与现代 PowerShell 7+ 使用不同运行时，模块兼容性和默认编码可能不同。生产脚本应声明并测试目标版本。
 
-## 进程监控
+## 进程监控 {#process-monitoring}
 
 进程监控回答“谁正在消耗资源、在等待什么、由谁启动”。先记录进程 ID、父进程、启动时间、命令、用户和状态，再决定是否重启。PID 会复用，只保存 PID 不能长期唯一标识进程。
 
@@ -179,34 +179,34 @@ Windows PowerShell 5.1 与现代 PowerShell 7+ 使用不同运行时，模块兼
 
 停止进程时，优先通过服务管理器请求有序停止并观察超时。强制终止可能跳过缓冲区刷新、锁释放和状态保存，只作为已知后果的最后手段。
 
-## 性能监控
+## 性能监控 {#performance-monitoring}
 
 性能问题应同时观察利用率、饱和度和错误：资源很忙不一定有问题，队列持续增长或请求超时才说明容量不能满足需求。
 
-### CPU 与调度
+### CPU 与调度 {#cpu-and-scheduling}
 
 - 查看用户态、内核态、I/O 等待、空闲时间和运行队列，而不是只看总 CPU。
 - Linux 可使用 `uptime` 查看负载趋势，`vmstat 1 5` 观察调度、内存和 I/O；BSD 的字段和工具选项需读本机手册。
 - Windows 可用 `Get-Counter` 读取处理器时间和队列等性能计数器。
 - 高系统态时间可能来自网络、存储或系统调用；先剖析再优化应用代码。
 
-### 内存
+### 内存 {#memory}
 
 - “已使用”内存包含可回收缓存。关注可用内存、换页、内存压力、OOM 或提交限制。
 - 持续换入换出、请求延迟升高和进程被终止比缓存占比较高更值得关注。
 - 泄漏判断需要时间序列和工作负载对照，单次进程内存快照不能证明泄漏。
 
-### 存储
+### 存储 {#storage}
 
 - 容量、inode 或元数据、吞吐、IOPS、延迟和队列是不同维度。
 - Linux 常见 `df -hP` 查文件系统容量、`df -iP` 查 inode，`iostat` 需要相应工具包。Windows 使用 `Get-Volume` 与性能计数器。
 - 删除仍被进程打开的文件可能不释放空间；应定位持有者并通过应用流程处理，不能盲目重启整机。
 
-### 证据窗口
+### 证据窗口 {#evidence-window}
 
 `top` 等实时界面适合探索，但事故复盘需要带时间戳的采样、监控时间序列和变更记录。采样工具本身会消耗资源；高频跟踪或系统调用追踪应先在测试环境评估开销并限制持续时间。
 
-## 网络工具
+## 网络工具 {#network-tools}
 
 网络排障应逐层验证，不要从“网页打不开”直接跳到防火墙结论。
 
@@ -242,11 +242,11 @@ Windows PowerShell 5.1 与现代 PowerShell 7+ 使用不同运行时，模块兼
 
 `ping` 使用 ICMP，而服务可能使用 TCP 或 UDP；中间设备可以阻止 ICMP 但允许业务流量。`traceroute` 显示的是探测响应路径，路由不对称和限速会造成缺口。抓包可能包含凭据和个人数据，只能在授权范围内最小化采集、安全保存并及时删除。
 
-## 文本处理
+## 文本处理 {#text-processing}
 
 Unix 管道通常传递字节或文本行，PowerShell 管道通常传递对象。选择工具时先明确输入契约。
 
-### Unix 文本工具
+### Unix 文本工具 {#unix-text-tools}
 
 - `grep` 按模式筛选行，固定字符串优先 `grep -F`，扩展正则使用 `grep -E`。
 - `cut` 适合简单、固定分隔字段；含引号和转义的 CSV 应使用 CSV 解析器。
@@ -260,7 +260,7 @@ printf '%s\n' '200 GET /health' '503 GET /api' '200 GET /' |
     awk '$1 >= 500 {count += 1} END {print "server_errors=" count + 0}'
 ```
 
-### PowerShell 对象处理
+### PowerShell 对象处理 {#powershell-object-processing}
 
 ```powershell
 $records = @(
@@ -279,11 +279,11 @@ $records |
 !!! tip "先保留原始数据"
     把筛选命令和原始证据分开保存。只保留最后几行结论会丢失上下文，也无法在提出新假设后重新分析。
 
-## 终端编辑器
+## 终端编辑器 {#terminal-editors}
 
 远程节点上不一定有图形界面。至少应掌握一种编辑器的打开、搜索、修改、保存和不保存退出；更稳妥的生产方式仍是修改版本控制中的配置并通过自动化发布。
 
-### Vim
+### Vim {#vim}
 
 **重点掌握**。Vim 采用模式编辑：普通模式用于移动和命令，插入模式输入文本，命令行模式保存与退出。无需掌握复杂配置，但应能完成应急编辑。
 
@@ -295,7 +295,7 @@ $records |
 
 以管理员权限打开后，编辑器插件、配置和 Shell 转义都可能扩大权限。优先编辑临时副本、校验语法、显示差异，再通过受控方式安装。
 
-### Nano
+### Nano {#nano}
 
 **替代方案**。Nano 的快捷键显示在底部，学习成本低，适合偶发的小修改。
 
@@ -307,7 +307,7 @@ $records |
 
 Nano 操作直接，但同样缺少配置事务。保存前确认文件路径，保存后运行对应语法检查。
 
-### Emacs
+### Emacs {#emacs}
 
 **替代方案**。Emacs 是可扩展编辑环境，也可在终端运行。记号 `C-x` 表示按住 Ctrl 再按 x，`M-x` 通常表示 Alt+x。
 
@@ -328,9 +328,9 @@ export VISUAL='vim'
 
 不要把交互式编辑作为大规模配置管理方法。紧急修改必须记录原因、备份、语法验证和回归自动化的后续事项。
 
-## 选型比较
+## 选型比较 {#selection-comparison}
 
-### Bash 与 PowerShell
+### Bash 与 PowerShell {#bash-and-powershell}
 
 | 维度 | Bash | PowerShell |
 | --- | --- | --- |
@@ -342,11 +342,11 @@ export VISUAL='vim'
 
 团队可以同时保留两者，但每类脚本应明确目标 Shell、最低版本、格式化和测试规则。跨平台自动化若大量调用平台特有命令，强行使用同一个脚本通常只会隐藏分支复杂度。
 
-### 编辑器
+### 编辑器 {#editors}
 
 选择团队在应急环境中确实可用的工具：Vim 常预装且远程效率高，Nano 易于临时上手，Emacs 适合已采用其工作流的工程师。生产标准不应要求所有人使用同一编辑器，而应要求变更可审查、可验证和可恢复。
 
-## 最小实践：安全分析样例日志
+## 最小实践：安全分析样例日志 {#minimal-practice-safely-analyze-sample-logs}
 
 该练习只操作由当前命令创建的临时目录，不读取真实日志。目标是统计 5xx 响应并确保清理路径明确。
 
@@ -405,9 +405,9 @@ finally {
 
 真实日志可能存在字段缺失、时区差异、轮转、压缩和敏感数据。先确认格式契约与授权范围，再调整解析器，禁止直接把生产日志上传到公共服务。
 
-## 生产实践
+## 生产实践 {#production-practices}
 
-### 安全操作
+### 安全操作 {#safe-operations}
 
 - 用普通权限观测，以单条、短时、可审计方式提权；不要启动永久管理员 Shell。
 - 运行命令前确认主机、账户、命名空间、当前目录和时间范围。终端标题或提示符不能替代身份验证。
@@ -415,7 +415,7 @@ finally {
 - 历史记录、进程参数和终端录屏都可能保存命令。令牌通过受控输入或文件描述符传递，不写在命令行。
 - 不运行来源不明的 `curl ... | sh`。下载、校验签名或摘要、阅读内容后再在隔离环境执行。
 
-### 可靠排障
+### 可靠排障 {#reliable-troubleshooting}
 
 - 为每条假设记录时间、命令、退出码和关键输出；命令前可先记录 UTC 时间。
 - 使用超时限制网络和跟踪工具，使用采样窗口避免无限运行。
@@ -423,14 +423,14 @@ finally {
 - 通过[版本控制系统](version-control-systems.md)保存可复用脚本，并使用 ShellCheck、PSScriptAnalyzer 和自动测试。
 - 长命令整理成参数明确的脚本；脚本支持只读模式、目标范围、并发上限和失败汇总。
 
-### 可观测与成本
+### 可观测与成本 {#observability-and-cost}
 
 - 临时终端命令用于验证监控结论，不替代持续指标、日志和追踪。
 - 不在全量节点高频执行昂贵查询。先抽样并测量命令本身的 CPU、I/O 和网络开销。
 - 输出机器可读格式时固定字段与版本；输出给人阅读时保留单位、时间和主机上下文。
 - 事故结束后删除包含敏感数据的临时文件，并把真正有用的检测转成受保留策略管理的遥测。
 
-## 常见误区
+## 常见误区 {#common-misconceptions}
 
 - **复制命令但不理解 Shell**：命令可能包含重定向、命令替换或环境相关通配符，应逐段解释后运行。
 - **用 `kill -9` 作为默认重启方式**：强制信号不给进程清理机会，应先通过服务管理器优雅停止。
@@ -443,7 +443,7 @@ finally {
 - **认为 `set -e` 捕获所有 Bash 错误**：其上下文规则复杂，关键边界必须显式检查和测试。
 - **直接在生产节点编辑配置**：会制造漂移；紧急修改也要尽快回写声明式来源并重新发布。
 
-## 动手练习
+## 动手练习 {#hands-on-exercises}
 
 1. 分别写一个 Bash 和 PowerShell 命令，输出当前时间、用户、主机和 Shell / PowerShell 版本，结果必须具有稳定字段名。
 2. 修改最小实践，使格式错误的行写入标准错误并导致退出码 `2`，但不得执行任何系统修改。
@@ -452,7 +452,7 @@ finally {
 5. 用 Vim、Nano 或 Emacs 在临时目录编辑一个文件，完成搜索、替换、保存、撤销和不保存退出；删除临时目录前用 `diff` 验证结果。
 6. 找一个自己的旧 Shell 脚本，检查未引用变量、未处理退出码、可预测临时文件和无限重试，提交一份风险清单。
 
-## 完成检查
+## 完成检查 {#completion-checklist}
 
 - [ ] 能区分终端、Shell、外部进程、标准流和退出码。
 - [ ] 能正确解释 Bash 单引号、双引号、数组、管道和 `pipefail`。
@@ -463,7 +463,7 @@ finally {
 - [ ] 能在 Vim、Nano 或 Emacs 中安全完成最小编辑流程。
 - [ ] 能把排障命令限制在授权范围并避免泄露凭据。
 
-## 官方延伸阅读
+## 官方延伸阅读 {#official-further-reading}
 
 - [GNU Bash 手册](https://www.gnu.org/software/bash/manual/)、[GNU Coreutils 手册](https://www.gnu.org/software/coreutils/manual/)与[ShellCheck](https://www.shellcheck.net/)
 - [PowerShell 文档](https://learn.microsoft.com/powershell/)、[关于管道](https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_pipelines)与[PSScriptAnalyzer](https://learn.microsoft.com/powershell/utility-modules/psscriptanalyzer/overview)

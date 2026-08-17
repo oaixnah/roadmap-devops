@@ -15,7 +15,7 @@ GitOps 不是“把 YAML 放进 Git”，也不等同于某个产品。它是一
 
 **重点掌握**：期望状态、持续协调、漂移、健康状态、分层交付，以及以 Git 提交而不是集群命令驱动变更。
 
-## 学习目标
+## 学习目标 {#learning-objectives}
 
 完成本章后，你应能够：
 
@@ -26,7 +26,7 @@ GitOps 不是“把 YAML 放进 Git”，也不等同于某个产品。它是一
 - 比较 Argo CD 与 Flux CD 的操作模型、扩展方式和迁移成本。
 - 为多集群交付设计渐进发布、策略门禁、可观测性和灾难恢复流程。
 
-## 前置知识
+## 前置知识 {#prerequisites}
 
 - 熟悉 [版本控制系统](version-control-systems.md) 中的分支、提交、标签和合并请求。
 - 理解 [CI/CD 工具](ci-cd-tools.md) 中构建、测试和部署阶段的职责。
@@ -34,9 +34,9 @@ GitOps 不是“把 YAML 放进 Git”，也不等同于某个产品。它是一
 - 知道如何从 [制品管理](artifact-management.md) 中按不可变摘要选择镜像。
 - 了解 [机密管理](secret-management.md) 中的加密存储和外部机密引用。
 
-## 核心原理
+## 核心原理 {#core-principles}
 
-### Git 是期望状态入口，不是运行时数据库
+### Git 是期望状态入口，不是运行时数据库 {#git-is-the-desired-state-entrypoint-not-a-runtime-database}
 
 Git 仓库保存的是经过授权的期望状态及其历史。Kubernetes API 保存运行时状态；云 API、数据库和外部控制器也可能拥有各自的真实状态。GitOps 不会消除这些状态源，而是明确哪些字段由谁负责，并让控制器将自己负责的字段持续收敛。
 
@@ -48,7 +48,7 @@ Git 仓库保存的是经过授权的期望状态及其历史。Kubernetes API �
 
 不应直接提交的内容包括明文机密、瞬时状态、完整数据库内容、未脱敏导出，以及由运行时控制器频繁写回的状态字段。
 
-### 协调是一个持续控制环
+### 协调是一个持续控制环 {#reconciliation-is-a-continuous-control-loop}
 
 协调器反复执行“观察、比较、行动、再观察”：
 
@@ -73,13 +73,13 @@ flowchart LR
 
 同步（Sync）与健康（Health）是不同维度。对象可以与 Git 一致，但应用仍因镜像拉取失败而不健康；也可以运行健康，却因人工修改副本数而产生漂移。
 
-### 拉取式交付重画凭据边界
+### 拉取式交付重画凭据边界 {#pull-based-delivery-redraws-credential-boundaries}
 
 传统推送式部署常让 CI 持有每个目标集群的高权限凭据。GitOps 通常在目标集群或受控管理集群中运行协调器，由它拉取 Git 与制品，并使用本地服务账号应用变更。CI 只需构建、测试、发布不可变制品，并提出环境仓库变更。
 
 这减少了 CI 凭据横向影响范围，但不会自动安全：协调器本身权限很高，Git 写权限可以间接变成部署权限，仓库凭据与 Webhook 也必须保护。管理多个集群的中央控制器还可能形成更大的爆炸半径，需要按租户、环境或信任域拆分。
 
-### 漂移、清理与回退
+### 漂移、清理与回退 {#drift-pruning-and-rollback}
 
 漂移是实际状态偏离期望状态。处理方式有三种：
 
@@ -91,7 +91,7 @@ flowchart LR
 
 Git 回退通常是创建一个恢复旧期望状态的新提交，而不是改写历史。若旧镜像已经删除、数据库发生不可逆迁移，或外部状态已变化，回退提交也无法自动恢复。因此部署回退、数据恢复和业务补偿必须分别设计。
 
-### 仓库结构表达职责
+### 仓库结构表达职责 {#repository-structure-expresses-responsibilities}
 
 常见分层是：
 
@@ -102,7 +102,7 @@ Git 回退通常是创建一个恢复旧期望状态的新提交，而不是改�
 
 单仓库便于原子修改和统一搜索，但权限边界较粗、规模增长快；多仓库可隔离团队与环境，却增加版本关联和批量变更成本。不要机械套用目录模板，应先明确谁能提议、谁能批准、哪个协调器能读、哪些变化必须原子发生。
 
-## Argo CD
+## Argo CD {#argo-cd}
 
 **重点掌握**。Argo CD 是面向 Kubernetes 的声明式 GitOps 持续交付控制器。它以 `Application` 资源描述来源、目标和同步策略，并提供 API、CLI 与 Web UI 展示差异、资源树和健康状态。
 
@@ -116,7 +116,7 @@ Git 回退通常是创建一个恢复旧期望状态的新提交，而不是改�
 
 Argo CD 的资源视图有利于排查依赖关系和人工审批。生产中应尽快关闭或保护初始管理员入口，接入单点登录，配置项目边界，并限制仓库凭据和目标集群。若启用多个配置管理插件，插件执行环境也属于供应链攻击面。
 
-## Flux CD
+## Flux CD {#flux-cd}
 
 **替代方案**。Flux CD 是一组 Kubernetes 控制器与自定义资源的集合，常见组件分别负责来源获取、Kustomize 协调、Helm 发布、通知和镜像自动化。它更强调由 Kubernetes API 表达可组合的控制器工作流。
 
@@ -130,7 +130,7 @@ Argo CD 的资源视图有利于排查依赖关系和人工审批。生产中应
 
 Flux 可通过 `flux bootstrap` 把控制器及其同步配置写入 Git，使自身也由 Git 管理。生产引导时应使用短期、最小权限凭据，审查 bootstrap 产生的密钥和部署密钥，并为来源验证、租户隔离与控制器权限建立明确策略。
 
-## 选型比较
+## 选型比较 {#selection-comparison}
 
 | 维度 | Argo CD | Flux CD |
 | --- | --- | --- |
@@ -151,11 +151,11 @@ Flux 可通过 `flux bootstrap` 把控制器及其同步配置写入 Git，使�
 
 两者都能实现可靠 GitOps。不要仅凭是否有 UI 选型；用一个包含自定义资源、失败回滚、机密引用和多环境覆盖的代表性服务做验证，并测量从合并到收敛、从漂移到修复的时间。
 
-## 最小实践：用 Argo CD 协调临时集群
+## 最小实践：用 Argo CD 协调临时集群 {#minimal-practice-reconcile-a-temporary-cluster-with-argo-cd}
 
 本实践创建仅供本机实验的 `kind` 集群，安装固定版本的 Argo CD，并从固定提交的公开示例仓库同步一个 Web 服务。示例通过 Kustomize 把上游旧镜像替换成以多架构摘要固定的非特权 Nginx 镜像。它不会访问生产集群，也不要求把密码写入文件。
 
-### 1. 准备工具与集群
+### 1. 准备工具与集群 {#prepare-tools-and-cluster}
 
 需要 Docker、`kubectl` 和 `kind`。创建独立集群，避免与现有上下文混淆：
 
@@ -166,7 +166,7 @@ kubectl config current-context
 
 输出应为 `kind-gitops-lab`。后续命令都显式使用该上下文。
 
-### 2. 安装控制器
+### 2. 安装控制器 {#install-controller}
 
 ```bash
 kubectl --context kind-gitops-lab create namespace argocd
@@ -184,7 +184,7 @@ kubectl --context kind-gitops-lab wait \
 !!! warning "远程清单必须先审查"
     为保持篇幅最小，本实验直接应用固定发布版本的官方清单。生产中应先下载到受控仓库，审查内容，并校验清单及其中镜像的来源或摘要，再通过既有发布流程安装。不要使用随时间移动的 `stable` 或 `latest` URL。
 
-### 3. 声明并同步应用
+### 3. 声明并同步应用 {#declare-and-sync-application}
 
 以下 `Application` 固定示例仓库的提交，避免实验内容随上游分支变化。目标命名空间由 Argo CD 创建；自动修复演示漂移收敛，自动清理只作用于这个临时应用。
 
@@ -294,7 +294,7 @@ kubectl --context kind-gitops-lab \
 
 然后访问 `http://127.0.0.1:8080/`。端口转发只监听本机，不创建公网入口。
 
-### 4. 观察漂移修复
+### 4. 观察漂移修复 {#observe-drift-remediation}
 
 手工把副本数改为 2，等待协调器恢复 Git 中声明的 1：
 
@@ -308,7 +308,7 @@ kubectl --context kind-gitops-lab \
 
 看到副本数回到 1 后按 ++ctrl+c++ 结束观察。这说明手工命令不是持久期望状态；正式变更应修改 Git 并经过评审。
 
-### 5. 清理
+### 5. 清理 {#cleanup}
 
 ```bash
 kind delete cluster --name gitops-lab
@@ -319,9 +319,9 @@ kind delete cluster --name gitops-lab
 ??? note "如何改用 Flux CD 完成同一练习"
     在临时集群安装固定版本 Flux 控制器，创建指向固定提交的 `GitRepository`，再创建引用 `guestbook` 路径的 `Kustomization`。观察 `Ready` 条件与资源漂移。若使用 `flux bootstrap`，应先创建自己的实验仓库，并在练习后回收写权限和部署密钥；不要对不受控的公共仓库执行 bootstrap。
 
-## 生产实践
+## 生产实践 {#production-practices}
 
-### 仓库与变更治理
+### 仓库与变更治理 {#repository-and-change-governance}
 
 - 保护生产分支，要求评审、状态检查和提交签名或受信身份。
 - 用代码所有者规则约束关键目录；提交者与最终批准者按风险分离。
@@ -329,13 +329,13 @@ kind delete cluster --name gitops-lab
 - 渲染后的资源也要在 CI 中做模式校验、策略检查和服务端 dry-run；只检查模板语法不够。
 - 大规模自动更新应分批提出，避免一个机器人提交同时影响全部集群。
 
-### 机密与来源
+### 机密与来源 {#secrets-and-sources}
 
 Git 历史不会因普通删除而消失，明文机密一旦提交必须立即轮换。推荐在 Git 中保存加密密文或外部机密引用，由受控控制器在目标环境解密或读取。密钥权限应与仓库读权限分离，使拿到 Git 副本的人不能直接还原生产机密。
 
 对 Git、Helm 和 OCI 来源固定提交、版本或摘要，并验证 TLS 与签名。私有仓库凭据使用只读、最小作用域和可轮换的身份；不同租户不要共享同一高权限部署密钥。
 
-### 权限与多租户
+### 权限与多租户 {#permissions-and-multi-tenancy}
 
 - 每个协调器只管理明确的集群、命名空间和资源种类。
 - 限制团队可选的来源仓库、目标和集群级对象，不能只依赖目录约定。
@@ -343,7 +343,7 @@ Git 历史不会因普通删除而消失，明文机密一旦提交必须立即�
 - 隔离不互信租户的渲染执行环境，防止模板插件读取控制器凭据或其他仓库。
 - 中央控制面若管理多个集群，应评估其被攻陷后的整体影响，并考虑按信任域拆分实例。
 
-### 发布安全与回退
+### 发布安全与回退 {#release-safety-and-rollback}
 
 自动同步不等于一次性全量发布。生产变更可按以下路径推进：
 
@@ -354,11 +354,11 @@ Git 历史不会因普通删除而消失，明文机密一旦提交必须立即�
 
 为破坏性变更设置同步顺序与显式门禁。数据库迁移优先采用向前和向后兼容的扩展/收缩流程；不要假设 `git revert` 可以逆转已经删除的数据。
 
-### 清理与防误删
+### 清理与防误删 {#pruning-and-deletion-protection}
 
 启用自动清理前，应验证路径为空、渲染失败、仓库暂时不可用和分支删除时的行为。对 Namespace、持久卷、CRD 等高影响对象使用删除保护、最终确认或独立生命周期。先在非生产环境观察仅检测模式，再逐步启用自动修复和清理。
 
-### 可观测性与服务级目标
+### 可观测性与服务级目标 {#observability-and-service-level-objectives}
 
 监控控制器不仅要看进程存活，还应覆盖：
 
@@ -371,41 +371,41 @@ Git 历史不会因普通删除而消失，明文机密一旦提交必须立即�
 
 告警应携带提交、应用、集群、失败阶段和负责人。控制器日志进入 [日志管理](logs-management.md)，指标与追踪按 [可观测性](observability.md) 的方法关联到发布事件。
 
-### 控制器恢复
+### 控制器恢复 {#controller-recovery}
 
 Git 可以重建期望状态，但不能重建所有运行时数据。应备份或能够重新生成：控制器配置、项目和租户边界、仓库凭据、集群注册信息、加密密钥及外部状态。定期在空集群演练 bootstrap，确认固定版本的控制器能从 Git 恢复，且恢复过程不会误接管生产资源。
 
-## 常见误区
+## 常见误区 {#common-misconceptions}
 
-### 把自动同步等同于 GitOps
+### 把自动同步等同于 GitOps {#equating-automatic-sync-with-gitops}
 
 若变更没有声明式来源、审计和持续协调，单纯由 webhook 触发脚本仍是普通自动部署。
 
-### 让 CI 直接改集群，再让 GitOps 接管
+### 让 CI 直接改集群，再让 GitOps 接管 {#letting-ci-change-the-cluster-before-gitops}
 
 两个写入者会导致竞争和无法解释的漂移。CI 应发布制品并更新期望状态，由一个明确控制器负责应用。
 
-### 把明文机密放进私有仓库
+### 把明文机密放进私有仓库 {#storing-plaintext-secrets-in-private-repositories}
 
 私有仓库仍可能被克隆、备份、日志记录或误授权。必须加密或保存外部引用，并建立轮换流程。
 
-### 默认开启全局自动清理
+### 默认开启全局自动清理 {#enabling-global-automatic-pruning-by-default}
 
 错误路径或渲染结果可能删除大量资源。自动清理必须配合范围限制、保护对象、分批启用和恢复演练。
 
-### 认为回退提交一定安全
+### 认为回退提交一定安全 {#assuming-revert-commits-are-always-safe}
 
 外部 API、消息、数据库迁移和已删除制品可能不可逆。回退前需验证数据兼容性和制品可用性。
 
-### 忽略字段所有权
+### 忽略字段所有权 {#ignoring-field-ownership}
 
 水平自动扩缩器、Operator 和 GitOps 控制器若同时管理同一字段，会持续互相覆盖。应明确忽略规则或重新划分所有权，而不是延长协调间隔掩盖问题。
 
-### 直接跟踪上游主分支
+### 直接跟踪上游主分支 {#tracking-upstream-main-directly}
 
 移动分支会绕过本组织评审，使上游变化直接进入集群。应固定提交或经过验证的版本，再由受控变更更新。
 
-## 动手练习
+## 动手练习 {#hands-on-exercises}
 
 1. **完成漂移实验**：在最小实践中修改副本数，记录 Argo CD 检测和恢复所需时间；然后暂停自动同步，比较仅检测模式。
 2. **设计仓库职责**：为应用开发者、平台团队和生产审批者画出读写矩阵。结果应明确谁能更新镜像摘要、修改集群级 RBAC 和批准生产变更。
@@ -414,7 +414,7 @@ Git 可以重建期望状态，但不能重建所有运行时数据。应备份�
 5. **比较实现**：用 Flux `GitRepository` 与 `Kustomization` 重做最小实践，记录来源状态、健康等待、漂移恢复和可视化排障路径的差异。
 6. **恢复控制面**：删除实验集群后从固定版本和仓库重新引导，测量恢复时间并列出 Git 之外仍需恢复的身份与密钥材料。
 
-## 完成检查
+## 完成检查 {#completion-checklist}
 
 - [ ] 能画出 GitOps 的观察、比较、行动控制环。
 - [ ] 能区分同步状态、健康状态和运行时漂移。
@@ -426,7 +426,7 @@ Git 可以重建期望状态，但不能重建所有运行时数据。应备份�
 - [ ] 能用新提交回退配置，并识别无法由 Git 回退的数据变化。
 - [ ] 已定义合并到收敛、漂移到修复和同步失败的监控指标。
 
-## 官方延伸阅读
+## 官方延伸阅读 {#official-further-reading}
 
 - [OpenGitOps Principles](https://opengitops.dev/)：GitOps 的厂商中立原则。
 - [Argo CD 官方文档](https://argo-cd.readthedocs.io/en/stable/)：安装、Application、同步、项目与安全说明。
