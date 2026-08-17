@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-3 8 70 48" role="img" aria-labelledby="title">
+  <title id="title">DevOps infinity loop</title>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path
+      d="M32 32c-7-12-12-16-18-16C6 16 2 23 2 32s5 16 13 16c10 0 16-13 21-21"
+      stroke="#ffffff"
+      stroke-width="9"
+    />
+    <path
+      d="M32 32c7 12 12 16 18 16 8 0 12-7 12-16s-5-16-13-16c-10 0-16 13-21 21"
+      stroke="#ffffff"
+      stroke-width="9"
+    />
+    <path
+      d="M32 32c-7-12-12-16-18-16C6 16 2 23 2 32s5 16 13 16c10 0 16-13 21-21"
+      stroke="#303f9f"
+      stroke-width="5.5"
+    />
+    <path
+      d="M32 32c7 12 12 16 18 16 8 0 12-7 12-16s-5-16-13-16c-10 0-16 13-21 21"
+      stroke="#00a9c0"
+      stroke-width="5.5"
+    />
+  </g>
+</svg>
