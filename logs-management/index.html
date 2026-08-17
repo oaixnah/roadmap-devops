@@ -1,0 +1,2303 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="本章梳理日志从生成、采集、缓冲、解析到索引、检索、归档和销毁的完整链路，比较全文与标签索引方案，并通过 Loki 实践掌握结构化事件、低基数查询、脱敏和保留治理。">
+      
+      
+        <meta name="author" content="oaixnah">
+      
+      
+        <link rel="canonical" href="https://devops.roadmap.oaix.tech/logs-management/">
+      
+      
+        <link rel="prev" href="../infrastructure-monitoring/">
+      
+      
+        <link rel="next" href="../container-orchestration/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/favicon.svg">
+      <meta name="generator" content="zensical-0.0.55">
+    
+    
+      
+        <title>日志管理 - DevOps Roadmap 中文手册</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../assets/stylesheets/modern/main.20815dad.min.css">
+      
+        
+          
+        
+        <link rel="stylesheet" href="../assets/stylesheets/modern/palette.dfe2e883.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+  
+
+
+  
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FLXQC4YQJF"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-FLXQC4YQJF');
+</script>
+
+  
+  
+
+
+<script type="text/javascript">
+    (function(c,l,a,r,i,t,y){
+        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+    })(window, document, "clarity", "script", "y3p2irnl2z");
+</script>
+
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-label="导航栏"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#_1" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href="./.." title="DevOps Roadmap 中文手册" class="md-header__button md-logo" aria-label="DevOps Roadmap 中文手册" data-md-component="logo">
+      
+  <img src="../assets/logo.svg" alt="DevOps Roadmap 中文手册">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer" aria-label="导航栏">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            DevOps Roadmap 中文手册
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              日志管理
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun-moon" viewBox="0 0 24 24"><path d="M12 2v2M14.837 16.385a6 6 0 1 1-7.223-7.222c.624-.147.97.66.715 1.248a4 4 0 0 0 5.26 5.259c.589-.255 1.396.09 1.248.715M16 12a4 4 0 0 0-4-4M19 5l-1.256 1.256M20 12h2"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search" aria-label="查找">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="查找">
+  <button type="button" class="md-search__button">
+    查找
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+    </div>
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="./.." title="DevOps Roadmap 中文手册" class="md-nav__button md-logo" aria-label="DevOps Roadmap 中文手册" data-md-component="logo">
+      
+  <img src="../assets/logo.svg" alt="DevOps Roadmap 中文手册">
+
+    </a>
+    DevOps Roadmap 中文手册
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  首页
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  基础能力
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  基础能力
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../learn-a-programming-language/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  学习一种编程语言
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../operating-system/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  操作系统
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../terminal-knowledge/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  终端知识
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../version-control-systems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  版本控制系统
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../vcs-hosting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  版本控制托管
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../containers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  容器
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  基础设施与云
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  基础设施与云
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../common-infrastructure-services/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  常见基础设施服务
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../networking-and-protocols/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  网络与协议
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cloud-providers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  云服务商
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../serverless/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  无服务器计算
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../provisioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  基础设施置备
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  配置管理
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  持续交付与运行
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  持续交付与运行
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ci-cd-tools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  CI/CD 工具
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../secret-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  机密管理
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../infrastructure-monitoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  基础设施监控
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  日志管理
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  日志管理
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        学习目标
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        前置知识
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        核心原理
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="核心原理">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        日志流水线
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        结构化事件
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        索引模型
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        时间、顺序与重复
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        日志、指标与追踪
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        工具详解
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="工具详解">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#papertrail" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Papertrail
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#splunk" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Splunk
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#loki" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Loki
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#elastic-stack" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Elastic Stack
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#graylog" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Graylog
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        选型比较
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#loki_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        最小实践：写入并查询 Loki
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        生产实践
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="生产实践">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        日志契约与采集
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_14" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        安全、隐私与审计
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_15" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        可靠性、性能与成本
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_16" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        可操作性
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_17" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        常见误区
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_18" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        动手练习
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_19" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        完成检查
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_20" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        官方延伸阅读
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../container-orchestration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  容器编排
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../observability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  可观测性
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  平台与架构治理
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  平台与架构治理
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../artifact-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  制品管理
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gitops/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  GitOps
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../service-mesh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  服务网格
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cloud-design-patterns/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  云设计模式
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        学习目标
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        前置知识
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        核心原理
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="核心原理">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        日志流水线
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        结构化事件
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        索引模型
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        时间、顺序与重复
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        日志、指标与追踪
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        工具详解
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="工具详解">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#papertrail" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Papertrail
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#splunk" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Splunk
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#loki" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Loki
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#elastic-stack" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Elastic Stack
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#graylog" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Graylog
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        选型比较
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#loki_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        最小实践：写入并查询 Loki
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        生产实践
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="生产实践">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        日志契约与采集
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_14" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        安全、隐私与审计
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_15" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        可靠性、性能与成本
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_16" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        可操作性
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_17" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        常见误区
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_18" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        动手练习
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_19" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        完成检查
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_20" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        官方延伸阅读
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+  <nav class="md-path" aria-label="导航栏" >
+    <ol class="md-path__list">
+      
+        
+  
+  
+    <li class="md-path__item">
+      <a href="./.." class="md-path__link">
+        
+  
+  <span class="md-ellipsis">
+    首页
+  </span>
+
+      </a>
+    </li>
+  
+
+      
+      
+        
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      <li class="md-path__item">
+        <a href="../ci-cd-tools/" class="md-path__link">
+          
+  
+  <span class="md-ellipsis">
+    持续交付与运行
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ol>
+  </nav>
+
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+<h1 id="_1">日志管理<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<p>日志是系统在特定时间发生了什么的离散记录。单机上读文件可以解决早期问题，但实例扩缩、容器销毁和服务跨区域后，必须统一处理采集、解析、传输、索引、检索、保留、权限和销毁，才能把日志变成可靠证据而不是昂贵噪声。</p>
+<p>本章覆盖 Papertrail、Splunk、Loki、Elastic Stack 与 Graylog，并通过本地 Loki 实践建立结构化日志、标签和查询的基本方法。</p>
+<h2 id="_2">学习目标<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>完成本章后，你应当能够：</p>
+<ul>
+<li>设计带时间、级别、服务、环境和关联标识的结构化日志事件。</li>
+<li>解释从应用到采集器、缓冲、存储、查询和归档的完整数据路径。</li>
+<li>区分全文索引、字段索引和标签索引，控制基数、保留期与成本。</li>
+<li>比较 Papertrail、Splunk、Loki、Elastic Stack 与 Graylog 的适用场景和运维责任。</li>
+<li>在本地安全运行 Loki，写入虚构日志并用 LogQL 检索。</li>
+<li>制定脱敏、访问控制、防篡改、丢日志检测和事件响应方案。</li>
+</ul>
+<h2 id="_3">前置知识<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<ul>
+<li>熟悉 <a href="../operating-system/">操作系统</a> 的文件、权限和服务日志。</li>
+<li>熟悉 <a href="../terminal-knowledge/">终端知识</a> 中的文本处理、进程和网络工具。</li>
+<li>理解 <a href="../networking-and-protocols/">网络与协议</a> 中的 TCP、UDP、HTTP 与 TLS。</li>
+<li>日志产生的资源上下文可结合 <a href="../infrastructure-monitoring/">基础设施监控</a> 学习。</li>
+</ul>
+<h2 id="_4">核心原理<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<h3 id="_5">日志流水线<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
+<pre class="mermaid"><code>flowchart LR
+    App[应用、系统与审计源] --&gt; Agent[采集器或转发器]
+    Agent --&gt; Buffer[内存或磁盘缓冲]
+    Buffer --&gt; Parse[解析、过滤、脱敏与路由]
+    Parse --&gt; Hot[热存储与索引]
+    Hot --&gt; Search[搜索、仪表盘与告警]
+    Hot --&gt; Archive[归档与保留策略]</code></pre>
+<p>每一段都可能丢失、重复或重排事件。TCP 能确认传输字节，不代表后端已成功索引；本地磁盘缓冲可以抵御短暂中断，却会消耗节点空间。应监控采集延迟、队列长度、拒收、解析失败和最后成功写入时间。</p>
+<h3 id="_6">结构化事件<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
+<p>纯文本便于人临时阅读，稳定 JSON 字段更适合机器查询。建议至少包含：</p>
+<ul>
+<li><code>timestamp</code>：带时区的 RFC 3339 时间，统一使用 UTC 并保留源时间。</li>
+<li><code>severity</code>：稳定枚举，例如 <code>DEBUG</code>、<code>INFO</code>、<code>WARN</code>、<code>ERROR</code>。</li>
+<li><code>service</code>、<code>environment</code>、<code>version</code>：定位事件来源和部署批次。</li>
+<li><code>message</code> 与 <code>event_name</code>：分别供人阅读和机器聚合。</li>
+<li><code>trace_id</code>、<code>span_id</code>、<code>request_id</code>：跨服务关联，但不要把这些高基数字段设为 Loki 索引标签；支持时可使用结构化元数据。</li>
+<li>必要的错误类型和堆栈；禁止记录密码、令牌、会话 Cookie 和完整个人敏感信息。</li>
+</ul>
+<p>示例：</p>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="p">{</span><span class="nt">"timestamp"</span><span class="p">:</span><span class="s2">"2026-08-13T09:30:00Z"</span><span class="p">,</span><span class="nt">"severity"</span><span class="p">:</span><span class="s2">"INFO"</span><span class="p">,</span><span class="nt">"service"</span><span class="p">:</span><span class="s2">"checkout"</span><span class="p">,</span><span class="nt">"environment"</span><span class="p">:</span><span class="s2">"demo"</span><span class="p">,</span><span class="nt">"event_name"</span><span class="p">:</span><span class="s2">"order_validated"</span><span class="p">,</span><span class="nt">"request_id"</span><span class="p">:</span><span class="s2">"req-example-001"</span><span class="p">,</span><span class="nt">"message"</span><span class="p">:</span><span class="s2">"example order validated"</span><span class="p">}</span>
+</span></code></pre></div>
+<h3 id="_7">索引模型<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
+<p>不同产品的成本和查询体验由索引模型决定：</p>
+<ul>
+<li><strong>全文/字段索引</strong>可快速搜索大量字段和任意词项，但摄取 CPU、存储和字段映射成本较高。Elastic Stack、Splunk 和 Graylog 常采用这一思路。</li>
+<li><strong>标签索引</strong>只索引低基数标签，日志正文压缩为块并在查询时扫描过滤。Loki 借鉴 Prometheus 标签模型，摄取成本较低，但查询必须先用选择性标签缩小范围。</li>
+<li><strong>托管日志搜索</strong>由服务商隐藏后端实现，用户通过查询语法、保留套餐和摄取配额使用，例如 Papertrail。</li>
+</ul>
+<p>不存在“所有字段全部索引又几乎无成本”的方案。字段结构、查询模式、保留期和合规要求必须共同设计。</p>
+<h3 id="_8">时间、顺序与重复<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
+<p>分布式系统没有天然的全局事件顺序。源主机时钟偏移、队列重试和批量发送都可能改变到达次序。日志事件应有源时间，并通过 NTP 监控时钟；接收时间可作为补充。需要幂等处理时加入事件标识，但不要假设后端一定去重。</p>
+<h3 id="_9">日志、指标与追踪<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
+<p>日志适合表达离散事件和丰富上下文；指标适合低成本聚合趋势和告警；追踪适合查看一次请求跨服务的因果路径。三者通过稳定的服务名、环境和 Trace ID 关联，而不是让同一信息在三个系统中无差别复制。跨信号诊断将在 <a href="../observability/">可观测性</a> 展开。</p>
+<div class="admonition warning">
+<p class="admonition-title">日志是敏感数据资产</p>
+<p>集中日志扩大了可搜索范围，也扩大了泄漏影响面。脱敏应尽量发生在数据离开源环境之前；后端界面中的字段隐藏不等于删除原始敏感值。</p>
+</div>
+<h2 id="_10">工具详解<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
+<h3 id="papertrail">Papertrail<a class="headerlink" href="#papertrail" title="Permanent link">&para;</a></h3>
+<p><strong>按需学习</strong>。Papertrail 是 SolarWinds 提供的托管日志管理服务，常通过 Syslog（包括 TLS Syslog）、远程日志目标或平台集成集中系统与应用日志，提供实时 Tail、搜索、保存搜索和告警。</p>
+<p>它适合希望快速集中 Heroku、Linux 服务和网络设备日志、又不想维护搜索集群的小团队。应核对每日/每月摄取、搜索窗口、归档、区域和合规要求。公网 UDP Syslog 无加密且可能丢包，生产中应优先使用 TLS 或受保护的转发器，并限制发送端地址。</p>
+<h3 id="splunk">Splunk<a class="headerlink" href="#splunk" title="Permanent link">&para;</a></h3>
+<p><strong>替代方案</strong>。Splunk Enterprise/Cloud 通过 Universal Forwarder、HTTP Event Collector（HEC）等接入数据，经解析进入 Index，由 Search Head 使用 Search Processing Language（SPL）搜索、统计、告警和制作仪表盘。Source type、时间解析和字段提取决定数据可用性。</p>
+<p>Splunk 适合数据源多、搜索分析和安全运营需求复杂的组织。主要约束是许可/摄取成本、索引容量、搜索并发以及分布式集群治理。应在源端过滤无价值噪声、正确设置索引与保留策略，HEC Token 必须按来源隔离并通过 TLS 传输。</p>
+<h3 id="loki">Loki<a class="headerlink" href="#loki" title="Permanent link">&para;</a></h3>
+<p><strong>重点掌握</strong>。Grafana Loki 以标签索引日志流，正文压缩后存入块和对象存储；LogQL 先选择日志流，再进行文本过滤、解析或指标式聚合。采集可使用 Grafana Alloy、Fluent Bit、OpenTelemetry Collector 等；Promtail 已于 2026 年 3 月 2 日结束生命周期，不应再用于新部署，既有部署应迁移到 Alloy 或其他受支持客户端。</p>
+<p>Loki 适合已有 Prometheus/Grafana 体系并希望用一致标签在指标与日志间跳转的团队。索引标签只放有界、常用于筛选的维度，如 <code>service</code>、<code>environment</code> 和 <code>cluster</code>；<code>request_id</code>、用户 ID 等请求级值应留在正文或结构化元数据。Pod 名可用于区分日志流，但短命 Job 等造成的标签频繁变化会生成大量小流，必须评估基数与流 churn。对象存储、索引网关、压缩器和查询公平性决定生产规模能力。</p>
+<h3 id="elastic-stack">Elastic Stack<a class="headerlink" href="#elastic-stack" title="Permanent link">&para;</a></h3>
+<p><strong>重点掌握</strong>。Elastic Stack 通常由 Elasticsearch、Kibana 以及 Elastic Agent/Beats 或 Logstash 组成。Elasticsearch 把文档存入索引和分片，Mapping 定义字段类型；Ingest Pipeline 或 Logstash 负责解析与转换；Kibana 提供 Discover、Dashboard、告警和管理界面。</p>
+<p>它适合需要灵活全文搜索、结构化字段查询和广泛数据接入的场景。生产中应使用 Data Stream 和 Index Lifecycle Management（ILM）管理滚动与冷热阶段，谨慎控制动态字段，规划主分片数量和副本。分片过多、Mapping Explosion 和高成本聚合是常见故障源。</p>
+<h3 id="graylog">Graylog<a class="headerlink" href="#graylog" title="Permanent link">&para;</a></h3>
+<p><strong>替代方案</strong>。Graylog 接收 Syslog、GELF 等输入，通过 Stream 路由消息，Pipeline Rule 解析和规范字段，Search、Dashboard、Event Definition 与 Notification 用于分析和告警。其部署还依赖用于搜索存储的 Data Node/OpenSearch 体系及元数据组件，具体支持组合应以所用版本官方文档为准。</p>
+<p>Graylog 适合重视 Syslog/GELF、集中解析和自托管搜索体验的团队。应按 Stream 与 Index Set 划分保留、权限和路由，监控 Journal 缓冲及搜索后端容量。升级时必须核对 Graylog 与底层数据节点的版本兼容矩阵，不能独立滚动升级其中一层。</p>
+<h2 id="_11">选型比较<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>方案</th>
+<th>运维模式</th>
+<th>查询与索引特点</th>
+<th>主要适用场景</th>
+<th>主要约束</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Papertrail</td>
+<td>托管</td>
+<td>简洁搜索、实时 Tail</td>
+<td>快速集中系统和平台日志</td>
+<td>套餐、保留、区域与复杂分析能力</td>
+</tr>
+<tr>
+<td>Splunk</td>
+<td>托管或自建</td>
+<td>SPL 与成熟字段/全文分析</td>
+<td>企业搜索、安全与多源分析</td>
+<td>许可、摄取和集群成本</td>
+</tr>
+<tr>
+<td>Loki</td>
+<td>自建或托管</td>
+<td>低基数标签索引、LogQL</td>
+<td>云原生、Grafana 生态</td>
+<td>标签设计与大范围扫描查询</td>
+</tr>
+<tr>
+<td>Elastic Stack</td>
+<td>自建或托管</td>
+<td>文档字段和全文索引</td>
+<td>灵活搜索与可定制数据管道</td>
+<td>分片、Mapping、容量维护</td>
+</tr>
+<tr>
+<td>Graylog</td>
+<td>主要为自建</td>
+<td>Stream、Pipeline、搜索后端</td>
+<td>Syslog/GELF 与集中运维日志</td>
+<td>组件兼容和后端容量</td>
+</tr>
+</tbody>
+</table>
+<p>选型时先采样真实日志并回答：</p>
+<ul>
+<li>每日摄取量、峰值吞吐、平均事件大小和保留期限是多少？</li>
+<li>主要查询是按服务看最近错误，还是跨月全文取证和复杂统计？</li>
+<li>是否涉及个人信息、支付数据、跨境、不可篡改归档或法律保留？</li>
+<li>团队能否维护索引、分片、对象存储、升级和灾难恢复？</li>
+<li>成本按摄取、索引、搜索、保留、主机还是用户计算？</li>
+<li>能否导出原始日志、解析规则、仪表盘和告警，替换 Agent 的成本多大？</li>
+</ul>
+<h2 id="loki_1">最小实践：写入并查询 Loki<a class="headerlink" href="#loki_1" title="Permanent link">&para;</a></h2>
+<p>本实践使用 Loki 官方容器的单进程本地配置，仅绑定回环地址，并禁用匿名使用统计。数据随容器删除，不用于生产。示例日志完全虚构且不含凭据。</p>
+<p>创建 <code>loki-local.yaml</code>：</p>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nt">auth_enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="nt">server</span><span class="p">:</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">  </span><span class="nt">http_listen_port</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3100</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="nt">common</span><span class="p">:</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">  </span><span class="nt">instance_addr</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">127.0.0.1</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">  </span><span class="nt">path_prefix</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/tmp/loki</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">  </span><span class="nt">storage</span><span class="p">:</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">    </span><span class="nt">filesystem</span><span class="p">:</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">      </span><span class="nt">chunks_directory</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/tmp/loki/chunks</span>
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">      </span><span class="nt">rules_directory</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/tmp/loki/rules</span>
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">  </span><span class="nt">replication_factor</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="w">  </span><span class="nt">ring</span><span class="p">:</span>
+</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="w">    </span><span class="nt">kvstore</span><span class="p">:</span>
+</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="w">      </span><span class="nt">store</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">inmemory</span>
+</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>
+</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="nt">schema_config</span><span class="p">:</span>
+</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="w">  </span><span class="nt">configs</span><span class="p">:</span>
+</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">from</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2020-10-24</span>
+</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="w">      </span><span class="nt">store</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">tsdb</span>
+</span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="w">      </span><span class="nt">object_store</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">filesystem</span>
+</span><span id="__span-1-23"><a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a><span class="w">      </span><span class="nt">schema</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">v13</span>
+</span><span id="__span-1-24"><a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a><span class="w">      </span><span class="nt">index</span><span class="p">:</span>
+</span><span id="__span-1-25"><a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a><span class="w">        </span><span class="nt">prefix</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">index_</span>
+</span><span id="__span-1-26"><a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a><span class="w">        </span><span class="nt">period</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">24h</span>
+</span><span id="__span-1-27"><a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a>
+</span><span id="__span-1-28"><a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a><span class="nt">analytics</span><span class="p">:</span>
+</span><span id="__span-1-29"><a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a><span class="w">  </span><span class="nt">reporting_enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+</span></code></pre></div>
+<p>启动 Loki：</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>--name<span class="w"> </span>loki-demo<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span>--pull<span class="o">=</span>missing<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">  </span>--cap-drop<span class="o">=</span>ALL<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">  </span>--security-opt<span class="o">=</span>no-new-privileges<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">  </span>-p<span class="w"> </span><span class="m">127</span>.0.0.1:3100:3100<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">  </span>-v<span class="w"> </span><span class="s2">"</span><span class="nv">$PWD</span><span class="s2">/loki-local.yaml:/etc/loki/local-config.yaml:ro"</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">  </span>grafana/loki:3.7.6@sha256:efd47c67f9bac88ca29bcf8cb997d9ab29d1848bd0aff579282295542a745952<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">  </span>-config.file<span class="o">=</span>/etc/loki/local-config.yaml
+</span></code></pre></div>
+<p>在另一个终端确认就绪：</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>curl<span class="w"> </span>--fail<span class="w"> </span>--silent<span class="w"> </span>--show-error<span class="w"> </span>http://127.0.0.1:3100/ready
+</span></code></pre></div>
+<p>生成纳秒时间戳并写入两条 JSON 日志。Loki Push API 在生产环境应放在认证代理之后；这里只允许本机访问：</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="nv">NOW</span><span class="o">=</span><span class="s2">"</span><span class="k">$(</span>date<span class="w"> </span>+%s<span class="k">)</span><span class="s2">000000000"</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>curl<span class="w"> </span>--fail<span class="w"> </span>--silent<span class="w"> </span>--show-error<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="w">  </span>-H<span class="w"> </span><span class="s1">'Content-Type: application/json'</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="w">  </span>-X<span class="w"> </span>POST<span class="w"> </span>http://127.0.0.1:3100/loki/api/v1/push<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">  </span>--data-raw<span class="w"> </span><span class="s2">"{\"streams\":[{\"stream\":{\"service\":\"demo-api\",\"environment\":\"local\"},\"values\":[[\"</span><span class="si">${</span><span class="nv">NOW</span><span class="si">}</span><span class="s2">\",\"{\\\"severity\\\":\\\"INFO\\\",\\\"request_id\\\":\\\"req-example-001\\\",\\\"message\\\":\\\"demo started\\\"}\"],[\"</span><span class="k">$((</span><span class="nv">NOW</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="m">1</span><span class="k">))</span><span class="s2">\",\"{\\\"severity\\\":\\\"ERROR\\\",\\\"request_id\\\":\\\"req-example-002\\\",\\\"message\\\":\\\"simulated failure\\\"}\"]]}]}"</span>
+</span></code></pre></div>
+<p>查询该日志流并只保留 <code>ERROR</code> 事件：</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>curl<span class="w"> </span>--get<span class="w"> </span>--fail<span class="w"> </span>--silent<span class="w"> </span>--show-error<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span>--data-urlencode<span class="w"> </span><span class="s1">'query={service="demo-api",environment="local"} | json | severity="ERROR"'</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">  </span>--data-urlencode<span class="w"> </span><span class="s1">'limit=10'</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">  </span>http://127.0.0.1:3100/loki/api/v1/query_range
+</span></code></pre></div>
+<p>响应 JSON 的 <code>data.result</code> 中应包含 <code>simulated failure</code>。注意 <code>request_id</code> 保留在正文并由查询时的 <code>json</code> 解析，而不是作为标签。用 <span class="keys"><kbd class="key-control">Ctrl</kbd><span>+</span><kbd class="key-c">C</kbd></span> 停止 Loki，容器将自动删除。</p>
+<h2 id="_12">生产实践<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h2>
+<h3 id="_13">日志契约与采集<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h3>
+<ul>
+<li>为公共字段定义版本化 Schema，统一服务名、环境、级别、时间和 Trace ID；Schema 变更需兼容查询与告警。</li>
+<li>应用优先写标准输出或本地受管理日志接口，由节点 Agent 采集，避免每个进程各自实现远程重试。</li>
+<li>多行堆栈在源端正确合并，设置最大事件大小；超大正文转存受控对象存储，仅记录引用和校验值。</li>
+<li>采集器使用磁盘缓冲、退避和限流，同时监控丢弃与积压；不能为“不丢日志”耗尽业务节点磁盘。</li>
+</ul>
+<h3 id="_14">安全、隐私与审计<a class="headerlink" href="#_14" title="Permanent link">&para;</a></h3>
+<ul>
+<li>在代码和采集管道双层实施允许列表或脱敏规则，测试 Authorization、Cookie、连接串和个人信息不会出现。</li>
+<li>按环境、团队、租户和字段敏感度控制读取；导出、保存搜索、告警目标和 API Token 也要授权与审计。</li>
+<li>传输使用 TLS，静态数据使用受管密钥加密。审计日志写入权限与业务管理员分离，并考虑防篡改归档。</li>
+<li>为数据主体删除、法律保留、跨境和备份副本建立可执行流程，不能只删除热索引。</li>
+</ul>
+<h3 id="_15">可靠性、性能与成本<a class="headerlink" href="#_15" title="Permanent link">&para;</a></h3>
+<ul>
+<li>热存储保留近期可搜索数据，较老数据转入低成本归档；恢复归档要有时间目标并定期演练。</li>
+<li>先删除健康检查成功日志等低价值事件，再考虑采样；安全审计和错误事件通常不能随机采样。</li>
+<li>限制无时间范围、无标签或前导通配符的大查询，为租户设置并发和扫描配额。</li>
+<li>使用真实日志分布压测解析、摄取和查询，容量包含副本、索引开销、峰值和故障余量。</li>
+<li>配置即代码管理采集器、Pipeline、索引模板、保留策略和告警，升级前验证字段及查询兼容性。</li>
+</ul>
+<h3 id="_16">可操作性<a class="headerlink" href="#_16" title="Permanent link">&para;</a></h3>
+<ul>
+<li>告警优先来自指标；日志告警适用于明确、低频且可行动的事件，如审计策略拒绝或批任务终态失败。</li>
+<li>在仪表盘和 Runbook 中保存参数化查询，不共享带固定生产敏感值的长链接。</li>
+<li>用 Canary 周期性写入已知日志并查询，检测从采集到检索的端到端中断。</li>
+<li>将部署版本和变更事件写成可关联字段，排障时可按版本快速切分。</li>
+</ul>
+<h2 id="_17">常见误区<a class="headerlink" href="#_17" title="Permanent link">&para;</a></h2>
+<p><strong>把所有对象序列化进日志</strong>：对象可能包含令牌和个人信息，字段爆炸还会推高索引成本。应显式选择允许记录的字段。</p>
+<p><strong>只依赖正则表达式事后脱敏</strong>：格式变化和编码会绕过规则。优先从源头不记录，脱敏作为第二道防线。</p>
+<p><strong>所有日志永久保留</strong>：增加费用、泄漏面和合规负担。保留应由用途和法规决定，并验证实际删除。</p>
+<p><strong>用日志代替指标告警</strong>：文本格式变化会让规则失效，大范围扫描也更昂贵。稳定的高频告警信号应暴露为指标。</p>
+<p><strong>把唯一标识设为 Loki 标签</strong>：每个请求产生独立流，会造成高基数和大量小块。唯一标识留在正文，查询时解析。</p>
+<p><strong>认为 TCP 或 Agent 成功发送就绝不丢失</strong>：后端拒收、解析失败、缓冲溢出和保留策略都可能丢数据，必须端到端验证。</p>
+<h2 id="_18">动手练习<a class="headerlink" href="#_18" title="Permanent link">&para;</a></h2>
+<ol>
+<li>完成 Loki 实践，分别查询全部日志、<code>ERROR</code> 日志和指定 <code>request_id</code>。</li>
+<li>将一行 Nginx 风格文本转换为 JSON Schema，明确字段类型、缺失值和时间格式。</li>
+<li>设计一条源端脱敏测试，确保请求头中的 Bearer Token 和查询参数 <code>password</code> 不进入日志。</li>
+<li>给每日 100 GiB 日志制定热存储、归档和删除策略，并写出查询恢复目标。</li>
+<li>任选两个日志工具，用相同样本比较接入、查询、权限、三年成本和迁移工作量。</li>
+</ol>
+<h2 id="_19">完成检查<a class="headerlink" href="#_19" title="Permanent link">&para;</a></h2>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能解释日志从源端到检索的每个环节和可能的丢失点。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能设计稳定的结构化日志字段并关联 Trace ID。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能区分全文/字段索引和 Loki 标签索引的成本模型。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能说明 Papertrail、Splunk、Loki、Elastic Stack、Graylog 的定位与约束。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 已完成本地 Loki 写入、JSON 解析查询和清理。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能制定脱敏、RBAC、加密、审计、保留和删除方案。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能监控采集延迟、队列、丢弃、解析失败和端到端可查询性。</li>
+</ul>
+<h2 id="_20">官方延伸阅读<a class="headerlink" href="#_20" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="https://www.papertrail.com/help/">Papertrail Documentation</a></li>
+<li><a href="https://docs.splunk.com/Documentation">Splunk Documentation</a></li>
+<li><a href="https://grafana.com/docs/loki/latest/">Grafana Loki Documentation</a></li>
+<li><a href="https://grafana.com/docs/loki/latest/query/">LogQL Documentation</a></li>
+<li><a href="https://www.elastic.co/docs/get-started/the-stack">Elastic Stack Documentation</a></li>
+<li><a href="https://www.elastic.co/docs/manage-data/lifecycle/index-lifecycle-management">Elasticsearch Index Lifecycle Management</a></li>
+<li><a href="https://go2docs.graylog.org/current/home.htm">Graylog Documentation</a></li>
+<li><a href="https://www.rfc-editor.org/rfc/rfc5424">RFC 5424：The Syslog Protocol</a></li>
+<li><a href="https://opentelemetry.io/docs/specs/otel/logs/data-model/">OpenTelemetry Logs Data Model</a></li>
+</ul>
+
+
+  <nav class="md-tags" >
+    
+      
+      
+      
+      
+        <span class="md-tag">可观测性</span>
+      
+    
+      
+      
+      
+      
+        <span class="md-tag">安全治理</span>
+      
+    
+      
+      
+      
+      
+        <span class="md-tag">可靠性工程</span>
+      
+    
+  </nav>
+
+
+
+
+
+
+
+
+  
+  
+
+
+
+  
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-circle-arrow-up" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16 12-4-4-4 4M12 16V8"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="页脚" >
+        
+          
+          <a href="../infrastructure-monitoring/" class="md-footer__link md-footer__link--prev" aria-label="上一页: 基础设施监控">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                上一页
+              </span>
+              <div class="md-ellipsis">
+                基础设施监控
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../container-orchestration/" class="md-footer__link md-footer__link--next" aria-label="下一页: 容器编排">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                下一页
+              </span>
+              <div class="md-ellipsis">
+                容器编排
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://zensical.org/" target="_blank" rel="noopener">
+      Zensical
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate":null,"base":"..","features":["announce.dismiss","content.action.edit","content.action.view","content.code.annotate","content.code.copy","content.code.select","content.footnote.tooltips","content.tabs.link","content.tooltips","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.path","navigation.sections","navigation.top","navigation.tracking","search.highlight","toc.follow"],"search":"../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"已复制","clipboard.copy":"复制","search.result.more.one":"在该页上还有 1 个符合条件的结果","search.result.more.other":"在该页上还有 # 个符合条件的结果","search.result.none":"没有找到符合条件的结果","search.result.one":"找到 1 个符合条件的结果","search.result.other":"# 个符合条件的结果","search.result.placeholder":"键入以开始搜索","search.result.term.missing":"缺少","select.version":"选择当前版本"},"version":null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.e886cdf1.min.js"></script>
+      
+    
+  </body>
+</html>

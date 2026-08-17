@@ -1,0 +1,2455 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="本章以进程、内存、文件系统、权限和服务管理为主线，对比 Windows、BSD 与主流 Linux 发行版的运行和维护差异，并指导读者设计可更新、可审计、可恢复的服务器基线。">
+      
+      
+        <meta name="author" content="oaixnah">
+      
+      
+        <link rel="canonical" href="https://devops.roadmap.oaix.tech/operating-system/">
+      
+      
+        <link rel="prev" href="../learn-a-programming-language/">
+      
+      
+        <link rel="next" href="../terminal-knowledge/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/favicon.svg">
+      <meta name="generator" content="zensical-0.0.55">
+    
+    
+      
+        <title>操作系统 - DevOps Roadmap 中文手册</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../assets/stylesheets/modern/main.20815dad.min.css">
+      
+        
+          
+        
+        <link rel="stylesheet" href="../assets/stylesheets/modern/palette.dfe2e883.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+  
+
+
+  
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FLXQC4YQJF"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-FLXQC4YQJF');
+</script>
+
+  
+  
+
+
+<script type="text/javascript">
+    (function(c,l,a,r,i,t,y){
+        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+    })(window, document, "clarity", "script", "y3p2irnl2z");
+</script>
+
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-label="导航栏"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#_1" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href="./.." title="DevOps Roadmap 中文手册" class="md-header__button md-logo" aria-label="DevOps Roadmap 中文手册" data-md-component="logo">
+      
+  <img src="../assets/logo.svg" alt="DevOps Roadmap 中文手册">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer" aria-label="导航栏">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            DevOps Roadmap 中文手册
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              操作系统
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun-moon" viewBox="0 0 24 24"><path d="M12 2v2M14.837 16.385a6 6 0 1 1-7.223-7.222c.624-.147.97.66.715 1.248a4 4 0 0 0 5.26 5.259c.589-.255 1.396.09 1.248.715M16 12a4 4 0 0 0-4-4M19 5l-1.256 1.256M20 12h2"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search" aria-label="查找">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="查找">
+  <button type="button" class="md-search__button">
+    查找
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+    </div>
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="./.." title="DevOps Roadmap 中文手册" class="md-nav__button md-logo" aria-label="DevOps Roadmap 中文手册" data-md-component="logo">
+      
+  <img src="../assets/logo.svg" alt="DevOps Roadmap 中文手册">
+
+    </a>
+    DevOps Roadmap 中文手册
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  首页
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  基础能力
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  基础能力
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../learn-a-programming-language/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  学习一种编程语言
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  操作系统
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  操作系统
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        学习目标
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        前置知识
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        核心原理
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="核心原理">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        内核与用户空间
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        进程、服务与启动
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        文件、身份与权限
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        软件包与更新
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        操作系统家族
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="操作系统家族">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#windows" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Windows
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bsd" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        BSD 家族概览
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="BSD 家族概览">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#freebsd" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        FreeBSD
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#openbsd" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        OpenBSD
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#netbsd" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        NetBSD
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#linux" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Linux 共同基础
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Linux 共同基础">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ubuntu-debian" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Ubuntu 与 Debian
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#suse-linux" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        SUSE Linux
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rhel" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        RHEL 及衍生发行版
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        选型比较
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        最小实践：采集系统事实
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        生产实践
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="生产实践">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        建立可重复基线
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_14" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        补丁与生命周期
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_15" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        权限与防护
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_16" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        可靠性与恢复
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_17" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        常见误区
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_18" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        动手练习
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_19" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        完成检查
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_20" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        官方延伸阅读
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../terminal-knowledge/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  终端知识
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../version-control-systems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  版本控制系统
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../vcs-hosting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  版本控制托管
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../containers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  容器
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  基础设施与云
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  基础设施与云
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../common-infrastructure-services/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  常见基础设施服务
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../networking-and-protocols/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  网络与协议
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cloud-providers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  云服务商
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../serverless/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  无服务器计算
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../provisioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  基础设施置备
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  配置管理
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  持续交付与运行
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  持续交付与运行
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ci-cd-tools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  CI/CD 工具
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../secret-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  机密管理
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../infrastructure-monitoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  基础设施监控
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../logs-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  日志管理
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../container-orchestration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  容器编排
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../observability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  可观测性
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  平台与架构治理
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  平台与架构治理
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../artifact-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  制品管理
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gitops/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  GitOps
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../service-mesh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  服务网格
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cloud-design-patterns/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  云设计模式
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        学习目标
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        前置知识
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        核心原理
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="核心原理">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        内核与用户空间
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        进程、服务与启动
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        文件、身份与权限
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        软件包与更新
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        操作系统家族
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="操作系统家族">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#windows" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Windows
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#bsd" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        BSD 家族概览
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="BSD 家族概览">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#freebsd" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        FreeBSD
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#openbsd" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        OpenBSD
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#netbsd" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        NetBSD
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#linux" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Linux 共同基础
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Linux 共同基础">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#ubuntu-debian" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Ubuntu 与 Debian
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#suse-linux" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        SUSE Linux
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rhel" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        RHEL 及衍生发行版
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        选型比较
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        最小实践：采集系统事实
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        生产实践
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="生产实践">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        建立可重复基线
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_14" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        补丁与生命周期
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_15" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        权限与防护
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_16" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        可靠性与恢复
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_17" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        常见误区
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_18" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        动手练习
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_19" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        完成检查
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_20" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        官方延伸阅读
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+  <nav class="md-path" aria-label="导航栏" >
+    <ol class="md-path__list">
+      
+        
+  
+  
+    <li class="md-path__item">
+      <a href="./.." class="md-path__link">
+        
+  
+  <span class="md-ellipsis">
+    首页
+  </span>
+
+      </a>
+    </li>
+  
+
+      
+      
+        
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      <li class="md-path__item">
+        <a href="../learn-a-programming-language/" class="md-path__link">
+          
+  
+  <span class="md-ellipsis">
+    基础能力
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ol>
+  </nav>
+
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+<h1 id="_1">操作系统<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<p>操作系统（Operating System，OS）决定进程如何获得 CPU 和内存、文件如何持久化、用户如何被授权、数据包如何进入应用，以及服务如何启动和更新。DevOps 工程师不必开发内核，但必须能判断问题发生在应用、运行时还是操作系统边界，并选择团队能够长期修补和恢复的平台。</p>
+<p>本章覆盖 Windows、FreeBSD、OpenBSD、NetBSD，以及 Ubuntu / Debian、SUSE Linux、RHEL 及其衍生发行版。重点不是背诵命令差异，而是建立跨平台的系统模型。</p>
+<h2 id="_2">学习目标<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>完成本章后，你应当能够：</p>
+<ul>
+<li>描述内核、用户空间、系统调用、进程、虚拟内存、文件系统和设备之间的关系。</li>
+<li>在 Windows、BSD 和主流 Linux 发行版上采集版本、资源、服务及网络基础信息。</li>
+<li>比较各操作系统的发布周期、软件来源、安全机制、自动化接口和迁移成本。</li>
+<li>设计包含最小化安装、补丁、权限、日志、备份和恢复验证的服务器基线。</li>
+<li>区分发行版差异、内核能力与应用兼容性，避免把命令表当作系统知识。</li>
+</ul>
+<h2 id="_3">前置知识<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<ul>
+<li>建议先掌握一种用于自动化的语言，参见<a href="../learn-a-programming-language/">学习一种编程语言</a>。</li>
+<li>本章示例使用 Shell 或 PowerShell；可与<a href="../terminal-knowledge/">终端知识</a>同步学习。</li>
+<li>不要求有管理员权限。最小实践中的命令均为信息查询，不修改系统配置。</li>
+</ul>
+<h2 id="_4">核心原理<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<h3 id="_5">内核与用户空间<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
+<p>应用通常不能直接操作硬件。它通过语言运行时和系统库发起系统调用，由内核校验权限并调度 CPU、内存、设备与网络资源。</p>
+<pre class="mermaid"><code>flowchart TB
+    App[应用与服务] --&gt; Runtime[运行时和系统库]
+    Runtime --&gt; Syscall[系统调用边界]
+    Syscall --&gt; Kernel[内核]
+    Kernel --&gt; CPU[CPU 调度]
+    Kernel --&gt; Memory[虚拟内存]
+    Kernel --&gt; FS[文件系统与设备]
+    Kernel --&gt; Network[网络协议栈]</code></pre>
+<p>这条边界解释了几个常见现象：</p>
+<ul>
+<li>应用看到的是进程自己的虚拟地址空间，不是物理内存的直接映射。</li>
+<li>文件权限由内核依据进程身份和访问控制规则判断，文件名本身不构成安全边界。</li>
+<li>容器共享宿主机内核；虚拟机则运行自己的内核。更多内容参见<a href="../containers/">容器</a>。</li>
+<li>用户空间工具可以替换，但不能使用当前内核未实现或未启用的能力。</li>
+</ul>
+<h3 id="_6">进程、服务与启动<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
+<p>进程是程序的一次运行实例，拥有身份、地址空间、打开的文件和调度状态。服务管理器负责声明依赖、启动、停止、重启和收集状态：Linux 常见 <code>systemd</code>，BSD 使用 <code>rc</code> 系统，Windows 使用服务控制管理器（Service Control Manager）。</p>
+<p>服务“正在运行”只说明进程状态，不表示业务可用。生产检查还应覆盖监听端口、依赖可达、请求成功率和关键业务路径。</p>
+<h3 id="_7">文件、身份与权限<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
+<p>Unix 类系统通常以用户 ID、组 ID 和权限位为基础，并可叠加 POSIX ACL、Linux capabilities、SELinux 或 AppArmor。Windows 以安全标识符（SID）、访问令牌和 NTFS ACL 表达更细的允许与拒绝规则。两类系统都遵循同一原则：权限授予进程所携带的身份，而不是授予“某段代码”。</p>
+<div class="admonition warning">
+<p class="admonition-title">管理员权限不是排障前提</p>
+<p>先用普通账户收集证据，再对确实需要的单个操作提权。长期使用 <code>root</code>、本地 Administrator 或关闭强制访问控制，会让误操作和入侵拥有完整影响范围。</p>
+</div>
+<h3 id="_8">软件包与更新<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
+<p>操作系统供应商通常负责一组经过构建、签名和兼容性验证的软件仓库。包管理器解析依赖并记录已安装内容，但应用语言的包管理器、容器镜像和手工复制的二进制文件可能绕过系统仓库。资产清单必须同时覆盖这些来源。</p>
+<p>安全补丁与功能升级是不同风险：前者应按漏洞暴露和服务等级及时部署，后者可能改变接口。两者都需要分批发布、健康验证和可测试的恢复路径。</p>
+<h2 id="_9">操作系统家族<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<h3 id="windows">Windows<a class="headerlink" href="#windows" title="Permanent link">&para;</a></h3>
+<p><strong>按需学习</strong>。Windows Server 适合依赖 Active Directory、组策略、IIS、Microsoft 工作负载或厂商仅支持 Windows 的环境，桌面版也常作为开发和管理终端。</p>
+<ul>
+<li><strong>系统基础</strong>：Windows NT 内核管理进程、线程、虚拟内存、I/O 和对象权限。服务由服务控制管理器管理，计划任务由 Task Scheduler 管理。</li>
+<li><strong>文件与配置</strong>：NTFS 支持 ACL、审计、备用数据流和卷功能。注册表是分层配置数据库，但应用也可能使用文件或远程配置，不能把所有状态都归因于注册表。</li>
+<li><strong>自动化</strong>：PowerShell 以 .NET 对象作为管道数据，Windows Management Instrumentation（WMI）与 Common Information Model（CIM）提供管理接口。新脚本应优先使用受支持的 cmdlet 和结构化对象。</li>
+<li><strong>软件与更新</strong>：Windows Update、Windows Server Update Services（WSUS）或企业补丁平台管理系统更新；WSUS 已停止主动开发，现有能力仍可用，选型时应评估后续迁移路径。<code>winget</code> 可用于部分应用，但必须验证服务器版本和组织支持策略。</li>
+<li><strong>安全</strong>：使用域或云身份、组策略、Defender、防火墙、BitLocker、凭据保护和 Just Enough Administration 等能力建立分层控制。不要因兼容问题永久关闭防护。</li>
+</ul>
+<p>需要同时运行 Linux 工具时，Windows Subsystem for Linux（WSL）可提供开发环境，但其进程、文件权限和网络边界随 WSL 版本与网络模式而异，不能把开发便利直接等同于生产拓扑。</p>
+<h3 id="bsd">BSD 家族概览<a class="headerlink" href="#bsd" title="Permanent link">&para;</a></h3>
+<p>FreeBSD、OpenBSD 和 NetBSD 共享 Unix 传统和 BSD 许可证，但它们是独立操作系统，不是同一内核的“发行版”。各项目同时维护内核和基本用户空间，因此系统升级、手册页与基础工具具有较强整体性；第三方软件再通过 ports、packages 或 pkgsrc 提供。</p>
+<h4 id="freebsd">FreeBSD<a class="headerlink" href="#freebsd" title="Permanent link">&para;</a></h4>
+<p><strong>替代方案</strong>。FreeBSD 注重完整系统的一致性，常见于网络服务、存储设备和需要 Jails 或 ZFS 的环境。</p>
+<ul>
+<li>基本系统与第三方包分开升级；二进制包常用 <code>pkg</code>，ports collection 用于按选项从源码构建。</li>
+<li>Jails 在共享 FreeBSD 内核上隔离进程、文件和网络，是系统级隔离机制，但不等同于虚拟机。</li>
+<li>ZFS 集成提供校验、快照、发送与接收等能力。快照不是离机备份，仍需独立故障域和恢复演练。</li>
+<li>服务通常通过 <code>/etc/rc.conf</code> 声明并由 <code>service</code> / <code>rc.d</code> 脚本管理；修改前应阅读对应手册页。</li>
+</ul>
+<h4 id="openbsd">OpenBSD<a class="headerlink" href="#openbsd" title="Permanent link">&para;</a></h4>
+<p><strong>按需学习</strong>。OpenBSD 把代码正确性、安全默认值和文档一致性放在优先位置，常用于防火墙、路由、跳板及对简洁安全基线要求较高的服务。</p>
+<ul>
+<li><code>pf</code> 提供包过滤与流量控制；规则应先做语法检查并保留带外恢复路径。</li>
+<li><code>pledge(2)</code> 与 <code>unveil(2)</code> 允许程序收窄可用系统调用和文件系统视图，但只有应用主动采用时才生效。</li>
+<li>基本系统安全修复可使用项目支持的补丁机制，版本升级遵循明确顺序。稳定取向意味着第三方软件版本未必追求最新。</li>
+<li>默认安装已有较完整的基础服务与手册，应避免为熟悉感盲目替换系统组件。</li>
+</ul>
+<h4 id="netbsd">NetBSD<a class="headerlink" href="#netbsd" title="Permanent link">&para;</a></h4>
+<p><strong>按需学习</strong>。NetBSD 以可移植性著称，支持多种硬件架构，适合嵌入式、老旧硬件、跨平台系统研究和需要 pkgsrc 的场景。</p>
+<ul>
+<li>内核与用户空间可面向多个架构构建，跨编译工具链是项目的重要能力。</li>
+<li>pkgsrc 不仅服务 NetBSD，也可在其他类 Unix 系统上管理第三方软件。</li>
+<li><code>rc.d</code> 服务模型和清晰的手册页便于自动化，但选型前要确认目标硬件、驱动和商业软件的支持范围。</li>
+</ul>
+<h3 id="linux">Linux 共同基础<a class="headerlink" href="#linux" title="Permanent link">&para;</a></h3>
+<p>Linux 发行版共享 Linux 内核和大量 GNU 或其他用户空间组件，但在软件包格式、默认配置、安全策略、发布周期和厂商支持上不同。生产环境应记录发行版、版本、内核、仓库和镜像来源，不能只记录“Linux”。</p>
+<h4 id="ubuntu-debian">Ubuntu 与 Debian<a class="headerlink" href="#ubuntu-debian" title="Permanent link">&para;</a></h4>
+<p><strong>重点掌握</strong>。Debian 强调自由软件、广泛架构支持和稳定发布；Ubuntu 基于 Debian，提供固定节奏版本、长期支持（LTS）及商业支持选项。两者相近但仓库、生命周期和包版本不能混用。</p>
+<ul>
+<li>软件包使用 Debian 包格式，底层工具为 <code>dpkg</code>，<code>apt</code> 负责仓库和依赖解析。自动化中使用非交互模式前必须预先定义配置行为，不能简单压制所有提示。</li>
+<li>主流服务器版本通常使用 <code>systemd</code> 管理服务和日志入口，网络配置工具因版本与镜像而异。</li>
+<li>Ubuntu 常默认启用 AppArmor 配置；Debian 是否启用及策略覆盖范围需按实际安装验证。</li>
+<li>Debian stable 适合重视稳定和社区治理的环境；Ubuntu LTS 适合需要明确支持窗口、云镜像和厂商认证的环境。两者都应在支持终止前规划升级。</li>
+</ul>
+<h4 id="suse-linux">SUSE Linux<a class="headerlink" href="#suse-linux" title="Permanent link">&para;</a></h4>
+<p><strong>替代方案</strong>。SUSE Linux Enterprise Server（SLES）提供企业支持，openSUSE Leap 与 Tumbleweed 分别面向稳定发布和滚动发布等不同需求。生产选型要区分具体产品，不能用“SUSE”概括生命周期。</p>
+<ul>
+<li>使用 RPM 包格式，<code>zypper</code> 管理仓库、依赖和补丁，底层可用 <code>rpm</code> 查询包元数据。</li>
+<li>YaST 提供文本和图形化系统管理接口，适合交互管理；规模化环境仍应将期望状态写入可审查的自动化配置。</li>
+<li>Btrfs 与 Snapper 常用于系统快照和回滚。回滚系统卷不等于回滚外部数据库或消息，应用一致性仍需单独设计。</li>
+<li>SLES 的模块、扩展和订阅决定软件来源与支持范围，引入仓库前要确认供应方、签名和生命周期。</li>
+</ul>
+<h4 id="rhel">RHEL 及衍生发行版<a class="headerlink" href="#rhel" title="Permanent link">&para;</a></h4>
+<p><strong>重点掌握</strong>。Red Hat Enterprise Linux（RHEL）强调企业生命周期、认证生态与商业支持。Rocky Linux、AlmaLinux、Oracle Linux 等衍生发行版提供不同治理、构建、内核或支持选项；兼容目标不代表所有包、时间线和支持责任完全相同。</p>
+<ul>
+<li>使用 RPM 包格式，现代版本常用 <code>dnf</code> 管理仓库和依赖。仓库模块化、应用流等行为应依据所用主版本文档确认。</li>
+<li>SELinux 通常默认启用，通过标签和策略实施强制访问控制。遇到拒绝时应查看审计记录并修正标签或策略，不应直接永久设为宽容模式。</li>
+<li><code>firewalld</code> 可按区域和服务管理防火墙规则；底层实现随版本演进，自动化应使用发行版支持的稳定接口。</li>
+<li>主版本生命周期较长，但软件版本可能通过回移安全补丁保持修复。不能只看上游版本号判断是否存在漏洞。</li>
+<li>选择衍生发行版时，要分别评估构建来源、更新延迟、签名密钥、治理模式、商业支持和迁移工具。</li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">上游版本号不等于补丁状态</p>
+<p>企业发行版经常把安全修复回移到较旧的稳定版本，同时保留兼容的版本号。漏洞判断应查询发行版安全公告和包发布号，而不是只用通用扫描器比较上游版本字符串。</p>
+</div>
+<h2 id="_10">选型比较<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>系统家族</th>
+<th>软件与更新</th>
+<th>突出能力</th>
+<th>主要约束</th>
+<th>典型采用条件</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Windows</td>
+<td>Windows 更新与厂商渠道</td>
+<td>AD、组策略、Microsoft 生态</td>
+<td>授权、自动化差异、特定工作负载依赖</td>
+<td>Microsoft 或仅支持 Windows 的应用</td>
+</tr>
+<tr>
+<td>FreeBSD</td>
+<td>基本系统、<code>pkg</code>、ports</td>
+<td>Jails、ZFS、系统整体性</td>
+<td>云镜像和商业软件覆盖需确认</td>
+<td>网络、存储、FreeBSD 原生服务</td>
+</tr>
+<tr>
+<td>OpenBSD</td>
+<td>基本系统与 packages</td>
+<td>安全默认值、<code>pf</code>、文档一致</td>
+<td>硬件和第三方生态相对聚焦</td>
+<td>防火墙、路由、安全敏感节点</td>
+</tr>
+<tr>
+<td>NetBSD</td>
+<td>基本系统与 pkgsrc</td>
+<td>多架构与可移植性</td>
+<td>团队经验和厂商支持需确认</td>
+<td>嵌入式、异构和研究环境</td>
+</tr>
+<tr>
+<td>Ubuntu / Debian</td>
+<td><code>apt</code> 与 Debian 包</td>
+<td>社区广、云镜像和软件生态成熟</td>
+<td>两者仓库与生命周期不可混用</td>
+<td>通用服务器和云工作负载</td>
+</tr>
+<tr>
+<td>SUSE Linux</td>
+<td><code>zypper</code> 与 RPM</td>
+<td>YaST、Btrfs / Snapper、企业支持</td>
+<td>产品线和模块需明确</td>
+<td>SUSE 生态、SAP 等认证场景</td>
+</tr>
+<tr>
+<td>RHEL 及衍生版</td>
+<td><code>dnf</code> 与 RPM</td>
+<td>SELinux、长生命周期、认证生态</td>
+<td>订阅与衍生版支持责任不同</td>
+<td>企业标准化和受认证工作负载</td>
+</tr>
+</tbody>
+</table>
+<p>选型时应做代表性验证：</p>
+<ol>
+<li>业务软件、驱动、监控、安全代理和备份工具是否获得该版本的正式支持？</li>
+<li>安全公告发布后，补丁多久可进入组织批准的仓库？</li>
+<li>团队能否自动构建镜像、执行原地升级或替换节点，并在失败时恢复？</li>
+<li>身份、审计、磁盘加密、强制访问控制和合规工具能否统一接入？</li>
+<li>授权、订阅、镜像存储、扫描例外和人员培训的总成本是多少？</li>
+<li>从当前系统迁移时，路径、权限、服务管理、换行符、大小写和系统调用差异会影响哪些应用？</li>
+</ol>
+<h2 id="_11">最小实践：采集系统事实<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
+<p>以下命令只读取系统信息。选择与当前平台匹配的标签页运行，不要为了练习在生产服务器安装额外工具。</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Linux</label><label for="__tabbed_1_2">PowerShell</label><label for="__tabbed_1_3">FreeBSD / OpenBSD / NetBSD</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nb">printf</span><span class="w"> </span><span class="s1">'%s\n'</span><span class="w"> </span><span class="s1">'--- release ---'</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="k">if</span><span class="w"> </span><span class="nb">test</span><span class="w"> </span>-r<span class="w"> </span>/etc/os-release<span class="p">;</span><span class="w"> </span><span class="k">then</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">    </span>awk<span class="w"> </span>-F<span class="o">=</span><span class="w"> </span><span class="s1">'/^(NAME|VERSION_ID|ID)=/ {print}'</span><span class="w"> </span>/etc/os-release
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="k">fi</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="nb">printf</span><span class="w"> </span><span class="s1">'%s\n'</span><span class="w"> </span><span class="s1">'--- kernel ---'</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>uname<span class="w"> </span>-srmo
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="nb">printf</span><span class="w"> </span><span class="s1">'%s\n'</span><span class="w"> </span><span class="s1">'--- identity ---'</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>id
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="nb">printf</span><span class="w"> </span><span class="s1">'%s\n'</span><span class="w"> </span><span class="s1">'--- filesystem ---'</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>df<span class="w"> </span>-hP<span class="w"> </span>/
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="nb">printf</span><span class="w"> </span><span class="s1">'%s\n'</span><span class="w"> </span><span class="s1">'--- uptime ---'</span>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a>uptime
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="nb">printf</span><span class="w"> </span><span class="s1">'%s\n'</span><span class="w"> </span><span class="s1">'--- service manager ---'</span>
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>ps<span class="w"> </span>-p<span class="w"> </span><span class="m">1</span><span class="w"> </span>-o<span class="w"> </span><span class="nv">comm</span><span class="o">=</span>
+</span></code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-powershell highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nv">$ErrorActionPreference</span> <span class="p">=</span> <span class="s1">'Stop'</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="nb">Get-ComputerInfo</span> <span class="p">|</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>    <span class="nb">Select-Object</span> <span class="n">WindowsProductName</span><span class="p">,</span> <span class="n">WindowsVersion</span><span class="p">,</span> <span class="n">OsBuildNumber</span><span class="p">,</span> <span class="n">OsArchitecture</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="nb">Get-CimInstance</span> <span class="n">Win32_OperatingSystem</span> <span class="p">|</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>    <span class="nb">Select-Object</span> <span class="n">LastBootUpTime</span><span class="p">,</span> <span class="n">TotalVisibleMemorySize</span><span class="p">,</span> <span class="n">FreePhysicalMemory</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="no">[System.Security.Principal.WindowsIdentity]</span><span class="p">::</span><span class="n">GetCurrent</span><span class="p">().</span><span class="n">Name</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="nb">Get-Volume</span> <span class="p">|</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>    <span class="nb">Where-Object</span> <span class="n">DriveLetter</span> <span class="p">|</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>    <span class="nb">Select-Object</span> <span class="n">DriveLetter</span><span class="p">,</span> <span class="n">FileSystem</span><span class="p">,</span> <span class="n">Size</span><span class="p">,</span> <span class="n">SizeRemaining</span>
+</span></code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-sh highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nb">printf</span><span class="w"> </span><span class="s1">'%s\n'</span><span class="w"> </span><span class="s1">'--- system ---'</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>uname<span class="w"> </span>-a
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="nb">printf</span><span class="w"> </span><span class="s1">'%s\n'</span><span class="w"> </span><span class="s1">'--- identity ---'</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>id
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="nb">printf</span><span class="w"> </span><span class="s1">'%s\n'</span><span class="w"> </span><span class="s1">'--- filesystem ---'</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a>df<span class="w"> </span>-h<span class="w"> </span>/
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="nb">printf</span><span class="w"> </span><span class="s1">'%s\n'</span><span class="w"> </span><span class="s1">'--- boot time ---'</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a>sysctl<span class="w"> </span>kern.boottime
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="nb">printf</span><span class="w"> </span><span class="s1">'%s\n'</span><span class="w"> </span><span class="s1">'--- enabled services ---'</span>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="k">case</span><span class="w"> </span><span class="s2">"</span><span class="k">$(</span>uname<span class="w"> </span>-s<span class="k">)</span><span class="s2">"</span><span class="w"> </span><span class="k">in</span>
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">    </span>FreeBSD<span class="p">|</span>NetBSD<span class="o">)</span><span class="w"> </span>service<span class="w"> </span>-e<span class="w"> </span><span class="p">;;</span>
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="w">    </span>OpenBSD<span class="o">)</span><span class="w"> </span>rcctl<span class="w"> </span>ls<span class="w"> </span>on<span class="w"> </span><span class="p">;;</span>
+</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="k">esac</span>
+</span></code></pre></div>
+</div>
+</div>
+</div>
+<p>将结果整理为以下字段：操作系统及版本、内核及架构、当前身份、根文件系统容量、启动时间或已运行时长、服务管理方式。命令输出是一次观测，不是资产系统中的永久事实；机器升级或重建后应重新采集。</p>
+<details class="note">
+<summary>容器中为什么看到宿主机内核</summary>
+<p>Linux 容器中的 <code>/etc/os-release</code> 通常描述容器用户空间，而 <code>uname</code> 返回共享的宿主机内核。二者出现不同“发行版”并不矛盾。排障记录应同时包含镜像用户空间和宿主机内核信息。</p>
+</details>
+<h2 id="_12">生产实践<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h2>
+<h3 id="_13">建立可重复基线<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h3>
+<ul>
+<li>从官方或组织验证的镜像构建最小系统，只安装业务、监控和应急恢复所需组件。</li>
+<li>将时区、时间同步、DNS、软件仓库、身份、日志、审计、磁盘布局和服务配置纳入配置管理，不依赖人工点击。</li>
+<li>记录操作系统版本、内核、包、固件、镜像摘要和例外项。对会自动漂移的配置执行持续检测。</li>
+<li>开发、预发布和生产使用相同家族与主版本；不能相同时，明确记录系统调用、文件系统和运行时差异。</li>
+</ul>
+<h3 id="_14">补丁与生命周期<a class="headerlink" href="#_14" title="Permanent link">&para;</a></h3>
+<ul>
+<li>订阅供应商安全公告，根据漏洞可利用性、暴露面和资产等级设定修复时限。</li>
+<li>建立小批量金丝雀、健康检查、暂停条件和替换或回滚路径。内核、驱动和底层库升级要包含重启测试。</li>
+<li>在版本停止安全支持前完成迁移演练。延长支持是争取迁移时间的手段，不是永久方案。</li>
+<li>内部镜像和仓库要校验签名、限制发布权限并监控同步失败，避免供应链中断造成无法扩容。</li>
+</ul>
+<h3 id="_15">权限与防护<a class="headerlink" href="#_15" title="Permanent link">&para;</a></h3>
+<ul>
+<li>人员使用具名账户和短期提权；服务使用独立低权限身份，禁止共享管理员凭据。</li>
+<li>保持 SELinux、AppArmor、Windows Defender、防火墙等防护开启。以最小规则修复兼容问题并记录原因和期限。</li>
+<li>禁止不必要的远程服务和监听地址；管理面使用独立网络、强认证与审计。</li>
+<li>敏感卷启用静态加密，密钥独立托管。休眠、交换空间、崩溃转储和临时目录也可能包含敏感数据。</li>
+</ul>
+<h3 id="_16">可靠性与恢复<a class="headerlink" href="#_16" title="Permanent link">&para;</a></h3>
+<ul>
+<li>监控 CPU 饱和、内存压力、磁盘延迟、inode 或元数据、网络错误、时间偏移和关键服务，而不只监控“主机在线”。</li>
+<li>日志发送到独立故障域，并限制大小和保留周期，防止日志填满系统盘。</li>
+<li>备份配置、数据和恢复所需密钥；定期在隔离环境恢复。RAID、快照和镜像都不能单独替代备份。</li>
+<li>对有状态服务验证文件系统冻结、应用一致性和恢复顺序；对无状态节点优先自动重建而非手工修复。</li>
+</ul>
+<h2 id="_17">常见误区<a class="headerlink" href="#_17" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>把发行版当作外观差异</strong>：仓库、补丁策略、安全默认值和支持责任都会影响生产风险。</li>
+<li><strong>混用相似发行版的仓库</strong>：Debian 与 Ubuntu、不同 RHEL 衍生版之间直接混装包会破坏依赖和支持边界。</li>
+<li><strong>看到旧版本号就认定未修复</strong>：应以供应商安全公告、包发布号和实际配置为依据。</li>
+<li><strong>为了排障关闭 SELinux 或防火墙</strong>：这会删除关键证据并扩大暴露面。先读取审计日志和命中规则。</li>
+<li><strong>把快照当作备份</strong>：同一存储或同一管理面的损坏、误删和勒索攻击可能同时删除快照。</li>
+<li><strong>只测试新装，不测试升级</strong>：长期运行系统的风险集中在补丁、重启、数据迁移和回滚。</li>
+<li><strong>假设脚本在所有 Unix 上相同</strong>：命令参数、<code>sed</code> / <code>awk</code> 实现、服务模型和文件路径都可能不同，应检测平台并测试。</li>
+<li><strong>手工维护“雪花服务器”</strong>：无法重建的服务器会把历史偶然状态变成单点故障。</li>
+</ul>
+<h2 id="_18">动手练习<a class="headerlink" href="#_18" title="Permanent link">&para;</a></h2>
+<ol>
+<li>在一台非生产机器运行系统事实采集命令，写出五项结论和两项仍未知的信息。结果不得只粘贴原始输出。</li>
+<li>创建一份操作系统支持矩阵，至少包含业务运行时、监控代理、备份代理、身份接入和结束支持日期。每项结论链接到厂商支持声明。</li>
+<li>选择 Ubuntu / Debian、SUSE、RHEL 系中的两个测试镜像，分别找出“查询已安装包”“查询服务状态”“查看系统日志”的只读命令，并解释输出字段差异。</li>
+<li>为一台假想 Web 服务器设计补丁批次：定义金丝雀比例、成功指标、最长观察时间、暂停条件和恢复方法。</li>
+<li>在不关闭安全机制的前提下，阅读当前系统的一条防火墙或强制访问控制规则，说明其主体、资源、动作和作用域。</li>
+<li>写出一次从 Windows 迁移到 Linux 或从 Linux 迁移到 BSD 的风险清单，覆盖路径、权限、大小写、换行符、服务、依赖和可观测性。</li>
+</ol>
+<h2 id="_19">完成检查<a class="headerlink" href="#_19" title="Permanent link">&para;</a></h2>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能解释内核、用户空间、系统调用、进程和虚拟内存的关系。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能在当前平台以普通权限采集版本、身份、磁盘和服务信息。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能说明 Windows、FreeBSD、OpenBSD、NetBSD 的定位与主要管理方式。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能说明 Ubuntu / Debian、SUSE Linux、RHEL 及衍生版的软件和安全机制差异。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能依据支持周期、生态、自动化、安全和总成本做选型，而不是只凭熟悉程度。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能制定包含测试批次、健康指标和恢复路径的补丁流程。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能区分快照、冗余、镜像与可验证备份。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能在不关闭防护的前提下调查权限或策略拒绝。</li>
+</ul>
+<h2 id="_20">官方延伸阅读<a class="headerlink" href="#_20" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="https://learn.microsoft.com/windows-server/">Microsoft Windows Server 文档</a>与<a href="https://learn.microsoft.com/powershell/">PowerShell 文档</a></li>
+<li><a href="https://docs.freebsd.org/en/books/handbook/">FreeBSD Handbook</a>、<a href="https://docs.freebsd.org/en/books/handbook/jails/">Jails 章节</a>与<a href="https://docs.freebsd.org/en/books/handbook/zfs/">ZFS 章节</a></li>
+<li><a href="https://www.openbsd.org/faq/">OpenBSD FAQ</a>、<a href="https://www.openbsd.org/faq/pf/"><code>pf</code> 用户指南</a>与<a href="https://man.openbsd.org/">手册页</a></li>
+<li><a href="https://www.netbsd.org/docs/guide/en/">NetBSD Guide</a>与<a href="https://www.netbsd.org/docs/pkgsrc/">pkgsrc 指南</a></li>
+<li><a href="https://www.debian.org/doc/manuals/debian-handbook/">Debian 管理员手册</a>与<a href="https://www.debian.org/security/">Debian 安全信息</a></li>
+<li><a href="https://documentation.ubuntu.com/server/">Ubuntu Server 文档</a>与<a href="https://ubuntu.com/about/release-cycle">Ubuntu 发布周期</a></li>
+<li><a href="https://documentation.suse.com/">SUSE 文档</a>与<a href="https://doc.opensuse.org/">openSUSE 文档</a></li>
+<li><a href="https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/">Red Hat Enterprise Linux 文档</a>与<a href="https://access.redhat.com/security/security-updates/">Red Hat 安全公告</a></li>
+<li><a href="https://docs.kernel.org/">Linux 内核文档</a>与<a href="https://www.freedesktop.org/software/systemd/man/latest/">systemd 手册</a></li>
+</ul>
+
+
+  <nav class="md-tags" >
+    
+      
+      
+      
+      
+        <span class="md-tag">基础能力</span>
+      
+    
+      
+      
+      
+      
+        <span class="md-tag">系统与网络</span>
+      
+    
+      
+      
+      
+      
+        <span class="md-tag">安全治理</span>
+      
+    
+      
+      
+      
+      
+        <span class="md-tag">可靠性工程</span>
+      
+    
+  </nav>
+
+
+
+
+
+
+
+
+  
+  
+
+
+
+  
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-circle-arrow-up" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16 12-4-4-4 4M12 16V8"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="页脚" >
+        
+          
+          <a href="../learn-a-programming-language/" class="md-footer__link md-footer__link--prev" aria-label="上一页: 学习一种编程语言">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                上一页
+              </span>
+              <div class="md-ellipsis">
+                学习一种编程语言
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../terminal-knowledge/" class="md-footer__link md-footer__link--next" aria-label="下一页: 终端知识">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                下一页
+              </span>
+              <div class="md-ellipsis">
+                终端知识
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://zensical.org/" target="_blank" rel="noopener">
+      Zensical
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate":null,"base":"..","features":["announce.dismiss","content.action.edit","content.action.view","content.code.annotate","content.code.copy","content.code.select","content.footnote.tooltips","content.tabs.link","content.tooltips","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.path","navigation.sections","navigation.top","navigation.tracking","search.highlight","toc.follow"],"search":"../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"已复制","clipboard.copy":"复制","search.result.more.one":"在该页上还有 1 个符合条件的结果","search.result.more.other":"在该页上还有 # 个符合条件的结果","search.result.none":"没有找到符合条件的结果","search.result.one":"找到 1 个符合条件的结果","search.result.other":"# 个符合条件的结果","search.result.placeholder":"键入以开始搜索","search.result.term.missing":"缺少","select.version":"选择当前版本"},"version":null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.e886cdf1.min.js"></script>
+      
+    
+  </body>
+</html>

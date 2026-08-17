@@ -1,0 +1,2627 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="本章解释无服务器函数的事件触发、实例复用、冷启动、并发、重试和至少一次投递，比较区域函数、边缘运行时与应用平台，并指导设计幂等、可观测、权限受限且成本可控的事件处理。">
+      
+      
+        <meta name="author" content="oaixnah">
+      
+      
+        <link rel="canonical" href="https://devops.roadmap.oaix.tech/serverless/">
+      
+      
+        <link rel="prev" href="../cloud-providers/">
+      
+      
+        <link rel="next" href="../provisioning/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/favicon.svg">
+      <meta name="generator" content="zensical-0.0.55">
+    
+    
+      
+        <title>无服务器计算 - DevOps Roadmap 中文手册</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../assets/stylesheets/modern/main.20815dad.min.css">
+      
+        
+          
+        
+        <link rel="stylesheet" href="../assets/stylesheets/modern/palette.dfe2e883.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+  
+
+
+  
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FLXQC4YQJF"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-FLXQC4YQJF');
+</script>
+
+  
+  
+
+
+<script type="text/javascript">
+    (function(c,l,a,r,i,t,y){
+        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+    })(window, document, "clarity", "script", "y3p2irnl2z");
+</script>
+
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-label="导航栏"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#_1" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href="./.." title="DevOps Roadmap 中文手册" class="md-header__button md-logo" aria-label="DevOps Roadmap 中文手册" data-md-component="logo">
+      
+  <img src="../assets/logo.svg" alt="DevOps Roadmap 中文手册">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer" aria-label="导航栏">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            DevOps Roadmap 中文手册
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              无服务器计算
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun-moon" viewBox="0 0 24 24"><path d="M12 2v2M14.837 16.385a6 6 0 1 1-7.223-7.222c.624-.147.97.66.715 1.248a4 4 0 0 0 5.26 5.259c.589-.255 1.396.09 1.248.715M16 12a4 4 0 0 0-4-4M19 5l-1.256 1.256M20 12h2"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search" aria-label="查找">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="查找">
+  <button type="button" class="md-search__button">
+    查找
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+    </div>
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="./.." title="DevOps Roadmap 中文手册" class="md-nav__button md-logo" aria-label="DevOps Roadmap 中文手册" data-md-component="logo">
+      
+  <img src="../assets/logo.svg" alt="DevOps Roadmap 中文手册">
+
+    </a>
+    DevOps Roadmap 中文手册
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  首页
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  基础能力
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  基础能力
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../learn-a-programming-language/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  学习一种编程语言
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../operating-system/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  操作系统
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../terminal-knowledge/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  终端知识
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../version-control-systems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  版本控制系统
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../vcs-hosting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  版本控制托管
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../containers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  容器
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  基础设施与云
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  基础设施与云
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../common-infrastructure-services/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  常见基础设施服务
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../networking-and-protocols/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  网络与协议
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cloud-providers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  云服务商
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  无服务器计算
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  无服务器计算
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        学习目标
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        前置知识
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        核心原理
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="核心原理">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        托管事件执行
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        冷启动与延迟
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        并发、背压与下游保护
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        投递语义与幂等性
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#faasbaas" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        FaaS、BaaS 与边缘计算
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        常见触发模式
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="常见触发模式">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#http" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        HTTP 请求
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        消息与队列
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        对象存储事件
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        计划任务
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        流式事件
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#aws-lambda" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        AWS Lambda
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cloudflare-workers" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Cloudflare Workers
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#azure-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Azure Functions
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#vercel" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Vercel
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#netlify" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Netlify
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#google-cloud-functions-cloud-run-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Google Cloud Functions / Cloud Run functions
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_14" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        选型比较
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="选型比较">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#serverless" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        不适合 Serverless 的信号
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cloudflare-worker" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        最小实践：本地运行 Cloudflare Worker
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="最小实践：本地运行 Cloudflare Worker">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        1. 创建项目文件
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        2. 安装并启动
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        3. 验证可重复性并清理
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_15" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        生产实践
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="生产实践">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_16" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        代码与部署
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_17" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        安全性
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_18" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        可靠性
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_19" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        可观测性
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_20" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        成本
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_21" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        常见误区
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_22" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        动手练习
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_23" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        完成检查
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_24" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        官方延伸阅读
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../provisioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  基础设施置备
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  配置管理
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  持续交付与运行
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  持续交付与运行
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ci-cd-tools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  CI/CD 工具
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../secret-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  机密管理
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../infrastructure-monitoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  基础设施监控
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../logs-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  日志管理
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../container-orchestration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  容器编排
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../observability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  可观测性
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  平台与架构治理
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  平台与架构治理
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../artifact-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  制品管理
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gitops/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  GitOps
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../service-mesh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  服务网格
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cloud-design-patterns/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  云设计模式
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        学习目标
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        前置知识
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        核心原理
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="核心原理">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        托管事件执行
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        冷启动与延迟
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        并发、背压与下游保护
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        投递语义与幂等性
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#faasbaas" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        FaaS、BaaS 与边缘计算
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        常见触发模式
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="常见触发模式">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#http" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        HTTP 请求
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        消息与队列
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        对象存储事件
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        计划任务
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        流式事件
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#aws-lambda" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        AWS Lambda
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cloudflare-workers" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Cloudflare Workers
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#azure-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Azure Functions
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#vercel" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Vercel
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#netlify" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Netlify
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#google-cloud-functions-cloud-run-functions" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Google Cloud Functions / Cloud Run functions
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_14" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        选型比较
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="选型比较">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#serverless" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        不适合 Serverless 的信号
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#cloudflare-worker" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        最小实践：本地运行 Cloudflare Worker
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="最小实践：本地运行 Cloudflare Worker">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        1. 创建项目文件
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        2. 安装并启动
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        3. 验证可重复性并清理
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_15" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        生产实践
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="生产实践">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_16" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        代码与部署
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_17" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        安全性
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_18" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        可靠性
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_19" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        可观测性
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_20" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        成本
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_21" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        常见误区
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_22" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        动手练习
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_23" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        完成检查
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_24" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        官方延伸阅读
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+  <nav class="md-path" aria-label="导航栏" >
+    <ol class="md-path__list">
+      
+        
+  
+  
+    <li class="md-path__item">
+      <a href="./.." class="md-path__link">
+        
+  
+  <span class="md-ellipsis">
+    首页
+  </span>
+
+      </a>
+    </li>
+  
+
+      
+      
+        
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      <li class="md-path__item">
+        <a href="../common-infrastructure-services/" class="md-path__link">
+          
+  
+  <span class="md-ellipsis">
+    基础设施与云
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ol>
+  </nav>
+
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+<h1 id="_1">无服务器计算<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<p>无服务器计算（Serverless）并不是没有服务器，而是平台接管服务器置备、运行时补丁、按事件扩缩容和部分可用性工作，团队围绕函数、静态站点、托管数据和事件源交付能力。它适合突发、事件驱动或希望减少空闲容量的负载，也会带来运行限制、冷启动、重试副作用、成本非线性和平台绑定。</p>
+<h2 id="_2">学习目标<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>完成本章后，你应当能够：</p>
+<ul>
+<li>区分 Serverless、函数即服务（FaaS）、后端即服务（BaaS）和边缘函数。</li>
+<li>解释事件触发、实例生命周期、并发、冷启动、超时和至少一次投递。</li>
+<li>把 HTTP、队列、对象事件、计划任务和流式事件映射到安全的处理模式。</li>
+<li>比较 AWS Lambda、Cloudflare Workers、Azure Functions、Vercel、Netlify 与 Cloud Run functions（原 Google Cloud Functions）。</li>
+<li>设计幂等、可重试、可观测且不会泄露机密的函数。</li>
+<li>在本机运行一个 Cloudflare Worker，并验证输入校验和结构化响应。</li>
+<li>判断何时不应使用 Serverless，以及如何控制费用和迁移成本。</li>
+</ul>
+<h2 id="_3">前置知识<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<ul>
+<li>理解 HTTP、TLS、DNS 和状态码，参见<a href="../networking-and-protocols/">网络与协议</a>。</li>
+<li>理解云的区域、身份、网络和共享责任，参见<a href="../cloud-providers/">云服务商</a>。</li>
+<li>能阅读 JavaScript 或其他编程语言，参见<a href="../learn-a-programming-language/">学习一种编程语言</a>。</li>
+<li>容器不是学习 FaaS 的必需前置，但有助于比较运行隔离，参见<a href="../containers/">容器</a>。</li>
+</ul>
+<h2 id="_4">核心原理<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<h3 id="_5">托管事件执行<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
+<p>传统常驻服务先准备容量，再持续等待请求。FaaS 则由平台接收事件、选择运行环境、启动或复用实例并调用处理函数。开发者声明内存、超时、触发器、权限和代码，平台负责调度与扩缩容。</p>
+<pre class="mermaid"><code>flowchart LR
+    E[HTTP、队列、对象或计划事件] --&gt; T[平台触发器]
+    T --&gt; I1[函数实例 1]
+    T --&gt; I2[函数实例 2]
+    I1 --&gt; D[(托管数据或外部 API)]
+    I2 --&gt; D
+    I1 --&gt; O[日志、指标与追踪]
+    I2 --&gt; O
+    T --&gt; DLQ[(失败目标或死信队列)]</code></pre>
+<p>实例可能在调用后被复用，也可能随时回收。因此：</p>
+<ul>
+<li>初始化代码可以放在处理函数外以复用连接，但不能假设它一定执行一次。</li>
+<li>内存和临时磁盘不是持久状态，重要数据必须写入外部存储。</li>
+<li>并发调用可能在多个实例同时处理相同或相关事件，不能依赖进程内锁保证全局互斥。</li>
+<li>部署包、运行时、区域、内存、CPU、超时、请求大小和网络连接都有平台限制。</li>
+</ul>
+<h3 id="_6">冷启动与延迟<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
+<p>没有可复用实例时，平台要创建隔离环境、加载运行时和执行初始化，形成冷启动。运行时、包体、依赖初始化、私有网络连接和实例规格都会影响延迟。突发流量还可能遇到扩容速率或并发配额。</p>
+<p>优化前先区分初始化时间与处理时间。可采用更小依赖、延迟加载非关键模块、连接复用、预置并发或最小实例等策略。预热会增加成本，也不能替代配额和下游容量规划。对极低延迟且持续高负载的服务，常驻容器可能更合适。</p>
+<h3 id="_7">并发、背压与下游保护<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
+<p>Serverless 平台可以快速增加函数实例，但数据库连接数、第三方 API 配额和消息消费能力未必同步增长。应设置保留并发、最大实例数、队列批大小或消费者并发，把平台扩容速度限制在下游可承受范围。</p>
+<p>同步 HTTP 超过并发限制时通常应快速返回 <code>429</code> 或 <code>503</code>；异步事件可在队列中形成背压。队列积压、最老消息年龄和失败重试次数比“函数运行实例数”更能反映用户影响。</p>
+<h3 id="_8">投递语义与幂等性<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
+<p>事件源的投递保证因平台和触发类型而异，但工程上应假设<strong>至少一次</strong>：同一事件可能因超时、网络中断、批处理失败或人工重放而被处理多次。所谓“精确一次”通常只在特定边界内成立。</p>
+<p>安全处理流程是：</p>
+<ol>
+<li>从平台事件中取得稳定事件 ID，或由业务方提供幂等键。</li>
+<li>在与业务写入相同的事务边界中记录处理结果，或使用带条件写的去重存储。</li>
+<li>重复事件返回已有结果，而不是再次执行外部副作用。</li>
+<li>为去重记录设置符合最大重放窗口的保留期。</li>
+<li>对永久错误转入失败目标或死信队列，避免无限重试。</li>
+</ol>
+<p>对于批量队列事件，整批失败可能重放已经成功的消息。优先使用平台支持的部分批次失败报告，或逐项幂等处理。重试采用指数退避和随机抖动，并设置总时限。</p>
+<h3 id="faasbaas">FaaS、BaaS 与边缘计算<a class="headerlink" href="#faasbaas" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>FaaS</strong>运行短生命周期代码，例如 Lambda 或 Azure Functions。</li>
+<li><strong>BaaS</strong>提供认证、数据库、对象存储和消息等可直接调用的后端能力。Serverless 应用通常由 FaaS 与 BaaS 组合而成。</li>
+<li><strong>边缘函数</strong>在靠近用户的分布式位置运行，适合请求重写、认证前置、个性化和轻量 API。其运行时、CPU 时间、网络出口和一致性限制通常不同于区域函数。</li>
+<li><strong>Serverless 应用平台</strong>将静态内容、构建、预览、CDN 和函数整合起来，例如 Vercel 和 Netlify。</li>
+</ul>
+<p>“边缘”不是自动更快。若函数每次都访问远端单区域数据库，总延迟可能更高，还会产生大量跨区域连接。计算与数据应按访问模式共同放置。</p>
+<h2 id="_9">常见触发模式<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<h3 id="http">HTTP 请求<a class="headerlink" href="#http" title="Permanent link">&para;</a></h3>
+<p>HTTP 函数适合短时 API、Webhook 和请求转换。必须限制方法、内容类型、正文大小和执行时长；先验证签名再解析或执行副作用。面向用户的长任务应返回任务 ID，并通过队列异步处理，而不是让连接一直等待。</p>
+<h3 id="_10">消息与队列<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h3>
+<p>队列吸收峰值并解耦生产者与消费者。函数应处理重复、乱序和毒消息。监控可见消息数、最老消息年龄、处理延迟及死信队列；仅监控调用错误会漏掉没有消费者的积压。</p>
+<h3 id="_11">对象存储事件<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h3>
+<p>上传对象可触发缩略图、扫描或数据导入。不要让函数写回同一前缀并再次触发自己，除非有明确循环终止条件。对象键和元数据不可信，下载前检查大小，处理后用输出前缀或标签标识状态。</p>
+<h3 id="_12">计划任务<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h3>
+<p>计划触发适合清理、汇总和同步。调度可能延迟或重复，任务仍需幂等。记录逻辑运行窗口，而不是只依赖实际启动时间，以便补跑遗漏周期。</p>
+<h3 id="_13">流式事件<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h3>
+<p>流分区通常决定顺序和并发。单个失败记录可能阻塞整个分区，应设置最大重试时间、失败去向和告警。增加并发不能突破分区数，也可能破坏依赖全局顺序的业务假设。</p>
+<h2 id="aws-lambda">AWS Lambda<a class="headerlink" href="#aws-lambda" title="Permanent link">&para;</a></h2>
+<p><strong>重点掌握</strong>。AWS Lambda 可由 API Gateway、Application Load Balancer、S3、EventBridge、SQS、SNS、DynamoDB Streams、Kinesis 等服务触发。函数配置执行角色、运行时、内存、临时存储、超时、环境变量和并发；版本与别名支持稳定引用和流量切换。</p>
+<p>内存设置也会影响可用 CPU，调优应同时测量时延和总费用。保留并发可保护其他函数或下游，预置并发可减少关键同步路径的冷启动但会产生持续费用。SQS 与流式事件源由事件源映射拉取，批大小、批窗口、并发和部分批次失败需要一起设计。</p>
+<p>函数执行角色只授予所需资源与操作。访问 VPC 资源会引入网络配置，应优先通过私有端点访问 AWS 服务，并为出站流量计算 NAT 成本。机密从 Secrets Manager 或 Systems Manager Parameter Store 等服务按身份读取，不写入部署包；环境变量也不是无条件适合所有敏感数据。</p>
+<p>Lambda 适合 AWS 事件生态、突发任务和可在最大执行时长内完成的处理。长时间持续计算、依赖特殊宿主能力或需要精确常驻连接的任务应评估 ECS、EKS 或其他计算方式。</p>
+<h2 id="cloudflare-workers">Cloudflare Workers<a class="headerlink" href="#cloudflare-workers" title="Permanent link">&para;</a></h2>
+<p><strong>替代方案</strong>。Cloudflare Workers 在全球边缘网络上运行，使用基于 Web 标准的运行时处理 <code>Request</code> 并返回 <code>Response</code>。它常与 Workers KV、Durable Objects、D1、R2、Queues 和其他 Cloudflare 服务组合。</p>
+<p>Workers 适合低延迟请求处理、边缘鉴权、代理、静态或动态站点以及靠近用户的轻量 API。它不是完整 Node.js 主机；虽然平台提供不断扩展的兼容能力，依赖原生扩展、任意文件系统或特定 Node API 的包仍需逐项验证。限制维度包括 CPU 时间、子请求、请求或响应大小和各类绑定配额，具体值按计划和最新官方文档确认。</p>
+<p>KV 偏向高读取和最终一致场景，Durable Objects 为单一对象提供协调与强一致模型，D1 提供关系数据能力，R2 面向对象存储。不能因为它们都能“保存数据”就互换。边缘函数访问单一区域数据库时，应使用连接代理、区域化架构或将计算移近数据。</p>
+<h2 id="azure-functions">Azure Functions<a class="headerlink" href="#azure-functions" title="Permanent link">&para;</a></h2>
+<p><strong>替代方案</strong>。Azure Functions 使用触发器和绑定连接 HTTP、Timer、Queue Storage、Service Bus、Event Hubs、Blob Storage 等服务。Function App 是部署、配置和部分扩缩边界；托管选项包括不同的动态和专用计划，功能、网络、冷启动和计费方式有所不同。</p>
+<p>输入与输出绑定减少样板代码，但也隐藏重试、并发和连接行为，生产前要阅读对应扩展的语义。使用托管身份访问 Azure 资源，避免连接字符串和账号密钥。需要长流程时可评估 Durable Functions，它通过编排历史实现可靠状态机，但编排器代码必须遵守确定性约束。</p>
+<p>选型时检查运行时版本、托管计划的网络能力、实例上限、超时、部署槽和区域支持。持续稳定高负载或依赖专用网络与固定容量时，专用计划或 Azure Container Apps 可能更可控。</p>
+<h2 id="vercel">Vercel<a class="headerlink" href="#vercel" title="Permanent link">&para;</a></h2>
+<p><strong>按需学习</strong>。Vercel 将 Git 集成、预览部署、CDN、前端框架构建与 Functions 或 Edge 能力组合，尤其常用于 Next.js 等前端和全栈 Web 项目。平台根据项目约定生成不可变部署，并为分支或提交提供预览 URL。</p>
+<p>Vercel Functions 适合与前端共同交付的 API、服务端渲染和短任务；不同函数运行时在 Node.js API、区域、持续时间和边缘能力上存在差异。不要把大文件上传先完整经过函数内存，可使用对象存储直传和签名 URL。数据库连接应使用适合短生命周期与并发扩展的驱动、连接池代理或平台集成。</p>
+<p>评估时关注构建分钟、函数执行、带宽、图像处理、日志保留、并发和团队席位费用。框架的缓存与增量渲染语义也会影响数据新鲜度，发布后要验证失效而不是假设每次请求都执行新代码。</p>
+<h2 id="netlify">Netlify<a class="headerlink" href="#netlify" title="Permanent link">&para;</a></h2>
+<p><strong>按需学习</strong>。Netlify 提供基于 Git 的构建部署、Deploy Previews、CDN、Functions、Edge Functions、Forms 和相关平台能力，适合静态站点与 Jamstack 风格应用。</p>
+<p>Functions 通常处理区域型后端逻辑，Edge Functions 靠近用户执行受限的请求逻辑。二者运行时、API、资源限制和一致性模型不同，不能只按名称替换。部署产物应不可变，运行时状态放入外部数据服务；异步和后台函数能力需要按当前计划及限制确认。</p>
+<p>选型要验证框架适配、重定向和 Header 配置、构建缓存、函数区域、身份与机密注入、日志出口、带宽和构建费用。预览环境同样可能访问生产数据，必须使用隔离凭据和数据集。</p>
+<h2 id="google-cloud-functions-cloud-run-functions">Google Cloud Functions / Cloud Run functions<a class="headerlink" href="#google-cloud-functions-cloud-run-functions" title="Permanent link">&para;</a></h2>
+<p><strong>替代方案</strong>。Google 已将 Cloud Functions 更名为 Cloud Run functions。当前推荐从源代码把函数直接部署到 Cloud Run，并通过 HTTP 或 Eventarc 触发；为兼容已有部署，<code>gcloud functions</code>、Cloud Functions v2 API 和第一代函数仍有独立入口。部署时需要区分运行服务账号与触发器身份，并配置区域、实例上下限、并发、CPU、内存和超时。</p>
+<p>调用身份与运行身份要分离：前者决定谁能触发函数，后者决定函数能访问哪些资源。通过服务账号和工作负载身份使用短期凭据，不创建可下载的长期密钥。事件通常采用 CloudEvents 表达，但事件源的重试、顺序和过滤能力仍需分别确认。</p>
+<p>Cloud Run functions 适合 Google Cloud 事件集成和小粒度函数。若应用包含多个路由、需要自定义容器、持续服务或更直接的并发控制，可比较普通 Cloud Run 服务；数据和分析流水线则可能更适合专用服务。</p>
+<h2 id="_14">选型比较<a class="headerlink" href="#_14" title="Permanent link">&para;</a></h2>
+<p>先回答工作负载问题，再比较平台名称：</p>
+<ol>
+<li><strong>事件来源在哪里</strong>：数据已经在 S3、Service Bus 或 Pub/Sub 时，同云函数通常减少身份、网络和事件桥接复杂度。</li>
+<li><strong>延迟目标是什么</strong>：全球请求前置逻辑可评估 Cloudflare Workers 或平台边缘函数；重数据操作应优先靠近数据，而非盲目靠近用户。</li>
+<li><strong>负载形状如何</strong>：低占空比、突发事件容易受益于按使用付费；稳定高占用时常驻容器可能更便宜且延迟更稳定。</li>
+<li><strong>执行需要什么</strong>：核对运行时、原生依赖、CPU 或 GPU、内存、临时磁盘、最大时长、并发和网络，不要只确认编程语言名称。</li>
+<li><strong>失败如何恢复</strong>：确认同步与异步重试、死信目标、最大事件年龄、顺序和部分批次失败能力。</li>
+<li><strong>如何治理</strong>：比较工作负载身份、私网、机密、审计、日志导出、区域、合规和部署回滚。</li>
+<li><strong>如何退出</strong>：业务逻辑与平台事件适配层尽量分开，保留事件契约测试和数据导出路径；但不要构建一个比函数本身更复杂的“万能多云框架”。</li>
+</ol>
+<table>
+<thead>
+<tr>
+<th>场景</th>
+<th>优先评估</th>
+<th>主要验证点</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AWS 内部事件处理</td>
+<td>AWS Lambda</td>
+<td>IAM、并发、VPC、事件源重试</td>
+</tr>
+<tr>
+<td>全球边缘请求逻辑</td>
+<td>Cloudflare Workers</td>
+<td>运行时 API、CPU、数据位置与一致性</td>
+</tr>
+<tr>
+<td>Azure 消息或企业集成</td>
+<td>Azure Functions</td>
+<td>托管计划、绑定语义、托管身份</td>
+</tr>
+<tr>
+<td>前端与 Next.js 一体交付</td>
+<td>Vercel</td>
+<td>函数区域、缓存、数据库连接与费用</td>
+</tr>
+<tr>
+<td>静态或 Jamstack 站点</td>
+<td>Netlify</td>
+<td>构建、边缘或区域函数、预览隔离</td>
+</tr>
+<tr>
+<td>Google Cloud 事件处理</td>
+<td>Cloud Run functions（原 Cloud Functions）</td>
+<td>部署入口、Eventarc、服务账号与并发</td>
+</tr>
+</tbody>
+</table>
+<h3 id="serverless">不适合 Serverless 的信号<a class="headerlink" href="#serverless" title="Permanent link">&para;</a></h3>
+<ul>
+<li>需要超出平台时限的持续任务，且无法可靠拆分或检查点续跑。</li>
+<li>持续高 CPU 或高内存使用，按调用计费明显高于稳定容量。</li>
+<li>依赖特殊内核、设备、守护进程、任意端口或本地持久状态。</li>
+<li>极端低延迟要求无法容忍任何冷启动或多租户抖动。</li>
+<li>大量跨区数据和数据库连接抵消了边缘计算收益。</li>
+<li>团队无法接受平台限制、区域范围或数据退出能力。</li>
+</ul>
+<h2 id="cloudflare-worker">最小实践：本地运行 Cloudflare Worker<a class="headerlink" href="#cloudflare-worker" title="Permanent link">&para;</a></h2>
+<p>这个实验不需要 Cloudflare 账号，不部署公网服务，也不使用机密。它创建一个校验查询参数并返回 JSON 的 Worker，通过本地 Wrangler 模拟器运行。</p>
+<h3 id="1">1. 创建项目文件<a class="headerlink" href="#1" title="Permanent link">&para;</a></h3>
+<p>在空目录创建 <code>package.json</code>：</p>
+<div class="language-json highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="p">{</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="nt">"name"</span><span class="p">:</span><span class="w"> </span><span class="s2">"serverless-handbook-lab"</span><span class="p">,</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span><span class="nt">"private"</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span><span class="nt">"scripts"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">    </span><span class="nt">"dev"</span><span class="p">:</span><span class="w"> </span><span class="s2">"wrangler dev --local --ip 127.0.0.1 --port 8787"</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span><span class="p">},</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">  </span><span class="nt">"devDependencies"</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">    </span><span class="nt">"wrangler"</span><span class="p">:</span><span class="w"> </span><span class="s2">"4.122.0"</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>创建 <code>wrangler.toml</code>：</p>
+<div class="language-toml highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"serverless-handbook-lab"</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="n">main</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"src/index.mjs"</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="n">compatibility_date</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"2026-08-13"</span>
+</span></code></pre></div>
+<p>创建 <code>src/index.mjs</code>：</p>
+<div class="language-javascript highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">export</span><span class="w"> </span><span class="k">default</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="w">  </span><span class="k">async</span><span class="w"> </span><span class="nx">fetch</span><span class="p">(</span><span class="nx">request</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">url</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="ow">new</span><span class="w"> </span><span class="nx">URL</span><span class="p">(</span><span class="nx">request</span><span class="p">.</span><span class="nx">url</span><span class="p">);</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">request</span><span class="p">.</span><span class="nx">method</span><span class="w"> </span><span class="o">!==</span><span class="w"> </span><span class="s2">"GET"</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nx">url</span><span class="p">.</span><span class="nx">pathname</span><span class="w"> </span><span class="o">!==</span><span class="w"> </span><span class="s2">"/hello"</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="w">      </span><span class="k">return</span><span class="w"> </span><span class="nx">Response</span><span class="p">.</span><span class="nx">json</span><span class="p">(</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="nx">error</span><span class="o">:</span><span class="w"> </span><span class="s2">"not_found"</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="nx">status</span><span class="o">:</span><span class="w"> </span><span class="mf">404</span><span class="p">,</span><span class="w"> </span><span class="nx">headers</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="s2">"cache-control"</span><span class="o">:</span><span class="w"> </span><span class="s2">"no-store"</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">      </span><span class="p">);</span>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a>
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">rawName</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">url</span><span class="p">.</span><span class="nx">searchParams</span><span class="p">.</span><span class="nx">get</span><span class="p">(</span><span class="s2">"name"</span><span class="p">);</span>
+</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="w">    </span><span class="kd">const</span><span class="w"> </span><span class="nx">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nx">rawName</span><span class="w"> </span><span class="o">===</span><span class="w"> </span><span class="kc">null</span><span class="w"> </span><span class="o">?</span><span class="w"> </span><span class="s2">"reader"</span><span class="w"> </span><span class="o">:</span><span class="w"> </span><span class="nx">rawName</span><span class="p">.</span><span class="nx">trim</span><span class="p">();</span>
+</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="w">    </span><span class="k">if</span><span class="w"> </span><span class="p">(</span><span class="nx">name</span><span class="p">.</span><span class="nx">length</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="mf">1</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nx">name</span><span class="p">.</span><span class="nx">length</span><span class="w"> </span><span class="o">&gt;</span><span class="w"> </span><span class="mf">40</span><span class="p">)</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="w">      </span><span class="k">return</span><span class="w"> </span><span class="nx">Response</span><span class="p">.</span><span class="nx">json</span><span class="p">(</span>
+</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="nx">error</span><span class="o">:</span><span class="w"> </span><span class="s2">"name_must_be_1_to_40_characters"</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="w">        </span><span class="p">{</span><span class="w"> </span><span class="nx">status</span><span class="o">:</span><span class="w"> </span><span class="mf">400</span><span class="p">,</span><span class="w"> </span><span class="nx">headers</span><span class="o">:</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="s2">"cache-control"</span><span class="o">:</span><span class="w"> </span><span class="s2">"no-store"</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="w">      </span><span class="p">);</span>
+</span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="w">    </span><span class="p">}</span>
+</span><span id="__span-2-20"><a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a>
+</span><span id="__span-2-21"><a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="nx">Response</span><span class="p">.</span><span class="nx">json</span><span class="p">(</span>
+</span><span id="__span-2-22"><a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="w">      </span><span class="p">{</span><span class="w"> </span><span class="nx">message</span><span class="o">:</span><span class="w"> </span><span class="sb">`hello, </span><span class="si">${</span><span class="nx">name</span><span class="si">}</span><span class="sb">`</span><span class="p">,</span><span class="w"> </span><span class="nx">requestId</span><span class="o">:</span><span class="w"> </span><span class="nx">crypto</span><span class="p">.</span><span class="nx">randomUUID</span><span class="p">()</span><span class="w"> </span><span class="p">},</span>
+</span><span id="__span-2-23"><a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a><span class="w">      </span><span class="p">{</span>
+</span><span id="__span-2-24"><a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a><span class="w">        </span><span class="nx">headers</span><span class="o">:</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-2-25"><a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a><span class="w">          </span><span class="s2">"cache-control"</span><span class="o">:</span><span class="w"> </span><span class="s2">"no-store"</span><span class="p">,</span>
+</span><span id="__span-2-26"><a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a><span class="w">          </span><span class="s2">"x-content-type-options"</span><span class="o">:</span><span class="w"> </span><span class="s2">"nosniff"</span><span class="p">,</span>
+</span><span id="__span-2-27"><a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a><span class="w">        </span><span class="p">},</span>
+</span><span id="__span-2-28"><a id="__codelineno-2-28" name="__codelineno-2-28" href="#__codelineno-2-28"></a><span class="w">      </span><span class="p">},</span>
+</span><span id="__span-2-29"><a id="__codelineno-2-29" name="__codelineno-2-29" href="#__codelineno-2-29"></a><span class="w">    </span><span class="p">);</span>
+</span><span id="__span-2-30"><a id="__codelineno-2-30" name="__codelineno-2-30" href="#__codelineno-2-30"></a><span class="w">  </span><span class="p">},</span>
+</span><span id="__span-2-31"><a id="__codelineno-2-31" name="__codelineno-2-31" href="#__codelineno-2-31"></a><span class="p">};</span>
+</span></code></pre></div>
+<h3 id="2">2. 安装并启动<a class="headerlink" href="#2" title="Permanent link">&para;</a></h3>
+<p>Wrangler <code>4.122.0</code> 需要 Node.js 22 或更高版本。检查 Node.js、npm 和依赖来源可信后，安装固定的直接依赖并生成锁文件：</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>node<span class="w"> </span>--version
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>npm<span class="w"> </span>install
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>npm<span class="w"> </span>run<span class="w"> </span>dev
+</span></code></pre></div>
+<p>服务只监听 <code>127.0.0.1:8787</code>。在另一个终端验证正常、非法和未知路由：</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>curl<span class="w"> </span>--fail<span class="w"> </span>--silent<span class="w"> </span>--show-error<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span><span class="s2">"http://127.0.0.1:8787/hello?name=DevOps"</span>
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>curl<span class="w"> </span>--include<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-4-5"><a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a><span class="w">  </span><span class="s2">"http://127.0.0.1:8787/hello?name="</span>
+</span><span id="__span-4-6"><a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>
+</span><span id="__span-4-7"><a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a>curl<span class="w"> </span>--include<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-4-8"><a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a><span class="w">  </span><span class="s2">"http://127.0.0.1:8787/unknown"</span>
+</span></code></pre></div>
+<p>第一个请求应返回含 <code>message</code> 和不同 <code>requestId</code> 的 JSON；后两个请求应分别得到 <code>400</code> 和 <code>404</code>。处理器不记录查询内容，避免把未来可能出现的敏感输入写入日志。</p>
+<h3 id="3">3. 验证可重复性并清理<a class="headerlink" href="#3" title="Permanent link">&para;</a></h3>
+<p>保留 <code>package-lock.json</code> 才能让团队和 CI 使用相同依赖图。实验结束后按 <code>Ctrl+C</code> 停止服务。若目录只用于实验，可在确认当前路径后删除整个实验目录；不要把 <code>node_modules</code> 或本地开发状态提交到业务仓库。</p>
+<div class="admonition note">
+<p class="admonition-title">本地模拟的边界</p>
+<p>本地运行可验证处理逻辑和基本运行时 API，不能证明生产区域、配额、冷启动、路由、身份绑定或计费行为。部署前仍需在隔离的云测试环境执行契约、负载和失败注入测试。</p>
+</div>
+<h2 id="_15">生产实践<a class="headerlink" href="#_15" title="Permanent link">&para;</a></h2>
+<h3 id="_16">代码与部署<a class="headerlink" href="#_16" title="Permanent link">&para;</a></h3>
+<ul>
+<li>处理器只做协议适配，把可独立测试的业务逻辑放入普通函数或模块。</li>
+<li>锁定运行时与依赖，生成软件物料清单并扫描已知漏洞；部署包只含运行所需文件。</li>
+<li>使用不可变版本和流量别名或平台部署版本，小比例验证后再扩大流量。</li>
+<li>数据库架构变更与函数回滚保持向前和向后兼容，避免旧函数读到新结构后崩溃。</li>
+<li>配置按环境分离，机密由平台机密服务和工作负载身份注入，不放在源码或构建日志。</li>
+</ul>
+<h3 id="_17">安全性<a class="headerlink" href="#_17" title="Permanent link">&para;</a></h3>
+<ul>
+<li>函数默认不公开；HTTP 入口要求明确认证与授权。Webhook 应先限制声明大小并以有上限的方式读取签名覆盖的原始字节，再验证签名和时间窗，验证通过前不得解析不可信内容或执行副作用。</li>
+<li>每个函数使用最小权限运行身份，不让整个应用共享一个管理员角色。</li>
+<li>限制出站目标、正文大小、解压后大小和临时文件，防止 SSRF、压缩炸弹和资源耗尽。</li>
+<li>预览部署使用隔离数据和只读或低权限凭据，禁止将任意分支代码连接生产数据库。</li>
+<li>日志不记录令牌、Cookie、完整请求正文和个人数据；错误响应不暴露堆栈或平台内部信息。</li>
+</ul>
+<h3 id="_18">可靠性<a class="headerlink" href="#_18" title="Permanent link">&para;</a></h3>
+<ul>
+<li>所有事件处理都假设重复和乱序，业务副作用有幂等键或条件写保护。</li>
+<li>为同步请求设置明确截止时间；异步处理配置最大重试、事件年龄和死信目标。</li>
+<li>用并发上限保护数据库和第三方服务，并为连接池或连接代理做容量测试。</li>
+<li>对计划任务记录逻辑时间窗，对流事件记录检查点和分区延迟。</li>
+<li>定期重放经过脱敏的失败事件，验证修复流程和死信队列消费责任。</li>
+</ul>
+<h3 id="_19">可观测性<a class="headerlink" href="#_19" title="Permanent link">&para;</a></h3>
+<p>至少采集调用量、成功率、错误分类、处理时长、冷启动、并发、限流、初始化时间和费用估算。异步系统还要采集队列深度、最老事件年龄、重试次数和死信数量。</p>
+<p>使用请求 ID、事件 ID 和追踪上下文关联触发器、函数与下游。采样策略应保留错误和高延迟调用。告警以用户结果和积压为中心，不能只在函数抛异常时触发。</p>
+<h3 id="_20">成本<a class="headerlink" href="#_20" title="Permanent link">&para;</a></h3>
+<ul>
+<li>估算请求费、执行时间、内存或 CPU、预置实例、构建、日志、存储和数据传输。</li>
+<li>设置平台预算和并发或最大实例护栏，避免循环触发和攻击导致无限扩容账单。</li>
+<li>日志采用采样和保留策略；高频逐请求调试日志可能比函数执行更贵。</li>
+<li>对稳定高负载定期与常驻容器比较单位请求成本，迁移成本也计入决策。</li>
+</ul>
+<h2 id="_21">常见误区<a class="headerlink" href="#_21" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>认为 Serverless 没有运维</strong>：运行时、依赖、权限、事件、配额、数据和成本仍需持续运营。</li>
+<li><strong>依赖函数实例保存状态</strong>：实例会回收或并发扩展，本地内存和临时磁盘都不是持久数据库。</li>
+<li><strong>假设事件只到达一次</strong>：超时后结果可能已提交，盲目重试会重复扣款、发信或写数据。</li>
+<li><strong>让函数无限扩展到数据库</strong>：大量实例会瞬间耗尽连接和写吞吐，应设置背压与并发上限。</li>
+<li><strong>用定时请求预热解决全部冷启动</strong>：它增加费用，不能覆盖突发扩容、版本发布和实例回收。</li>
+<li><strong>把边缘函数和区域函数视为同一运行时</strong>：API、CPU、数据一致性和网络位置都可能不同。</li>
+<li><strong>通过环境变量散发所有机密</strong>：环境变量可能出现在配置视图、转储或诊断中，应按威胁模型使用机密服务和短期身份。</li>
+<li><strong>只看函数执行费用</strong>：API 网关、日志、数据库、NAT、构建和出口流量常是主要账单。</li>
+<li><strong>在对象触发器中写回同一位置</strong>：可能形成自触发循环，快速耗尽配额并产生费用。</li>
+</ul>
+<h2 id="_22">动手练习<a class="headerlink" href="#_22" title="Permanent link">&para;</a></h2>
+<ol>
+<li>完成本地 Worker 实验，为响应增加稳定的调用方幂等键校验；缺失或超过 64 字符时返回 <code>400</code>，并编写至少三个 <code>curl</code> 验证用例。</li>
+<li>设计一个“图片上传后生成缩略图”的事件流程，标注输入前缀、输出前缀、文件上限、幂等键、重试、死信目标和恶意文件扫描。</li>
+<li>假设数据库最多接受 100 个连接、每个函数实例最多保持 2 个连接，为函数设置并发上限并预留运维连接。写出计算和过载时客户端行为。</li>
+<li>分别为 AWS Lambda、Azure Functions 和 Cloud Run functions 找到一个队列触发器，比较批大小、部分失败、重试和死信能力，以当前官方文档为准。</li>
+<li>对每月 100 万次、每次 200 毫秒和每次 2 秒的两种负载，比较候选平台的执行、请求、日志和出口费用。记录价格日期与区域，不只给一个总数。</li>
+<li>选择 Vercel 或 Netlify 的预览部署，设计一条规则确保未审查分支不能使用生产写凭据。</li>
+</ol>
+<h2 id="_23">完成检查<a class="headerlink" href="#_23" title="Permanent link">&para;</a></h2>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能区分 Serverless、FaaS、BaaS、边缘函数和应用平台。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能解释实例复用、冷启动、并发、超时和平台限制。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能为 HTTP、队列、对象、计划和流事件设计失败处理。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能说明 AWS Lambda 与 AWS 事件源、权限和并发的关系。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能说明 Cloudflare Workers 的边缘运行时与数据绑定边界。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能说明 Azure Functions 的触发器、绑定、托管计划与身份。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能说明 Vercel、Netlify 的前端交付模型和预览环境风险。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能说明 Cloud Run functions（原 Google Cloud Functions）的事件、运行身份和实例设置。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 已在本机运行 Worker，并验证成功、输入错误和未知路由。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能判断一个工作负载何时不适合 Serverless，并计算完整成本。</li>
+</ul>
+<h2 id="_24">官方延伸阅读<a class="headerlink" href="#_24" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="https://docs.aws.amazon.com/lambda/latest/dg/welcome.html">AWS Lambda Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/lambda/latest/operatorguide/intro.html">AWS Lambda Operator Guide</a></li>
+<li><a href="https://developers.cloudflare.com/workers/">Cloudflare Workers 文档</a></li>
+<li><a href="https://learn.microsoft.com/azure/azure-functions/">Azure Functions 文档</a></li>
+<li><a href="https://vercel.com/docs/functions">Vercel Functions 文档</a></li>
+<li><a href="https://docs.netlify.com/functions/overview/">Netlify Functions 文档</a></li>
+<li><a href="https://cloud.google.com/run/docs/functions-with-run">Cloud Run functions 文档</a></li>
+<li><a href="https://cloudevents.io/">CloudEvents 规范</a></li>
+<li><a href="https://owasp.org/www-project-serverless-top-10/">OWASP Serverless Top 10</a></li>
+</ul>
+
+
+  <nav class="md-tags" >
+    
+      
+      
+      
+      
+        <span class="md-tag">云与架构</span>
+      
+    
+      
+      
+      
+      
+        <span class="md-tag">自动化交付</span>
+      
+    
+      
+      
+      
+      
+        <span class="md-tag">可靠性工程</span>
+      
+    
+  </nav>
+
+
+
+
+
+
+
+
+  
+  
+
+
+
+  
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-circle-arrow-up" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16 12-4-4-4 4M12 16V8"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="页脚" >
+        
+          
+          <a href="../cloud-providers/" class="md-footer__link md-footer__link--prev" aria-label="上一页: 云服务商">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                上一页
+              </span>
+              <div class="md-ellipsis">
+                云服务商
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../provisioning/" class="md-footer__link md-footer__link--next" aria-label="下一页: 基础设施置备">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                下一页
+              </span>
+              <div class="md-ellipsis">
+                基础设施置备
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://zensical.org/" target="_blank" rel="noopener">
+      Zensical
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate":null,"base":"..","features":["announce.dismiss","content.action.edit","content.action.view","content.code.annotate","content.code.copy","content.code.select","content.footnote.tooltips","content.tabs.link","content.tooltips","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.path","navigation.sections","navigation.top","navigation.tracking","search.highlight","toc.follow"],"search":"../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"已复制","clipboard.copy":"复制","search.result.more.one":"在该页上还有 1 个符合条件的结果","search.result.more.other":"在该页上还有 # 个符合条件的结果","search.result.none":"没有找到符合条件的结果","search.result.one":"找到 1 个符合条件的结果","search.result.other":"# 个符合条件的结果","search.result.placeholder":"键入以开始搜索","search.result.term.missing":"缺少","select.version":"选择当前版本"},"version":null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.e886cdf1.min.js"></script>
+      
+    
+  </body>
+</html>

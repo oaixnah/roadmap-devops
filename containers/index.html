@@ -1,0 +1,2495 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="本章从命名空间、控制组、能力和镜像层解释容器隔离，比较 Docker 应用容器、LXC 系统容器与虚拟机，并通过最小权限实践建立镜像供应链、资源限制、数据恢复和运行安全基线。">
+      
+      
+        <meta name="author" content="oaixnah">
+      
+      
+        <link rel="canonical" href="https://devops.roadmap.oaix.tech/containers/">
+      
+      
+        <link rel="prev" href="../vcs-hosting/">
+      
+      
+        <link rel="next" href="../common-infrastructure-services/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/favicon.svg">
+      <meta name="generator" content="zensical-0.0.55">
+    
+    
+      
+        <title>容器 - DevOps Roadmap 中文手册</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../assets/stylesheets/modern/main.20815dad.min.css">
+      
+        
+          
+        
+        <link rel="stylesheet" href="../assets/stylesheets/modern/palette.dfe2e883.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+  
+
+
+  
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FLXQC4YQJF"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-FLXQC4YQJF');
+</script>
+
+  
+  
+
+
+<script type="text/javascript">
+    (function(c,l,a,r,i,t,y){
+        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+    })(window, document, "clarity", "script", "y3p2irnl2z");
+</script>
+
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-label="导航栏"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#_1" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href="./.." title="DevOps Roadmap 中文手册" class="md-header__button md-logo" aria-label="DevOps Roadmap 中文手册" data-md-component="logo">
+      
+  <img src="../assets/logo.svg" alt="DevOps Roadmap 中文手册">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer" aria-label="导航栏">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            DevOps Roadmap 中文手册
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              容器
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun-moon" viewBox="0 0 24 24"><path d="M12 2v2M14.837 16.385a6 6 0 1 1-7.223-7.222c.624-.147.97.66.715 1.248a4 4 0 0 0 5.26 5.259c.589-.255 1.396.09 1.248.715M16 12a4 4 0 0 0-4-4M19 5l-1.256 1.256M20 12h2"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search" aria-label="查找">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="查找">
+  <button type="button" class="md-search__button">
+    查找
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+    </div>
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="./.." title="DevOps Roadmap 中文手册" class="md-nav__button md-logo" aria-label="DevOps Roadmap 中文手册" data-md-component="logo">
+      
+  <img src="../assets/logo.svg" alt="DevOps Roadmap 中文手册">
+
+    </a>
+    DevOps Roadmap 中文手册
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  首页
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  基础能力
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  基础能力
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../learn-a-programming-language/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  学习一种编程语言
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../operating-system/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  操作系统
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../terminal-knowledge/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  终端知识
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../version-control-systems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  版本控制系统
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../vcs-hosting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  版本控制托管
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  容器
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  容器
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        学习目标
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        前置知识
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        核心原理
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="核心原理">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        容器不是轻量虚拟机
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#namespaces" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        namespaces：隔离视图
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cgroups" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        cgroups：资源核算与限制
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#capabilitiesseccomp" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        capabilities、seccomp 与强制访问控制
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        镜像、层与运行容器
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#docker" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Docker
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Docker">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dockerfile" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Dockerfile 与构建上下文
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        容器运行
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        网络与存储
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lxc" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        LXC
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="LXC">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        系统容器模型
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        非特权与特权容器
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        网络、存储与生命周期
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        选型比较
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#docker_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        最小实践：最小权限 Docker 容器
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="最小实践：最小权限 Docker 容器">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        可选构建实践
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_14" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        生产实践
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="生产实践">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_15" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        镜像供应链
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_16" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        运行时安全
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_17" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        可靠性与数据
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_18" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        可观测性与成本
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lxc_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        LXC 专项基线
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_19" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        常见误区
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_20" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        动手练习
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_21" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        完成检查
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_22" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        官方延伸阅读
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  基础设施与云
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  基础设施与云
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../common-infrastructure-services/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  常见基础设施服务
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../networking-and-protocols/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  网络与协议
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cloud-providers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  云服务商
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../serverless/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  无服务器计算
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../provisioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  基础设施置备
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  配置管理
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  持续交付与运行
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  持续交付与运行
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ci-cd-tools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  CI/CD 工具
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../secret-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  机密管理
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../infrastructure-monitoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  基础设施监控
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../logs-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  日志管理
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../container-orchestration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  容器编排
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../observability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  可观测性
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  平台与架构治理
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  平台与架构治理
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../artifact-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  制品管理
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gitops/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  GitOps
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../service-mesh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  服务网格
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cloud-design-patterns/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  云设计模式
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        学习目标
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        前置知识
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        核心原理
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="核心原理">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        容器不是轻量虚拟机
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#namespaces" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        namespaces：隔离视图
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cgroups" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        cgroups：资源核算与限制
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#capabilitiesseccomp" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        capabilities、seccomp 与强制访问控制
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        镜像、层与运行容器
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#docker" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Docker
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Docker">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#dockerfile" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Dockerfile 与构建上下文
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        容器运行
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        网络与存储
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#lxc" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        LXC
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="LXC">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        系统容器模型
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        非特权与特权容器
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        网络、存储与生命周期
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        选型比较
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#docker_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        最小实践：最小权限 Docker 容器
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="最小实践：最小权限 Docker 容器">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        可选构建实践
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_14" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        生产实践
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="生产实践">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_15" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        镜像供应链
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_16" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        运行时安全
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_17" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        可靠性与数据
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_18" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        可观测性与成本
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#lxc_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        LXC 专项基线
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_19" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        常见误区
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_20" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        动手练习
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_21" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        完成检查
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_22" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        官方延伸阅读
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+  <nav class="md-path" aria-label="导航栏" >
+    <ol class="md-path__list">
+      
+        
+  
+  
+    <li class="md-path__item">
+      <a href="./.." class="md-path__link">
+        
+  
+  <span class="md-ellipsis">
+    首页
+  </span>
+
+      </a>
+    </li>
+  
+
+      
+      
+        
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      <li class="md-path__item">
+        <a href="../learn-a-programming-language/" class="md-path__link">
+          
+  
+  <span class="md-ellipsis">
+    基础能力
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ol>
+  </nav>
+
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+<h1 id="_1">容器<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<p>容器把应用、依赖和启动约定打包为可重复交付的单元，并利用操作系统内核隔离进程与限制资源。它解决“同一制品如何在不同环境一致运行”的一部分问题，但不自动解决数据持久化、机密、网络策略、漏洞修补或高可用。</p>
+<p>本章覆盖 Docker 与 LXC。Docker 主要围绕应用镜像和容器工作流，LXC 更接近运行完整 Linux 用户空间的系统容器；两者都共享宿主机内核，与虚拟机有根本差异。</p>
+<h2 id="_2">学习目标<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>完成本章后，你应当能够：</p>
+<ul>
+<li>解释 Linux namespaces、cgroups、capabilities、文件系统层和容器运行时的职责。</li>
+<li>构建、检查并运行最小 Docker 镜像，使用非 root、只读根文件系统和资源限制。</li>
+<li>描述 LXC 系统容器的配置、镜像、网络、存储以及特权 / 非特权模型。</li>
+<li>根据隔离强度、工作负载形态、镜像生态、宿主机责任和迁移成本比较 Docker、LXC 与虚拟机。</li>
+<li>设计镜像供应链、运行时安全、可观测性、容量和恢复实践。</li>
+</ul>
+<h2 id="_3">前置知识<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="../operating-system/">操作系统</a>：进程、文件系统、身份、内核和服务管理。</li>
+<li><a href="../terminal-knowledge/">终端知识</a>：安全运行命令、查看进程与网络状态。</li>
+<li><a href="../version-control-systems/">版本控制系统</a>：管理 Dockerfile、LXC 配置与部署声明。</li>
+<li>最小实践需要可用的 Docker Engine。LXC 通常要求 Linux 宿主机及管理员预先配置，相关命令只建议在专用测试主机运行。</li>
+</ul>
+<h2 id="_4">核心原理<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<h3 id="_5">容器不是轻量虚拟机<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
+<p>虚拟机管理程序虚拟硬件，每台虚拟机运行自己的内核。Linux 容器把普通进程放入隔离视图，并共享宿主机 Linux 内核。</p>
+<pre class="mermaid"><code>flowchart TB
+    subgraph Host[Linux 宿主机]
+        Kernel[共享 Linux 内核]
+        Runtime[容器管理器与运行时]
+        subgraph C1[容器 A]
+            AppA[应用进程]
+            RootA[根文件系统视图]
+        end
+        subgraph C2[容器 B]
+            AppB[应用进程]
+            RootB[根文件系统视图]
+        end
+        Runtime --&gt; C1
+        Runtime --&gt; C2
+        AppA --&gt; Kernel
+        AppB --&gt; Kernel
+    end</code></pre>
+<p>因此：</p>
+<ul>
+<li>容器中的系统调用直接进入宿主机内核，内核漏洞可能跨越容器边界。</li>
+<li>Linux 容器不能携带另一种内核；在 Windows 或 macOS 上运行 Linux 容器通常由 Docker Desktop 等工具管理一个 Linux 虚拟机。</li>
+<li>镜像中的 <code>/etc/os-release</code> 描述用户空间，<code>uname</code> 描述共享内核，两者发行版名称可能不同。</li>
+<li>容器内的 root 若未经过用户命名空间映射，仍可能对应宿主机高权限身份；“在容器里”本身不是权限控制。</li>
+</ul>
+<h3 id="namespaces">namespaces：隔离视图<a class="headerlink" href="#namespaces" title="Permanent link">&para;</a></h3>
+<p>Linux namespace 让一组进程看到不同的系统资源视图。常见类型包括：</p>
+<ul>
+<li><strong>PID</strong>：隔离进程编号和父子关系；容器内 PID 1 还承担信号转发与回收孤儿进程的责任。</li>
+<li><strong>mount</strong>：隔离挂载点和根文件系统视图。</li>
+<li><strong>network</strong>：提供独立接口、路由、防火墙与端口空间。</li>
+<li><strong>UTS</strong>：隔离主机名和域名。</li>
+<li><strong>IPC</strong>：隔离 System V IPC、POSIX 消息队列等进程通信资源。</li>
+<li><strong>user</strong>：把容器内用户 ID 映射到宿主机不同 ID，是非特权容器的重要基础。</li>
+<li><strong>cgroup</strong>：隔离进程所见的 cgroup 层级。</li>
+<li><strong>time</strong>：在支持的内核与运行时中隔离部分时钟偏移，不代表可以随意改变宿主机时间。</li>
+</ul>
+<p>namespace 主要控制“看见什么”，不直接限制“能用多少”。绑定宿主机目录、共享网络 namespace 或暴露运行时 socket 会主动打穿部分边界。</p>
+<h3 id="cgroups">cgroups：资源核算与限制<a class="headerlink" href="#cgroups" title="Permanent link">&para;</a></h3>
+<p>控制组（cgroups）按进程组核算并限制 CPU、内存、I/O 和进程数量等资源。cgroup v2 提供统一层级，但具体可用控制器取决于内核、宿主配置和运行时。</p>
+<ul>
+<li>CPU 配额控制一段周期内可用时间，CPU weight 控制竞争时相对份额。</li>
+<li>内存上限触发回收和内存不足处理；容器可能在宿主仍有空闲内存时被终止。</li>
+<li>PID 上限能抑制 fork bomb，但过低会使应用无法创建线程或子进程。</li>
+<li>I/O 限制依赖设备和调度支持，必须在目标存储上验证。</li>
+</ul>
+<p>资源限制不是容量规划替代品。没有请求与限制的合理关系、应用背压和监控，容器仍可能频繁节流或被终止。</p>
+<h3 id="capabilitiesseccomp">capabilities、seccomp 与强制访问控制<a class="headerlink" href="#capabilitiesseccomp" title="Permanent link">&para;</a></h3>
+<p>Linux 把传统 root 权限拆分为 capabilities，例如绑定低端口或管理网络。运行容器时应删除默认不需要的 capability，只按需求增加。seccomp 可限制系统调用，AppArmor 或 SELinux 可限制文件、进程和网络相关访问。</p>
+<p>这些控制相互补充：namespace 隔离视图，cgroup 限制资源，capability 拆分特权，seccomp 缩小系统调用面，强制访问控制限制对象访问。关闭某一层会增大其他层失效后的影响。</p>
+<h3 id="_6">镜像、层与运行容器<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
+<p>开放容器倡议（Open Container Initiative，OCI）定义镜像、运行时和分发相关规范。容器镜像由不可变内容层、配置和清单组成，注册表通过内容摘要分发对象。运行时在镜像层上增加可写层并创建进程。</p>
+<ul>
+<li>标签是可移动名称，如 <code>app:1.2</code>；摘要是内容地址，如 <code>app@sha256:...</code>。生产部署应记录并优先固定摘要。</li>
+<li>删除镜像后不会自动删除注册表中的历史、签名和派生制品；保留策略需要显式设计。</li>
+<li>容器可写层适合短期运行状态，不适合唯一保存业务数据。容器删除后可写层通常随之消失。</li>
+<li>多架构镜像清单可让同一标签指向不同平台镜像。构建和部署要验证 CPU 架构及操作系统。</li>
+</ul>
+<details class="note">
+<summary>Docker、containerd 与 runc 的关系</summary>
+<p>Docker Engine 提供镜像构建、网络、卷和 API 等高层能力，常通过 containerd 管理容器生命周期，再由 OCI 低层运行时（常见 <code>runc</code>）创建 namespaces、cgroups 和进程。具体组件会随部署产品变化，排障时先查询实际运行时版本和配置，不要假定固定调用链。</p>
+</details>
+<h2 id="docker">Docker<a class="headerlink" href="#docker" title="Permanent link">&para;</a></h2>
+<p><strong>重点掌握</strong>。Docker 提供 Dockerfile 构建、镜像分发、容器生命周期、网络与卷等一致工作流，适合把单个应用进程及依赖打包交付。Docker Engine 采用客户端与守护进程 API；能控制 Docker daemon 的主体通常可以在宿主机创建高权限容器，因此 Docker socket 等同于高价值管理接口。</p>
+<h3 id="dockerfile">Dockerfile 与构建上下文<a class="headerlink" href="#dockerfile" title="Permanent link">&para;</a></h3>
+<p>Dockerfile 逐步描述基础镜像、文件、依赖、用户、入口和元数据。构建上下文中的文件可被构建器读取，应通过 <code>.dockerignore</code> 排除 <code>.git</code>、凭据、本地缓存和无关大文件。</p>
+<div class="language-dockerfile highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c"># syntax=docker/dockerfile:1</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="k">FROM</span><span class="w"> </span><span class="s">python:3.13-slim</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="k">WORKDIR</span><span class="w"> </span><span class="s">/app</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="k">COPY</span><span class="w"> </span>--chown<span class="o">=</span><span class="m">65532</span>:65532<span class="w"> </span>server.py<span class="w"> </span>/app/server.py
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="k">USER</span><span class="w"> </span><span class="s">65532:65532</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="k">EXPOSE</span><span class="w"> </span><span class="s">8080</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="k">ENTRYPOINT</span><span class="w"> </span><span class="p">[</span><span class="s2">"python"</span><span class="p">,</span><span class="w"> </span><span class="s2">"/app/server.py"</span><span class="p">]</span>
+</span></code></pre></div>
+<p>生产 Dockerfile 应进一步做到：</p>
+<ul>
+<li>基础镜像使用受信任来源并固定可追踪版本或摘要，定期由自动流程更新和重建。</li>
+<li>多阶段构建把编译器留在构建阶段，只复制运行所需产物；但构建阶段依赖仍属于供应链，应扫描和记录。</li>
+<li><code>RUN</code> 合理组合包安装与缓存清理，避免仓库元数据过期或无用层增大镜像。</li>
+<li>使用 exec 形式的 <code>ENTRYPOINT</code> / <code>CMD</code>，使应用直接接收信号；若需要 init，选择明确的轻量 init 并测试停止行为。</li>
+<li><code>HEALTHCHECK</code> 只做低成本本地判断，不能代替外部业务探测；编排平台是否使用镜像健康检查需另行确认。</li>
+<li>不用 <code>ARG</code>、<code>ENV</code> 或 <code>COPY</code> 传递构建机密。使用构建器支持的临时 secret mount，且保证输出层不含机密。</li>
+</ul>
+<div class="admonition warning">
+<p class="admonition-title">Docker 组通常等价于宿主机 root</p>
+<p>能访问未受限 Docker daemon 的用户可以挂载宿主文件系统或启动特权容器。不要把加入 <code>docker</code> 组当作普通的免提权便利，应按管理员权限管理并审计。</p>
+</div>
+<h3 id="_7">容器运行<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
+<p>运行时应显式定义：</p>
+<ul>
+<li>非 root 用户和只读根文件系统；需要写入的路径使用受限临时挂载或卷。</li>
+<li>删除全部 capabilities 后按最小需求增加，禁止 <code>--privileged</code> 作为兼容性捷径。</li>
+<li>CPU、内存、PID 和临时存储边界，以及超限时应用行为。</li>
+<li>网络连接方向、监听地址和发布端口。<code>EXPOSE</code> 只是镜像元数据，不会自动向宿主发布端口。</li>
+<li>日志驱动、轮转和阻塞策略。应用将结构化日志写到标准输出 / 错误，采集器负责传输。</li>
+<li>停止信号与宽限期。应用需要处理信号、停止接收新请求并完成在途工作。</li>
+</ul>
+<p>Rootless mode 能减少 daemon 和容器对应宿主 root 的风险，但网络、存储、cgroup 和低端口能力可能受宿主配置限制；它不是忽略镜像漏洞或错误挂载的理由。</p>
+<h3 id="_8">网络与存储<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
+<p>Docker bridge 网络通常为容器提供私有地址，并通过端口发布将宿主流量转入容器。容器 IP 会变化，应用应通过服务名或编排服务发现通信。<code>--network host</code> 删除网络 namespace 隔离并可能产生端口冲突，只在明确性能或协议需求下采用。</p>
+<p>卷由 Docker 管理生命周期，bind mount 直接暴露宿主路径。后者容易受宿主路径、权限、SELinux 标签和部署差异影响。数据库使用卷仍需应用一致的备份与恢复；复制卷目录未必得到可恢复数据。</p>
+<p>Docker Compose 用声明文件定义多容器开发或单机应用，适合可重复本地环境。它不是自动提供多节点容错的编排系统。Compose 文件也应固定镜像、限制权限并把机密放在受控机制中。</p>
+<h2 id="lxc">LXC<a class="headerlink" href="#lxc" title="Permanent link">&para;</a></h2>
+<p><strong>替代方案</strong>。Linux Containers（LXC）提供低层用户空间工具与库，用于创建和管理共享 Linux 内核的系统容器。系统容器通常运行接近完整发行版的用户空间和多个服务，管理体验类似轻量主机。LXC 与提供更高层 API、镜像和集群体验的 Incus 等项目有关联，但产品、命令和治理不同；本章只讨论 LXC 本身。</p>
+<h3 id="_9">系统容器模型<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
+<p>LXC 配置描述根文件系统、网络、挂载、设备、capabilities、cgroup 与用户 ID 映射。容器可通过发行版模板或镜像创建，再使用 <code>lxc-start</code>、<code>lxc-stop</code>、<code>lxc-info</code>、<code>lxc-attach</code> 等工具管理。确切命令、模板来源和配置键以安装版本手册为准。</p>
+<p>与应用容器相比，LXC 系统容器通常：</p>
+<ul>
+<li>运行 init 和多个守护进程，具有自己的用户、包管理器和服务生命周期；</li>
+<li>更适合整合遗留服务、提供接近虚拟机的 Linux 环境或高密度实验主机；</li>
+<li>需要像服务器一样执行系统补丁、服务清单、日志与配置管理；</li>
+<li>不天然采用 Docker / OCI 镜像作为应用发布单元，迁移和供应链工具链不同。</li>
+</ul>
+<h3 id="_10">非特权与特权容器<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h3>
+<p>非特权 LXC 容器使用 user namespace，把容器内 root 映射到宿主机非 root UID / GID 范围，通常应作为默认选择。宿主需要分配 subordinate ID，并确保映射、文件所有权、备份和共享存储工具正确处理这些数值。</p>
+<p>特权容器中容器 root 更接近宿主 root，内核攻击面和错误设备 / 挂载配置的后果更大。只有无法通过非特权配置满足且风险被明确接受时才采用，并配合严格 capability、设备、AppArmor / SELinux、seccomp 与网络限制。</p>
+<p>嵌套运行 Docker、访问物理设备、使用某些文件系统或系统调用时，常见诱惑是放宽整个容器。应先确定需要的单项 capability、设备节点、挂载传播和安全配置，避免启用全特权或不受限配置。</p>
+<h3 id="_11">网络、存储与生命周期<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h3>
+<p>LXC 可连接 Linux bridge、veth、macvlan 等网络。网络模式影响二层可达、宿主通信、地址管理和防火墙位置。生产部署必须明确入口与出口过滤在哪里执行，并防止容器伪造地址或绕过宿主策略。</p>
+<p>根文件系统可位于目录、LVM、ZFS、Btrfs 等后端，能力与快照语义不同。快照通常不能自动保证多服务应用一致性，也不是异地备份。克隆系统容器后还要重新生成机器身份、SSH 主机密钥或其他唯一标识，防止重复身份。</p>
+<p>由于 LXC 容器共享宿主内核，来宾发行版的用户空间必须与宿主内核兼容。需要不同内核模块、Windows 内核或强租户隔离时，应选择虚拟机。</p>
+<h2 id="_12">选型比较<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>Docker 应用容器</th>
+<th>LXC 系统容器</th>
+<th>虚拟机</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>交付单元</td>
+<td>镜像加单个或少量前台进程</td>
+<td>接近完整 Linux 用户空间</td>
+<td>虚拟磁盘、固件和独立 OS</td>
+</tr>
+<tr>
+<td>内核</td>
+<td>与宿主共享</td>
+<td>与宿主共享</td>
+<td>每台虚拟机独立</td>
+</tr>
+<tr>
+<td>启动与密度</td>
+<td>通常高密度、启动快</td>
+<td>通常比虚拟机轻量</td>
+<td>开销较高但隔离边界更强</td>
+</tr>
+<tr>
+<td>更新方式</td>
+<td>重建镜像并替换容器</td>
+<td>可像主机原地更新，也可重建</td>
+<td>镜像替换或来宾内更新</td>
+</tr>
+<tr>
+<td>生态</td>
+<td>OCI 注册表、CI/CD、编排生态广</td>
+<td>Linux 主机管理与 LXC 工具</td>
+<td>云和传统基础设施成熟</td>
+</tr>
+<tr>
+<td>主要风险</td>
+<td>daemon 权限、镜像供应链、错误挂载</td>
+<td>特权容器、宿主内核、系统漂移</td>
+<td>镜像膨胀、补丁与容量成本</td>
+</tr>
+</tbody>
+</table>
+<p>选择时回答：</p>
+<ol>
+<li>工作负载是单个可替换应用，还是需要完整 init、多个服务和接近主机的管理体验？</li>
+<li>租户是否互不信任，是否需要不同内核、模块或操作系统？强隔离通常优先虚拟机或专用节点。</li>
+<li>团队已有 OCI 构建与注册表流程，还是主机镜像、包管理和配置管理流程？</li>
+<li>数据状态在哪里，如何备份、恢复和迁移？容器技术不能替代数据库恢复设计。</li>
+<li>宿主机内核、运行时、镜像和容器用户空间分别由谁补丁，维护窗口如何协调？</li>
+<li>从 Docker 迁到 LXC（或反向）时，镜像格式、入口、服务管理、网络、卷和监控如何转换？</li>
+</ol>
+<p>不要为了“容器化”把稳定虚拟机原样塞入特权系统容器，也不要把需要多个紧耦合系统服务的遗留环境强拆为大量应用容器。先测量隔离、交付和运维收益。</p>
+<h2 id="docker_1">最小实践：最小权限 Docker 容器<a class="headerlink" href="#docker_1" title="Permanent link">&para;</a></h2>
+<p>该实践运行一个只读、无网络、删除全部 capabilities、限制内存和进程数的临时容器。它只打印身份和文件系统测试结果，结束后自动删除。首次运行会从 Docker Hub 拉取公开镜像；在受限环境中请改用组织批准的镜像仓库和摘要。</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nv">container_name</span><span class="o">=</span><span class="s2">"container-practice-</span><span class="k">$(</span>date<span class="w"> </span>+%s<span class="k">)</span><span class="s2">-</span><span class="nv">$$</span><span class="s2">"</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span>--name<span class="w"> </span><span class="s2">"</span><span class="nv">$container_name</span><span class="s2">"</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">    </span>--network<span class="w"> </span>none<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">    </span>--read-only<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">    </span>--tmpfs<span class="w"> </span>/tmp:rw,noexec,nosuid,size<span class="o">=</span>16m<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">    </span>--cap-drop<span class="w"> </span>ALL<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">    </span>--security-opt<span class="w"> </span>no-new-privileges<span class="o">=</span><span class="nb">true</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">    </span>--user<span class="w"> </span><span class="m">65534</span>:65534<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">    </span>--memory<span class="w"> </span>64m<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">    </span>--pids-limit<span class="w"> </span><span class="m">32</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">    </span>alpine:3.22<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">    </span>/bin/sh<span class="w"> </span>-eu<span class="w"> </span>-c<span class="w"> </span><span class="s1">'</span>
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="s1">        id</span>
+</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a><span class="s1">        test ! -w /</span>
+</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="s1">        printf "temporary\n" &gt; /tmp/probe</span>
+</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="s1">        test "$(cat /tmp/probe)" = temporary</span>
+</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="s1">        if wget -q -T 2 -O /dev/null https://example.com/; then</span>
+</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="s1">            echo "unexpected network access" &gt;&amp;2</span>
+</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="s1">            exit 1</span>
+</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="s1">        fi</span>
+</span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="s1">        echo "isolation checks passed"</span>
+</span><span id="__span-1-23"><a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a><span class="s1">    '</span>
+</span><span id="__span-1-24"><a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a><span class="nb">test</span><span class="w"> </span>-z<span class="w"> </span><span class="s2">"</span><span class="k">$(</span>docker<span class="w"> </span>ps<span class="w"> </span>--all<span class="w"> </span>--quiet<span class="w"> </span>--filter<span class="w"> </span><span class="s2">"name=^/</span><span class="si">${</span><span class="nv">container_name</span><span class="si">}</span>$<span class="s2">"</span><span class="k">)</span><span class="s2">"</span>
+</span></code></pre></div>
+<p>预期看到非 root 身份和 <code>isolation checks passed</code>。如果镜像中 <code>wget</code> 对无网络失败，脚本会继续；若意外访问成功，练习会失败。最后一条命令确认容器已自动删除。</p>
+<div class="admonition note">
+<p class="admonition-title">这不是完整沙箱证明</p>
+<p>练习只验证几项配置的可见行为，不证明内核、运行时或镜像没有漏洞。生产还需要补丁、seccomp / AppArmor / SELinux、镜像验证、网络策略、节点隔离和持续监控。</p>
+</div>
+<h3 id="_13">可选构建实践<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h3>
+<p>在空的练习目录中创建以下 <code>Dockerfile</code>：</p>
+<div class="language-dockerfile highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="c"># syntax=docker/dockerfile:1</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="k">FROM</span><span class="w"> </span><span class="s">alpine:3.22</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="k">RUN</span><span class="w"> </span>addgroup<span class="w"> </span>-S<span class="w"> </span>app<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>adduser<span class="w"> </span>-S<span class="w"> </span>-G<span class="w"> </span>app<span class="w"> </span>app
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="k">USER</span><span class="w"> </span><span class="s">app</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="k">ENTRYPOINT</span><span class="w"> </span><span class="p">[</span><span class="s2">"/bin/sh"</span><span class="p">,</span><span class="w"> </span><span class="s2">"-c"</span><span class="p">]</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="k">CMD</span><span class="w"> </span><span class="p">[</span><span class="s2">"printf 'hello from uid=%s\\n' \"$(id -u)\""</span><span class="p">]</span>
+</span></code></pre></div>
+<p>构建并查看镜像历史：</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="nv">image_tag</span><span class="o">=</span><span class="s2">"local/container-practice:practice-</span><span class="k">$(</span>date<span class="w"> </span>+%s<span class="k">)</span><span class="s2">-</span><span class="nv">$$</span><span class="s2">"</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>docker<span class="w"> </span>build<span class="w"> </span>--pull<span class="w"> </span>--tag<span class="w"> </span><span class="s2">"</span><span class="nv">$image_tag</span><span class="s2">"</span><span class="w"> </span>.
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>docker<span class="w"> </span>image<span class="w"> </span>inspect<span class="w"> </span><span class="s2">"</span><span class="nv">$image_tag</span><span class="s2">"</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>docker<span class="w"> </span><span class="nb">history</span><span class="w"> </span>--no-trunc<span class="w"> </span><span class="s2">"</span><span class="nv">$image_tag</span><span class="s2">"</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>docker<span class="w"> </span>run<span class="w"> </span>--rm<span class="w"> </span>--read-only<span class="w"> </span>--cap-drop<span class="w"> </span>ALL<span class="w"> </span>--network<span class="w"> </span>none<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="w">    </span><span class="s2">"</span><span class="nv">$image_tag</span><span class="s2">"</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>docker<span class="w"> </span>image<span class="w"> </span>rm<span class="w"> </span><span class="s2">"</span><span class="nv">$image_tag</span><span class="s2">"</span>
+</span></code></pre></div>
+<p>本地标签不是生产来源证明。实际发布应在 CI 中生成软件物料清单（SBOM）、漏洞结果、来源证明与签名，并按不可变摘要部署。</p>
+<h2 id="_14">生产实践<a class="headerlink" href="#_14" title="Permanent link">&para;</a></h2>
+<h3 id="_15">镜像供应链<a class="headerlink" href="#_15" title="Permanent link">&para;</a></h3>
+<ul>
+<li>基础镜像只来自批准来源，固定摘要并由自动化定期更新；镜像越小不必然越安全，关键是内容可盘点、可修补。</li>
+<li>在隔离构建器中构建，不挂载开发者家目录或永久云凭据。依赖和基础镜像经过代理、校验与保留。</li>
+<li>为镜像生成 SBOM、漏洞扫描、构建来源证明和签名，在准入阶段验证签名者、仓库与策略。</li>
+<li>同一镜像逐级晋升，不在不同环境重新构建“相同版本”。记录源码提交、构建参数、镜像摘要和部署环境。</li>
+<li>漏洞修复通过更新基础镜像与重新构建完成；运行中的旧容器不会因注册表标签更新而自动获得补丁。</li>
+</ul>
+<h3 id="_16">运行时安全<a class="headerlink" href="#_16" title="Permanent link">&para;</a></h3>
+<ul>
+<li>默认非 root、只读根、删除 capabilities、<code>no-new-privileges</code>、受支持 seccomp 和 AppArmor / SELinux 策略。</li>
+<li>禁止特权容器、宿主 PID / network namespace、任意设备和 Docker socket；例外必须有所有者、期限与隔离节点。</li>
+<li>机密以运行时受控挂载或短期身份提供，不写入镜像层、环境转储或 Dockerfile。容器环境变量可被进程和调试接口读取。</li>
+<li>限制入口与出口网络，管理面与业务面分离。容器端口发布前确认绑定地址，避免默认暴露到所有接口。</li>
+<li>宿主机最小化安装并及时修补内核、固件和运行时；生产容器节点不作为通用登录和构建主机。</li>
+</ul>
+<h3 id="_17">可靠性与数据<a class="headerlink" href="#_17" title="Permanent link">&para;</a></h3>
+<ul>
+<li>应用处理终止信号并在宽限期内优雅退出；启动、就绪、存活和业务健康是不同信号。</li>
+<li>设置 CPU、内存和 PID 边界，通过压力测试确定节流、OOM 和重启行为，避免所有副本同时触顶。</li>
+<li>无状态容器通过替换恢复；有状态服务按应用一致性备份卷和外部数据，并在不同故障域演练恢复。</li>
+<li>容器、镜像和卷有明确生命周期。清理任务只删除可重建且已过保留期的对象，先输出计划并限制作用域。</li>
+<li>Docker daemon 或 LXC 管理面不可用时，定义现有工作负载是否继续、如何安全重启及配置从何恢复。</li>
+</ul>
+<h3 id="_18">可观测性与成本<a class="headerlink" href="#_18" title="Permanent link">&para;</a></h3>
+<ul>
+<li>采集容器与宿主两层 CPU、内存压力、I/O、网络、重启和 OOM 事件，并保留镜像摘要、节点和部署版本标签。</li>
+<li>应用日志写标准流并由驱动轮转、传输；高日志速率要有背压和磁盘上限，避免填满宿主分区。</li>
+<li>对镜像层、构建缓存、注册表、卷快照和网络出口设置保留与预算。多架构镜像和重复基础层会增加存储。</li>
+<li>密度优化不能牺牲故障域。单节点放置过多关键副本会让一次内核或运行时故障造成集中中断。</li>
+</ul>
+<h3 id="lxc_1">LXC 专项基线<a class="headerlink" href="#lxc_1" title="Permanent link">&para;</a></h3>
+<ul>
+<li>优先非特权容器，集中管理 UID / GID 子区间并监控耗尽或重叠。</li>
+<li>将每个系统容器纳入主机资产、补丁、配置、备份和漏洞管理，不因其启动快而当作临时进程忽略。</li>
+<li>限定可挂载文件系统、设备、内核接口和网络模式；评审任何 <code>lxc.apparmor.profile</code>、capability 或设备放宽。</li>
+<li>克隆后重置机器唯一身份，验证日志、监控和配置管理不会把两个容器视为同一节点。</li>
+<li>宿主升级前在代表性系统容器验证用户空间兼容性，并保留虚拟机或替代节点恢复路径。</li>
+</ul>
+<h2 id="_19">常见误区<a class="headerlink" href="#_19" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>把容器当作虚拟机安全边界</strong>：共享内核使攻击面和故障域不同，不可信租户通常需要更强隔离。</li>
+<li><strong>使用 <code>latest</code> 就认为总能获得修复</strong>：标签可移动，运行实例不会自动更新，回滚也失去明确目标。</li>
+<li><strong>镜像扫描无高危就代表安全</strong>：扫描可能缺少运行配置、未知组件和可利用性上下文。</li>
+<li><strong>在 Dockerfile 中删除机密即可</strong>：早期层仍可能保存内容，构建机密必须从未进入持久层。</li>
+<li><strong>用 root 只是容器内部方便</strong>：错误挂载、内核漏洞和过量 capabilities 会放大 root 的后果。</li>
+<li><strong>挂载 Docker socket 管理兄弟容器</strong>：这通常授予宿主机级控制，应通过受限管理 API 或独立控制面替代。</li>
+<li><strong>只限制内存，不验证 OOM</strong>：应用可能损坏在途操作、频繁重启或让依赖承受重试风暴。</li>
+<li><strong>把容器可写层保存为数据库备份</strong>：文件可能不一致，容器删除后状态也可能丢失。</li>
+<li><strong>把 LXC 系统容器当作无需补丁的镜像</strong>：它通常运行完整用户空间和多个服务，仍有长期系统维护责任。</li>
+<li><strong>遇到 LXC 兼容问题就改成特权容器</strong>：应先定位具体 capability、设备、映射或策略需求。</li>
+</ul>
+<h2 id="_20">动手练习<a class="headerlink" href="#_20" title="Permanent link">&para;</a></h2>
+<ol>
+<li>运行最小权限实践，并用 <code>docker inspect</code> 找出用户、只读根、网络模式、内存和 PID 限制对应字段。</li>
+<li>构建可选镜像，分别检查镜像配置和历史，证明没有加入本地 <code>.git</code> 或凭据文件。</li>
+<li>编写一个 20 行以内的 HTTP 服务，在容器中以非 root 运行；实现终止信号处理，并验证停止时能在宽限期退出。</li>
+<li>为同一容器设置较小 CPU 与内存限制，在测试负载下观察节流和 OOM；记录应用、容器和宿主三层证据。</li>
+<li>设计一个数据库容器备份流程，明确一致性点、加密、异地副本、保留期限和恢复验收，不能只写“备份卷”。</li>
+<li>在专用 Linux 测试机上创建一个非特权 LXC 容器，记录 UID 映射、网络、存储后端和安全配置；若无专用环境，只完成配置评审，不在共享主机尝试。</li>
+<li>对 Docker、非特权 LXC 和虚拟机做威胁模型，分别说明宿主内核漏洞、错误挂载和恶意租户的影响范围。</li>
+<li>选择一个公开镜像，以摘要拉取并生成 SBOM，验证其中操作系统包来源，然后写出补丁触发与重新部署流程。</li>
+</ol>
+<h2 id="_21">完成检查<a class="headerlink" href="#_21" title="Permanent link">&para;</a></h2>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能解释 namespace、cgroup、capability、seccomp 和强制访问控制的不同职责。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能说明容器共享宿主机内核，以及它与虚拟机的隔离差异。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能解释 OCI 镜像层、标签、摘要、可写层和注册表。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能构建并运行非 root、只读、无额外 capability 且有限资源的 Docker 容器。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能说明 Docker daemon、socket、网络、卷和停止信号的生产风险。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能解释 LXC 系统容器及特权 / 非特权模型，并说明何时选择它。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能按工作负载、隔离、生态、数据和维护成本选择 Docker、LXC 或虚拟机。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能设计镜像来源证明、签名、扫描、补丁和按摘要晋升流程。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能监控容器与宿主资源，并通过恢复演练验证有状态数据。</li>
+</ul>
+<h2 id="_22">官方延伸阅读<a class="headerlink" href="#_22" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="https://docs.docker.com/">Docker 官方文档</a>、<a href="https://docs.docker.com/reference/dockerfile/">Dockerfile 参考</a>与<a href="https://docs.docker.com/engine/security/">Docker Engine 安全</a></li>
+<li><a href="https://docs.docker.com/engine/security/rootless/">Docker Rootless mode</a>、<a href="https://docs.docker.com/engine/containers/resource_constraints/">资源约束</a>与<a href="https://docs.docker.com/engine/storage/">存储文档</a></li>
+<li><a href="https://linuxcontainers.org/lxc/">LXC 官方站点</a>、<a href="https://linuxcontainers.org/lxc/getting-started/">LXC 入门</a>与<a href="https://linuxcontainers.org/lxc/manpages/">LXC 手册页</a></li>
+<li><a href="https://man7.org/linux/man-pages/man7/namespaces.7.html">Linux namespaces 手册</a>、<a href="https://docs.kernel.org/admin-guide/cgroup-v2.html">cgroup v2 文档</a>与<a href="https://man7.org/linux/man-pages/man7/capabilities.7.html">capabilities 手册</a></li>
+<li><a href="https://github.com/opencontainers/image-spec">OCI Image Specification</a>、<a href="https://github.com/opencontainers/runtime-spec">OCI Runtime Specification</a>与<a href="https://github.com/opencontainers/distribution-spec">OCI Distribution Specification</a></li>
+<li><a href="https://containerd.io/docs/">containerd 文档</a>、<a href="https://github.com/opencontainers/runc">runc 项目</a>与<a href="https://docs.docker.com/build/buildkit/">BuildKit 文档</a></li>
+<li><a href="https://docs.sigstore.dev/">Sigstore 文档</a>、<a href="https://slsa.dev/">SLSA</a>与<a href="https://spdx.dev/">SPDX</a></li>
+</ul>
+
+
+  <nav class="md-tags" >
+    
+      
+      
+      
+      
+        <span class="md-tag">容器与平台</span>
+      
+    
+      
+      
+      
+      
+        <span class="md-tag">软件供应链</span>
+      
+    
+      
+      
+      
+      
+        <span class="md-tag">安全治理</span>
+      
+    
+  </nav>
+
+
+
+
+
+
+
+
+  
+  
+
+
+
+  
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-circle-arrow-up" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16 12-4-4-4 4M12 16V8"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="页脚" >
+        
+          
+          <a href="../vcs-hosting/" class="md-footer__link md-footer__link--prev" aria-label="上一页: 版本控制托管">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                上一页
+              </span>
+              <div class="md-ellipsis">
+                版本控制托管
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../common-infrastructure-services/" class="md-footer__link md-footer__link--next" aria-label="下一页: 常见基础设施服务">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                下一页
+              </span>
+              <div class="md-ellipsis">
+                常见基础设施服务
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://zensical.org/" target="_blank" rel="noopener">
+      Zensical
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate":null,"base":"..","features":["announce.dismiss","content.action.edit","content.action.view","content.code.annotate","content.code.copy","content.code.select","content.footnote.tooltips","content.tabs.link","content.tooltips","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.path","navigation.sections","navigation.top","navigation.tracking","search.highlight","toc.follow"],"search":"../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"已复制","clipboard.copy":"复制","search.result.more.one":"在该页上还有 1 个符合条件的结果","search.result.more.other":"在该页上还有 # 个符合条件的结果","search.result.none":"没有找到符合条件的结果","search.result.one":"找到 1 个符合条件的结果","search.result.other":"# 个符合条件的结果","search.result.placeholder":"键入以开始搜索","search.result.term.missing":"缺少","select.version":"选择当前版本"},"version":null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.e886cdf1.min.js"></script>
+      
+    
+  </body>
+</html>

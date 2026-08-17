@@ -1,0 +1,2419 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="本章围绕 Git 的对象模型、工作区、暂存区、提交图和远端引用，讲解分支、合并、变基、冲突调查与安全恢复，并建立适用于代码、配置和文档的可审查版本控制流程。">
+      
+      
+        <meta name="author" content="oaixnah">
+      
+      
+        <link rel="canonical" href="https://devops.roadmap.oaix.tech/version-control-systems/">
+      
+      
+        <link rel="prev" href="../terminal-knowledge/">
+      
+      
+        <link rel="next" href="../vcs-hosting/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/favicon.svg">
+      <meta name="generator" content="zensical-0.0.55">
+    
+    
+      
+        <title>版本控制系统 - DevOps Roadmap 中文手册</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../assets/stylesheets/modern/main.20815dad.min.css">
+      
+        
+          
+        
+        <link rel="stylesheet" href="../assets/stylesheets/modern/palette.dfe2e883.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+  
+
+
+  
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FLXQC4YQJF"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-FLXQC4YQJF');
+</script>
+
+  
+  
+
+
+<script type="text/javascript">
+    (function(c,l,a,r,i,t,y){
+        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+    })(window, document, "clarity", "script", "y3p2irnl2z");
+</script>
+
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-label="导航栏"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#_1" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href="./.." title="DevOps Roadmap 中文手册" class="md-header__button md-logo" aria-label="DevOps Roadmap 中文手册" data-md-component="logo">
+      
+  <img src="../assets/logo.svg" alt="DevOps Roadmap 中文手册">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer" aria-label="导航栏">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            DevOps Roadmap 中文手册
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              版本控制系统
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun-moon" viewBox="0 0 24 24"><path d="M12 2v2M14.837 16.385a6 6 0 1 1-7.223-7.222c.624-.147.97.66.715 1.248a4 4 0 0 0 5.26 5.259c.589-.255 1.396.09 1.248.715M16 12a4 4 0 0 0-4-4M19 5l-1.256 1.256M20 12h2"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search" aria-label="查找">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="查找">
+  <button type="button" class="md-search__button">
+    查找
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+    </div>
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="./.." title="DevOps Roadmap 中文手册" class="md-nav__button md-logo" aria-label="DevOps Roadmap 中文手册" data-md-component="logo">
+      
+  <img src="../assets/logo.svg" alt="DevOps Roadmap 中文手册">
+
+    </a>
+    DevOps Roadmap 中文手册
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  首页
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  基础能力
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  基础能力
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../learn-a-programming-language/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  学习一种编程语言
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../operating-system/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  操作系统
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../terminal-knowledge/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  终端知识
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  版本控制系统
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  版本控制系统
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        学习目标
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        前置知识
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        核心原理
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="核心原理">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        快照与对象
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        三棵树与引用
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        提交图、合并与变基
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        本地与远端
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        日常工作流
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="日常工作流">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        初始化与身份
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        查看并选择性提交
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        忽略文件与属性
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        分支与集成
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_14" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        标签与版本
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_15" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        调查与恢复
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="调查与恢复">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_16" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        调查历史
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_17" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        恢复选择
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_18" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        选型思路
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="选型思路">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_19" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        仓库边界
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_20" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        分支策略
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_21" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        最小实践：本地提交、合并与还原
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_22" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        生产实践
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="生产实践">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_23" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        变更质量
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_24" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        安全与供应链
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_25" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        可靠性与恢复
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_26" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        性能与维护
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_27" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        常见误区
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_28" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        动手练习
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_29" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        完成检查
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_30" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        官方延伸阅读
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../vcs-hosting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  版本控制托管
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../containers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  容器
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  基础设施与云
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  基础设施与云
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../common-infrastructure-services/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  常见基础设施服务
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../networking-and-protocols/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  网络与协议
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cloud-providers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  云服务商
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../serverless/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  无服务器计算
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../provisioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  基础设施置备
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  配置管理
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  持续交付与运行
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  持续交付与运行
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ci-cd-tools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  CI/CD 工具
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../secret-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  机密管理
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../infrastructure-monitoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  基础设施监控
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../logs-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  日志管理
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../container-orchestration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  容器编排
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../observability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  可观测性
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  平台与架构治理
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  平台与架构治理
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../artifact-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  制品管理
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gitops/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  GitOps
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../service-mesh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  服务网格
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cloud-design-patterns/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  云设计模式
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        学习目标
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        前置知识
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        核心原理
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="核心原理">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        快照与对象
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        三棵树与引用
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        提交图、合并与变基
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        本地与远端
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        日常工作流
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="日常工作流">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        初始化与身份
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        查看并选择性提交
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        忽略文件与属性
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        分支与集成
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_14" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        标签与版本
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_15" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        调查与恢复
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="调查与恢复">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_16" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        调查历史
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_17" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        恢复选择
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_18" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        选型思路
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="选型思路">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_19" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        仓库边界
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_20" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        分支策略
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_21" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        最小实践：本地提交、合并与还原
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_22" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        生产实践
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="生产实践">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_23" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        变更质量
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_24" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        安全与供应链
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_25" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        可靠性与恢复
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_26" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        性能与维护
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_27" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        常见误区
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_28" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        动手练习
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_29" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        完成检查
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_30" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        官方延伸阅读
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+  <nav class="md-path" aria-label="导航栏" >
+    <ol class="md-path__list">
+      
+        
+  
+  
+    <li class="md-path__item">
+      <a href="./.." class="md-path__link">
+        
+  
+  <span class="md-ellipsis">
+    首页
+  </span>
+
+      </a>
+    </li>
+  
+
+      
+      
+        
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      <li class="md-path__item">
+        <a href="../learn-a-programming-language/" class="md-path__link">
+          
+  
+  <span class="md-ellipsis">
+    基础能力
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ol>
+  </nav>
+
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+<h1 id="_1">版本控制系统<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<p>版本控制系统（Version Control System，VCS）让代码、配置和文档的每次变化都有可比较的历史，使多人能够并行工作，也为审查、发布、回滚和审计提供共同依据。DevOps 工作中的流水线、基础设施定义和运行手册都应进入版本控制，否则生产状态会依赖聊天记录、个人目录或不可复现的点击操作。</p>
+<p>本章聚焦分布式版本控制系统 Git。托管平台提供评审、权限和自动化能力，但 Git 的提交、分支与对象模型首先存在于本地；平台比较参见<a href="../vcs-hosting/">版本控制托管</a>。</p>
+<h2 id="_2">学习目标<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>完成本章后，你应当能够：</p>
+<ul>
+<li>解释工作区、暂存区、提交、引用、对象数据库和远端跟踪分支之间的关系。</li>
+<li>创建仓库并完成选择性暂存、提交、分支、合并、变基和冲突处理。</li>
+<li>使用 <code>status</code>、<code>diff</code>、<code>log</code>、<code>show</code>、<code>blame</code> 与 <code>bisect</code> 调查变化来源。</li>
+<li>根据变更是否共享，安全选择恢复、还原、重置或回退方法。</li>
+<li>设计包含小提交、代码评审、分支保护、提交签名和秘密扫描的生产协作流程。</li>
+</ul>
+<h2 id="_3">前置知识<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<ul>
+<li>能在<a href="../terminal-knowledge/">终端知识</a>中介绍的 Bash 或 PowerShell 环境运行命令。</li>
+<li>理解文件路径、文本编码和退出码。</li>
+<li>本章练习会在 <code>mktemp</code> 创建的独立临时仓库中进行，不接触当前项目和远端服务。</li>
+</ul>
+<h2 id="_4">核心原理<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<h3 id="_5">快照与对象<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
+<p>Git 将一次提交视为项目目录树的快照，而不是简单保存“第几行改了什么”。未变化文件可复用已有对象，因此不需要重复存储完整内容。核心对象包括：</p>
+<ul>
+<li><strong>blob</strong>：文件内容，不包含文件名。</li>
+<li><strong>tree</strong>：目录结构，把名称和模式关联到 blob 或子 tree。</li>
+<li><strong>commit</strong>：指向根 tree 和零个或多个父提交，并记录作者、提交者和说明。</li>
+<li><strong>tag</strong>：附注标签对象可指向提交等对象，并保存标签元数据与签名。</li>
+</ul>
+<p>对象名由内容哈希得到。哈希能帮助发现对象意外损坏并建立不可变引用，但普通提交哈希本身不是作者身份认证；可信身份需要签名、受控密钥和验证策略。</p>
+<pre class="mermaid"><code>flowchart LR
+    Work[工作区] --&gt;|git add| Index[暂存区]
+    Index --&gt;|git commit| Commit[提交对象]
+    Commit --&gt; Parent[父提交]
+    Branch[分支引用] --&gt; Commit
+    Remote[远端引用 origin/main] --&gt; Other[已知远端提交]</code></pre>
+<h3 id="_6">三棵树与引用<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
+<p>日常操作可以理解为比较三份状态：</p>
+<ol>
+<li><strong>HEAD</strong>：当前检出的提交，通常由当前分支间接指向。</li>
+<li><strong>暂存区（index）</strong>：下一次提交将包含的快照。</li>
+<li><strong>工作区</strong>：磁盘上当前可编辑的文件。</li>
+</ol>
+<p><code>git diff</code> 默认比较工作区与暂存区；<code>git diff --staged</code> 比较暂存区与 <code>HEAD</code>；<code>git diff HEAD</code> 比较工作区整体与 <code>HEAD</code>。先确认比较边界，才能正确判断“改动去哪了”。</p>
+<p>分支只是一个可移动的提交引用，创建分支不会复制整个目录。<code>HEAD</code> 通常指向当前分支；处于 detached HEAD 时，它直接指向某个提交，新提交若没有创建分支引用，之后可能难以找到。</p>
+<h3 id="_7">提交图、合并与变基<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
+<p>每个提交指向父提交，形成有向无环图。合并保留两条历史并创建双亲提交（若不能快进）；变基则把一组提交重新应用到新基点，生成内容相似但身份不同的新提交。</p>
+<ul>
+<li><strong>合并（merge）</strong>保留真实分叉关系，适合共享分支和需要明确集成节点的流程。</li>
+<li><strong>变基（rebase）</strong>可整理尚未共享的本地提交，使线性阅读更容易；它会重写提交，已共享分支上使用会给协作者造成重复历史。</li>
+<li><strong>拣选（cherry-pick）</strong>把指定提交的补丁应用到当前位置，适合有选择地回移修复，但会生成新提交且可能遗漏依赖变化。</li>
+</ul>
+<p>冲突不是 Git 损坏，而是多个变化无法自动组合。解决者必须理解两边意图，编辑最终内容，运行测试，再标记为已解决；不能机械选择“ours”或“theirs”。</p>
+<h3 id="_8">本地与远端<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
+<p>远端是另一个 Git 仓库的简短名称和 URL。<code>git fetch</code> 下载对象并更新远端跟踪引用，如 <code>origin/main</code>，不会直接修改当前工作区；<code>git pull</code> 通常组合 fetch 与 merge 或 rebase，行为受配置影响。生产操作中分开执行 fetch、检查差异、再集成通常更可控。</p>
+<p><code>git push</code> 请求远端更新引用。普通推送不是把整个本地目录上传，而是发送远端缺少的对象并更新目标引用。被保护分支、权限和服务端检查可能拒绝更新。</p>
+<div class="admonition warning">
+<p class="admonition-title">Git 历史不是秘密保险箱</p>
+<p>文件从最新提交删除后，内容仍可能存在于旧提交、标签、派生仓库、缓存和备份。凭据一旦提交，应立即吊销或轮换，再按协作范围决定是否重写历史。</p>
+</div>
+<h2 id="_9">日常工作流<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<h3 id="_10">初始化与身份<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>git<span class="w"> </span>init<span class="w"> </span>-b<span class="w"> </span>main
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>git<span class="w"> </span>config<span class="w"> </span>user.name<span class="w"> </span><span class="s1">'Example Developer'</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>git<span class="w"> </span>config<span class="w"> </span>user.email<span class="w"> </span><span class="s1">'developer@example.com'</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>git<span class="w"> </span>status
+</span></code></pre></div>
+<p>示例显式创建 <code>main</code> 分支，并使用仓库级虚构身份，不改变全局配置。作者字段用于归属记录，不构成强身份验证。组织需要可验证来源时，应另外配置 OpenPGP、SSH 或 X.509 等提交签名，并在托管平台执行验证策略。</p>
+<h3 id="_11">查看并选择性提交<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>git<span class="w"> </span>status<span class="w"> </span>--short
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>git<span class="w"> </span>diff
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>git<span class="w"> </span>add<span class="w"> </span>--<span class="w"> </span>path/to/file
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>git<span class="w"> </span>diff<span class="w"> </span>--staged
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>git<span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s1">'docs: explain deployment prechecks'</span>
+</span></code></pre></div>
+<p>先查看工作区差异，再按文件或补丁选择暂存，最后检查 staged 差异。<code>git commit -a</code> 会自动暂存已跟踪文件的修改与删除，但不会包含新文件，也容易把无关修改混入提交。</p>
+<p>提交应表达一个完整、可验证的意图。说明标题写“为什么做或得到什么”，具体背景、风险和后续工作放在正文或评审记录中。格式化和逻辑变化尽量分开，便于审查与追溯。</p>
+<h3 id="_12">忽略文件与属性<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h3>
+<p><code>.gitignore</code> 只影响尚未跟踪的路径，不能停止跟踪已经提交的文件。它适合忽略构建产物、编辑器临时文件和本地缓存，不适合隐藏应有模板或敏感配置。</p>
+<p><code>.gitattributes</code> 可声明文本、换行、差异驱动和合并策略。跨 Windows 与 Unix 团队应明确仓库换行约定，避免整个文件因 CRLF / LF 转换显示为变化。二进制大文件需要评估 Git LFS 或制品仓库，不应直接把每次构建产物提交到普通 Git 历史。</p>
+<h3 id="_13">分支与集成<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>git<span class="w"> </span>switch<span class="w"> </span>-c<span class="w"> </span>docs/prechecks
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="c1"># 编辑并提交后：</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>git<span class="w"> </span>switch<span class="w"> </span>main
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>git<span class="w"> </span>merge<span class="w"> </span>--no-ff<span class="w"> </span>docs/prechecks
+</span></code></pre></div>
+<p>短生命周期分支减少长期漂移。团队需要明确主干、发布分支、修复回移和删除旧分支的规则，但分支模型应服务发布频率与合规要求，不应为了流程图而制造等待。</p>
+<p>变基尚未共享的功能分支：</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>git<span class="w"> </span>fetch<span class="w"> </span>origin
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>git<span class="w"> </span>rebase<span class="w"> </span>origin/main
+</span></code></pre></div>
+<p>遇到冲突时，先运行 <code>git status</code>，编辑冲突文件并测试，然后 <code>git add</code> 和 <code>git rebase --continue</code>。如果发现基点或目标错误，可用 <code>git rebase --abort</code> 回到开始前状态。</p>
+<h3 id="_14">标签与版本<a class="headerlink" href="#_14" title="Permanent link">&para;</a></h3>
+<p>附注标签适合标记版本或审计节点：</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>git<span class="w"> </span>tag<span class="w"> </span>-a<span class="w"> </span>v1.0.0<span class="w"> </span>-m<span class="w"> </span><span class="s1">'Release v1.0.0'</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>git<span class="w"> </span>show<span class="w"> </span>v1.0.0
+</span></code></pre></div>
+<p>标签只是引用，不等于可复现制品。发布还应记录构建环境、依赖、制品摘要、签名和发布说明。不要移动已经公开的版本标签；需要修正时发布新版本并说明旧版本状态。</p>
+<h2 id="_15">调查与恢复<a class="headerlink" href="#_15" title="Permanent link">&para;</a></h2>
+<h3 id="_16">调查历史<a class="headerlink" href="#_16" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>git log --graph --decorate --oneline --all</code> 查看提交图和引用。</li>
+<li><code>git show &lt;commit&gt;</code> 查看提交元数据与补丁。</li>
+<li><code>git log -- path/to/file</code> 跟踪文件历史；文件重命名可结合 <code>--follow</code>，但复杂拆分仍需人工判断。</li>
+<li><code>git blame</code> 显示每行最后一次变化，适合寻找上下文，不应作为追责工具；格式化可能掩盖原始设计提交。</li>
+<li><code>git bisect</code> 通过二分定位首次出现问题的提交，若有稳定自动测试可显著减少排查次数。</li>
+<li><code>git reflog</code> 记录本地引用移动，可帮助找回误删分支或重置前提交；它是本地、有过期和清理期限的恢复线索，不是备份。</li>
+</ul>
+<h3 id="_17">恢复选择<a class="headerlink" href="#_17" title="Permanent link">&para;</a></h3>
+<p>先问两个问题：变化是否已共享？希望恢复工作区、暂存区，还是提交历史？</p>
+<table>
+<thead>
+<tr>
+<th>目标</th>
+<th>常用方式</th>
+<th>历史影响</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>丢弃某个未暂存文件的修改</td>
+<td><code>git restore -- file</code></td>
+<td>不创建提交，未保存内容会丢失</td>
+</tr>
+<tr>
+<td>从暂存区移出但保留工作区修改</td>
+<td><code>git restore --staged -- file</code></td>
+<td>不改变文件内容</td>
+</tr>
+<tr>
+<td>撤销一个已共享提交</td>
+<td><code>git revert &lt;commit&gt;</code></td>
+<td>新增反向提交，保留审计历史</td>
+</tr>
+<tr>
+<td>移动未共享分支引用</td>
+<td><code>git reset</code> 的合适模式</td>
+<td>可重写本地历史，必须先确认三棵树影响</td>
+</tr>
+<tr>
+<td>找回最近移动前的提交</td>
+<td><code>git reflog</code> 后创建分支</td>
+<td>依赖本地 reflog 尚未过期</td>
+</tr>
+</tbody>
+</table>
+<p><code>git reset --soft</code>、默认 mixed 和 <code>--hard</code> 对工作区及暂存区影响不同。尤其 <code>--hard</code> 会丢弃已跟踪文件的未提交修改，本章实践不需要使用它。共享历史优先 <code>revert</code>，因为协作者不必重新同步一条被改写的分支。</p>
+<p>暂时切换任务时可以提交一个结构完整的本地提交，或谨慎使用 <code>git stash push -u -m '...'</code>。stash 仍保存在当前仓库中，可能被遗忘，也不适合长期保存或跨机器备份。</p>
+<h2 id="_18">选型思路<a class="headerlink" href="#_18" title="Permanent link">&para;</a></h2>
+<p>本章唯一核心工具是 Git，但仍需选择工作方式和配套存储。</p>
+<h3 id="_19">仓库边界<a class="headerlink" href="#_19" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>单仓库</strong>便于原子修改、统一工具和跨组件重构，但仓库规模、权限分区和 CI 成本可能增长。</li>
+<li><strong>多仓库</strong>可按团队与发布边界隔离权限和生命周期，但跨仓变更需要版本契约、编排和更强的发现能力。</li>
+<li><strong>子模块</strong>精确记录另一个仓库的提交，适合确有独立生命周期的依赖；使用者必须理解初始化、更新和 detached HEAD。它不是通用包管理器。</li>
+<li><strong>Git LFS</strong>用指针替代大文件内容并由独立存储传输，能减小普通对象压力，但增加服务、配额、备份和迁移依赖。</li>
+</ul>
+<h3 id="_20">分支策略<a class="headerlink" href="#_20" title="Permanent link">&para;</a></h3>
+<ul>
+<li>高频部署团队通常适合短分支和主干集成，以自动测试和渐进发布控制风险。</li>
+<li>有多个受支持版本的产品可能需要发布分支，并明确修复从主干向旧版本回移的方向。</li>
+<li>强监管环境可能要求职责分离、审批和不可变发布标签，但审批数量不自动提高质量；每个门禁都应对应具体风险。</li>
+</ul>
+<p>评估策略时比较：变更等待时间、冲突频率、回滚方式、并行维护版本数、审计要求和开发者认知成本。迁移分支模型时先减少长期分支和隐式规则，再调整平台保护配置。</p>
+<h2 id="_21">最小实践：本地提交、合并与还原<a class="headerlink" href="#_21" title="Permanent link">&para;</a></h2>
+<p>以下练习创建独立临时仓库，不读取或修改当前项目，也不连接远端。复制执行后，最后一条命令会删除练习目录。</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nv">practice_dir</span><span class="o">=</span><span class="s2">"</span><span class="k">$(</span>mktemp<span class="w"> </span>-d<span class="k">)</span><span class="s2">"</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>git<span class="w"> </span>-C<span class="w"> </span><span class="s2">"</span><span class="nv">$practice_dir</span><span class="s2">"</span><span class="w"> </span>init<span class="w"> </span>-b<span class="w"> </span>main
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>git<span class="w"> </span>-C<span class="w"> </span><span class="s2">"</span><span class="nv">$practice_dir</span><span class="s2">"</span><span class="w"> </span>config<span class="w"> </span>user.name<span class="w"> </span><span class="s1">'Practice User'</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>git<span class="w"> </span>-C<span class="w"> </span><span class="s2">"</span><span class="nv">$practice_dir</span><span class="s2">"</span><span class="w"> </span>config<span class="w"> </span>user.email<span class="w"> </span><span class="s1">'practice@example.com'</span>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="nb">printf</span><span class="w"> </span><span class="s1">'port=8080\n'</span><span class="w"> </span>&gt;<span class="w"> </span><span class="s2">"</span><span class="si">${</span><span class="nv">practice_dir</span><span class="si">}</span><span class="s2">/app.conf"</span>
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>git<span class="w"> </span>-C<span class="w"> </span><span class="s2">"</span><span class="nv">$practice_dir</span><span class="s2">"</span><span class="w"> </span>add<span class="w"> </span>app.conf
+</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>git<span class="w"> </span>-C<span class="w"> </span><span class="s2">"</span><span class="nv">$practice_dir</span><span class="s2">"</span><span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s1">'config: add initial port'</span>
+</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>
+</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>git<span class="w"> </span>-C<span class="w"> </span><span class="s2">"</span><span class="nv">$practice_dir</span><span class="s2">"</span><span class="w"> </span>switch<span class="w"> </span>-c<span class="w"> </span>feature/health
+</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="nb">printf</span><span class="w"> </span><span class="s1">'health_path=/health\n'</span><span class="w"> </span>&gt;&gt;<span class="w"> </span><span class="s2">"</span><span class="si">${</span><span class="nv">practice_dir</span><span class="si">}</span><span class="s2">/app.conf"</span>
+</span><span id="__span-5-12"><a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>git<span class="w"> </span>-C<span class="w"> </span><span class="s2">"</span><span class="nv">$practice_dir</span><span class="s2">"</span><span class="w"> </span>add<span class="w"> </span>app.conf
+</span><span id="__span-5-13"><a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a>git<span class="w"> </span>-C<span class="w"> </span><span class="s2">"</span><span class="nv">$practice_dir</span><span class="s2">"</span><span class="w"> </span>commit<span class="w"> </span>-m<span class="w"> </span><span class="s1">'config: add health endpoint'</span>
+</span><span id="__span-5-14"><a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a>
+</span><span id="__span-5-15"><a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a>git<span class="w"> </span>-C<span class="w"> </span><span class="s2">"</span><span class="nv">$practice_dir</span><span class="s2">"</span><span class="w"> </span>switch<span class="w"> </span>main
+</span><span id="__span-5-16"><a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a>git<span class="w"> </span>-C<span class="w"> </span><span class="s2">"</span><span class="nv">$practice_dir</span><span class="s2">"</span><span class="w"> </span>merge<span class="w"> </span>--no-ff<span class="w"> </span>feature/health<span class="w"> </span>-m<span class="w"> </span><span class="s1">'merge: health endpoint'</span>
+</span><span id="__span-5-17"><a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a>git<span class="w"> </span>-C<span class="w"> </span><span class="s2">"</span><span class="nv">$practice_dir</span><span class="s2">"</span><span class="w"> </span>log<span class="w"> </span>--graph<span class="w"> </span>--decorate<span class="w"> </span>--oneline<span class="w"> </span>--all
+</span><span id="__span-5-18"><a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a>
+</span><span id="__span-5-19"><a id="__codelineno-5-19" name="__codelineno-5-19" href="#__codelineno-5-19"></a>git<span class="w"> </span>-C<span class="w"> </span><span class="s2">"</span><span class="nv">$practice_dir</span><span class="s2">"</span><span class="w"> </span>revert<span class="w"> </span>--no-edit<span class="w"> </span>-m<span class="w"> </span><span class="m">1</span><span class="w"> </span>HEAD
+</span><span id="__span-5-20"><a id="__codelineno-5-20" name="__codelineno-5-20" href="#__codelineno-5-20"></a><span class="nb">test</span><span class="w"> </span><span class="s2">"</span><span class="k">$(</span>git<span class="w"> </span>-C<span class="w"> </span><span class="s2">"</span><span class="nv">$practice_dir</span><span class="s2">"</span><span class="w"> </span>show<span class="w"> </span>HEAD:app.conf<span class="k">)</span><span class="s2">"</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s1">'port=8080'</span>
+</span><span id="__span-5-21"><a id="__codelineno-5-21" name="__codelineno-5-21" href="#__codelineno-5-21"></a>git<span class="w"> </span>-C<span class="w"> </span><span class="s2">"</span><span class="nv">$practice_dir</span><span class="s2">"</span><span class="w"> </span>status<span class="w"> </span>--short
+</span><span id="__span-5-22"><a id="__codelineno-5-22" name="__codelineno-5-22" href="#__codelineno-5-22"></a>
+</span><span id="__span-5-23"><a id="__codelineno-5-23" name="__codelineno-5-23" href="#__codelineno-5-23"></a>rm<span class="w"> </span>-rf<span class="w"> </span>--<span class="w"> </span><span class="s2">"</span><span class="nv">$practice_dir</span><span class="s2">"</span>
+</span></code></pre></div>
+<p>你应看到功能提交、合并提交和还原提交。<code>revert</code> 没有删除历史，而是创建新提交抵消合并引入的变化。<code>-m 1</code> 把合并提交的第一个父提交指定为主线；实际操作前必须检查提交图，确认要保留哪一侧，错误的主线会还原错误内容。</p>
+<div class="admonition note">
+<p class="admonition-title">练习为何使用 <code>git -C</code></p>
+<p><code>-C</code> 明确指定每条命令作用的仓库，避免因当前目录判断错误而操作正在工作的项目。生产自动化也应显式传递仓库路径并先验证远端与分支。</p>
+</div>
+<h2 id="_22">生产实践<a class="headerlink" href="#_22" title="Permanent link">&para;</a></h2>
+<h3 id="_23">变更质量<a class="headerlink" href="#_23" title="Permanent link">&para;</a></h3>
+<ul>
+<li>每个提交聚焦一个意图并通过对应测试；生成文件与源文件的关系要明确，避免审查者检查重复噪声。</li>
+<li>合并请求保持可审查规模，描述问题、方案、验证、风险和恢复方式。紧急变更可以缩短流程，但不能省略记录和事后复盘。</li>
+<li>使用受保护主分支、必需检查和至少一名有能力的评审者。重要路径使用所有者规则，但要避免唯一审批人成为单点。</li>
+<li>自动格式化、静态检查、测试和安全扫描在本地可运行，在 CI 中以干净环境重复。</li>
+</ul>
+<h3 id="_24">安全与供应链<a class="headerlink" href="#_24" title="Permanent link">&para;</a></h3>
+<ul>
+<li>使用短期或硬件保护的认证方式访问远端，定期清理离职人员、机器人和部署密钥权限。</li>
+<li>启用秘密扫描和提交前检测，但不把钩子当作唯一控制。服务端与 CI 仍应检测，发现泄露先轮换凭据。</li>
+<li>对发布提交和标签使用组织认可的签名方案，验证签名者身份、密钥状态和构建者权限。</li>
+<li>固定第三方 CI action、子模块和依赖的不可变提交或摘要；审查自动化在拉取请求中可获得的令牌权限。</li>
+<li><code>.git</code> 历史可能包含已删除资料，备份、镜像和归档都应受到与源码相同的访问控制。</li>
+</ul>
+<h3 id="_25">可靠性与恢复<a class="headerlink" href="#_25" title="Permanent link">&para;</a></h3>
+<ul>
+<li>托管服务不是唯一备份。定期镜像仓库、默认分支、标签、LFS 对象及必要的平台元数据，并演练恢复。</li>
+<li>在推送前运行 <code>git status</code>、检查远端 URL 和分支；脚本推送时使用最小权限并避免覆盖式更新。</li>
+<li>确需更新已共享功能分支时，使用带租约的方式比无条件强制推送更能防止覆盖他人新提交，但仍需团队协调。</li>
+<li>删除分支前确认提交已合并或有标签保留。依赖 reflog 恢复远端数据是不可靠的。</li>
+</ul>
+<h3 id="_26">性能与维护<a class="headerlink" href="#_26" title="Permanent link">&para;</a></h3>
+<ul>
+<li>不提交构建产物、依赖目录、数据库转储或频繁变化的大二进制文件；使用制品仓库和保留策略。</li>
+<li>大型仓库可评估稀疏检出、部分克隆和提交图优化，但先测量克隆、状态检查和 CI 瓶颈。</li>
+<li>定期升级受支持的 Git 版本，关注安全公告和协议配置。服务器侧维护应由托管平台或经过验证的运维流程执行。</li>
+</ul>
+<h2 id="_27">常见误区<a class="headerlink" href="#_27" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>把 Git 当作共享文件夹</strong>：大提交和模糊说明失去可审查历史，应按意图组织快照。</li>
+<li><strong>使用 <code>git add .</code> 后不检查</strong>：可能提交日志、凭据或无关修改；提交前检查 staged diff。</li>
+<li><strong>认为 <code>.gitignore</code> 能保护秘密</strong>：它只影响未跟踪文件，且可被覆盖；凭据需要独立管理和扫描。</li>
+<li><strong>在共享分支随意变基或强推</strong>：提交身份改变会使协作者重复合并或丢失工作。</li>
+<li><strong>用 <code>reset --hard</code> 解决所有问题</strong>：它可能不可逆地删除未提交修改，先确认三棵树和恢复目标。</li>
+<li><strong>把提交哈希当作可信签名</strong>：哈希标识内容，不证明提交者身份或构建来源。</li>
+<li><strong>只备份默认分支</strong>：标签、其他分支、LFS 对象和平台评审记录也可能是恢复所需信息。</li>
+<li><strong>长期保存 stash</strong>：stash 缺少正常分支的可见协作与生命周期，重要工作应创建分支和提交。</li>
+<li><strong>用 <code>blame</code> 追责个人</strong>：最后改动者未必是设计者；应沿提交、评审和需求上下文调查。</li>
+</ul>
+<h2 id="_28">动手练习<a class="headerlink" href="#_28" title="Permanent link">&para;</a></h2>
+<ol>
+<li>在临时仓库创建两个文件，只暂存其中一个。分别用三种 <code>diff</code> 命令说明工作区、暂存区与 <code>HEAD</code> 的差异。</li>
+<li>创建两个分支修改同一行，制造一次冲突。解决时保留双方意图，运行一个自动断言，再完成合并。</li>
+<li>创建三个提交并用 <code>git bisect run</code> 配合一个返回 0 或 1 的测试脚本定位首次失败提交。记录总测试次数。</li>
+<li>对一个临时提交执行 <code>revert</code>，比较原提交与还原提交的 tree，并解释为什么历史仍然包含原内容。</li>
+<li>从 <code>git reflog</code> 找到一次分支移动前的提交，为其创建 <code>recovery/practice</code> 分支。不要使用 <code>reset --hard</code>。</li>
+<li>为团队拟定分支保护规则，逐条说明其降低的风险、失败时谁可处置以及是否会形成单点。</li>
+<li>检查一个自己的仓库是否包含大文件、生成目录和疑似凭据；只输出路径与类型，不在终端打印敏感内容。</li>
+</ol>
+<h2 id="_29">完成检查<a class="headerlink" href="#_29" title="Permanent link">&para;</a></h2>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能画出工作区、暂存区、<code>HEAD</code> 和远端跟踪引用的关系。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能解释 blob、tree、commit、tag 与分支引用。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能选择性暂存并在提交前检查准确差异。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能根据共享状态选择 merge、rebase 或 cherry-pick。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能安全解决冲突并通过测试验证最终语义。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能使用 log、show、blame、bisect 和 reflog 调查问题。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能区分 restore、revert、reset 的目标和风险。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能说明秘密轮换、提交签名、分支保护和仓库备份的边界。</li>
+</ul>
+<h2 id="_30">官方延伸阅读<a class="headerlink" href="#_30" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="https://git-scm.com/book/zh/v2">Pro Git 中文版</a>、<a href="https://git-scm.com/docs">Git 参考手册</a>与<a href="https://git-scm.com/docs/gittutorial">Git 教程</a></li>
+<li><a href="https://git-scm.com/book/zh/v2/Git-内部原理-Git-对象">Git 对象</a>与<a href="https://git-scm.com/docs/gitglossary">引用规范</a></li>
+<li><a href="https://git-scm.com/docs/git-diff"><code>git diff</code></a>、<a href="https://git-scm.com/docs/git-restore"><code>git restore</code></a>、<a href="https://git-scm.com/docs/git-revert"><code>git revert</code></a>与<a href="https://git-scm.com/docs/git-reset"><code>git reset</code></a></li>
+<li><a href="https://git-scm.com/docs/git-merge"><code>git merge</code></a>、<a href="https://git-scm.com/docs/git-rebase"><code>git rebase</code></a>与<a href="https://git-scm.com/docs/git-bisect"><code>git bisect</code></a></li>
+<li><a href="https://git-scm.com/book/zh/v2/Git-工具-签署工作">Git 签名文档</a>与<a href="https://git-scm.com/docs/gitcredentials">Git 凭据文档</a></li>
+<li><a href="https://git-lfs.com/">Git LFS 官方站点</a>与<a href="https://github.com/git/git/security/advisories">Git 安全公告</a></li>
+</ul>
+
+
+  <nav class="md-tags" >
+    
+      
+      
+      
+      
+        <span class="md-tag">基础能力</span>
+      
+    
+      
+      
+      
+      
+        <span class="md-tag">版本与协作</span>
+      
+    
+      
+      
+      
+      
+        <span class="md-tag">软件供应链</span>
+      
+    
+  </nav>
+
+
+
+
+
+
+
+
+  
+  
+
+
+
+  
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-circle-arrow-up" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16 12-4-4-4 4M12 16V8"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="页脚" >
+        
+          
+          <a href="../terminal-knowledge/" class="md-footer__link md-footer__link--prev" aria-label="上一页: 终端知识">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                上一页
+              </span>
+              <div class="md-ellipsis">
+                终端知识
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../vcs-hosting/" class="md-footer__link md-footer__link--next" aria-label="下一页: 版本控制托管">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                下一页
+              </span>
+              <div class="md-ellipsis">
+                版本控制托管
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://zensical.org/" target="_blank" rel="noopener">
+      Zensical
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate":null,"base":"..","features":["announce.dismiss","content.action.edit","content.action.view","content.code.annotate","content.code.copy","content.code.select","content.footnote.tooltips","content.tabs.link","content.tooltips","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.path","navigation.sections","navigation.top","navigation.tracking","search.highlight","toc.follow"],"search":"../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"已复制","clipboard.copy":"复制","search.result.more.one":"在该页上还有 1 个符合条件的结果","search.result.more.other":"在该页上还有 # 个符合条件的结果","search.result.none":"没有找到符合条件的结果","search.result.one":"找到 1 个符合条件的结果","search.result.other":"# 个符合条件的结果","search.result.placeholder":"键入以开始搜索","search.result.term.missing":"缺少","select.version":"选择当前版本"},"version":null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.e886cdf1.min.js"></script>
+      
+    
+  </body>
+</html>

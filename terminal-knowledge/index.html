@@ -1,0 +1,2814 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="本章解释终端、Shell、标准流和退出码的协作方式，结合 Bash、PowerShell、进程与性能诊断、网络和文本工具及常用编辑器，训练安全、可复现且有证据的命令行排障方法。">
+      
+      
+        <meta name="author" content="oaixnah">
+      
+      
+        <link rel="canonical" href="https://devops.roadmap.oaix.tech/terminal-knowledge/">
+      
+      
+        <link rel="prev" href="../operating-system/">
+      
+      
+        <link rel="next" href="../version-control-systems/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/favicon.svg">
+      <meta name="generator" content="zensical-0.0.55">
+    
+    
+      
+        <title>终端知识 - DevOps Roadmap 中文手册</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../assets/stylesheets/modern/main.20815dad.min.css">
+      
+        
+          
+        
+        <link rel="stylesheet" href="../assets/stylesheets/modern/palette.dfe2e883.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+  
+
+
+  
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FLXQC4YQJF"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-FLXQC4YQJF');
+</script>
+
+  
+  
+
+
+<script type="text/javascript">
+    (function(c,l,a,r,i,t,y){
+        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+    })(window, document, "clarity", "script", "y3p2irnl2z");
+</script>
+
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-label="导航栏"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#_1" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href="./.." title="DevOps Roadmap 中文手册" class="md-header__button md-logo" aria-label="DevOps Roadmap 中文手册" data-md-component="logo">
+      
+  <img src="../assets/logo.svg" alt="DevOps Roadmap 中文手册">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer" aria-label="导航栏">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            DevOps Roadmap 中文手册
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              终端知识
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun-moon" viewBox="0 0 24 24"><path d="M12 2v2M14.837 16.385a6 6 0 1 1-7.223-7.222c.624-.147.97.66.715 1.248a4 4 0 0 0 5.26 5.259c.589-.255 1.396.09 1.248.715M16 12a4 4 0 0 0-4-4M19 5l-1.256 1.256M20 12h2"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search" aria-label="查找">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="查找">
+  <button type="button" class="md-search__button">
+    查找
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+    </div>
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="./.." title="DevOps Roadmap 中文手册" class="md-nav__button md-logo" aria-label="DevOps Roadmap 中文手册" data-md-component="logo">
+      
+  <img src="../assets/logo.svg" alt="DevOps Roadmap 中文手册">
+
+    </a>
+    DevOps Roadmap 中文手册
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  首页
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  基础能力
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  基础能力
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../learn-a-programming-language/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  学习一种编程语言
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../operating-system/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  操作系统
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  终端知识
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  终端知识
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        学习目标
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        前置知识
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        核心原理
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="核心原理">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#shell" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        终端、Shell 与命令
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        观测应从现象到资源
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#bash" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Bash
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Bash">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        解析、引用与展开
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        错误与组合
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#powershell" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        PowerShell
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="PowerShell">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        对象管道
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        参数、错误与作用域
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        进程监控
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        性能监控
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="性能监控">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cpu" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        CPU 与调度
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        内存
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        存储
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_14" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        证据窗口
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_15" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        网络工具
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_16" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        文本处理
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="文本处理">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#unix" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Unix 文本工具
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#powershell_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        PowerShell 对象处理
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_17" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        终端编辑器
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="终端编辑器">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#vim" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Vim
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#nano" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Nano
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#emacs" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Emacs
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_18" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        选型比较
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="选型比较">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#bash-powershell" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Bash 与 PowerShell
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_19" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        编辑器
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_20" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        最小实践：安全分析样例日志
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_21" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        生产实践
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="生产实践">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_22" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        安全操作
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_23" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        可靠排障
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_24" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        可观测与成本
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_25" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        常见误区
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_26" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        动手练习
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_27" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        完成检查
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_28" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        官方延伸阅读
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../version-control-systems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  版本控制系统
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../vcs-hosting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  版本控制托管
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../containers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  容器
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  基础设施与云
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  基础设施与云
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../common-infrastructure-services/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  常见基础设施服务
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../networking-and-protocols/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  网络与协议
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cloud-providers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  云服务商
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../serverless/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  无服务器计算
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../provisioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  基础设施置备
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  配置管理
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  持续交付与运行
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  持续交付与运行
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ci-cd-tools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  CI/CD 工具
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../secret-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  机密管理
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../infrastructure-monitoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  基础设施监控
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../logs-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  日志管理
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../container-orchestration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  容器编排
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../observability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  可观测性
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  平台与架构治理
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  平台与架构治理
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../artifact-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  制品管理
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gitops/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  GitOps
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../service-mesh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  服务网格
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cloud-design-patterns/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  云设计模式
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        学习目标
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        前置知识
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        核心原理
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="核心原理">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#shell" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        终端、Shell 与命令
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        观测应从现象到资源
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#bash" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Bash
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Bash">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        解析、引用与展开
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        错误与组合
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#powershell" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        PowerShell
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="PowerShell">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        对象管道
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        参数、错误与作用域
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        进程监控
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        性能监控
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="性能监控">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#cpu" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        CPU 与调度
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        内存
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        存储
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_14" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        证据窗口
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_15" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        网络工具
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_16" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        文本处理
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="文本处理">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#unix" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Unix 文本工具
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#powershell_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        PowerShell 对象处理
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_17" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        终端编辑器
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="终端编辑器">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#vim" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Vim
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#nano" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Nano
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#emacs" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Emacs
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_18" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        选型比较
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="选型比较">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#bash-powershell" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Bash 与 PowerShell
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_19" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        编辑器
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_20" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        最小实践：安全分析样例日志
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_21" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        生产实践
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="生产实践">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_22" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        安全操作
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_23" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        可靠排障
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_24" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        可观测与成本
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_25" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        常见误区
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_26" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        动手练习
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_27" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        完成检查
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_28" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        官方延伸阅读
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+  <nav class="md-path" aria-label="导航栏" >
+    <ol class="md-path__list">
+      
+        
+  
+  
+    <li class="md-path__item">
+      <a href="./.." class="md-path__link">
+        
+  
+  <span class="md-ellipsis">
+    首页
+  </span>
+
+      </a>
+    </li>
+  
+
+      
+      
+        
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      <li class="md-path__item">
+        <a href="../learn-a-programming-language/" class="md-path__link">
+          
+  
+  <span class="md-ellipsis">
+    基础能力
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ol>
+  </nav>
+
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+<h1 id="_1">终端知识<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<p>终端是观察和控制系统最直接的接口。部署失败、资源耗尽或网络异常时，图形化平台可能不可用，工程师仍需要通过终端收集证据、缩小故障范围并执行可审计的操作。熟练使用终端不等于记住大量命令，而是理解 Shell 如何解析输入、命令如何交换数据，以及怎样在不扩大事故的前提下验证假设。</p>
+<p>本章覆盖 Bash、PowerShell、进程监控、性能监控、网络工具、文本处理，以及 Vim、Nano、Emacs 三类编辑器。</p>
+<h2 id="_2">学习目标<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>完成本章后，你应当能够：</p>
+<ul>
+<li>解释终端、Shell、命令行程序和伪终端的职责边界。</li>
+<li>在 Bash 与 PowerShell 中安全处理参数、管道、错误、退出码和引用。</li>
+<li>按 CPU、内存、磁盘和网络四类资源采集进程与系统证据。</li>
+<li>使用网络与文本工具验证名称解析、连接、TLS 和 HTTP 各层状态。</li>
+<li>在 Vim、Nano 或 Emacs 中完成紧急查看、搜索、修改和退出，并能选择默认编辑器。</li>
+<li>将一次性排障命令整理为可复现、低风险且不泄露敏感信息的记录。</li>
+</ul>
+<h2 id="_3">前置知识<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<ul>
+<li>建议先阅读<a href="../operating-system/">操作系统</a>，理解进程、文件权限和网络栈。</li>
+<li>需要把命令升级为可测试工具时，参见<a href="../learn-a-programming-language/">学习一种编程语言</a>。</li>
+<li>本章不要求管理员权限。示例只访问当前用户创建的临时数据或公开示例域名。</li>
+</ul>
+<h2 id="_4">核心原理<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<h3 id="shell">终端、Shell 与命令<a class="headerlink" href="#shell" title="Permanent link">&para;</a></h3>
+<p>终端模拟器负责显示字符和传递键盘输入；Shell 读取一行文本，完成引用、变量展开、重定向和管道连接，再启动内建命令或外部程序。SSH、终端复用器和容器执行接口常分配伪终端（PTY），让远端程序表现得像连接了交互终端。</p>
+<pre class="mermaid"><code>flowchart LR
+    User[键盘与屏幕] &lt;--&gt; Terminal[终端或伪终端]
+    Terminal &lt;--&gt; Shell[Shell 解析器]
+    Shell --&gt; Builtin[Shell 内建命令]
+    Shell --&gt; Process[外部进程]
+    Process --&gt; Streams[标准输入、输出、错误]
+    Streams --&gt; Shell</code></pre>
+<p>程序默认获得三个流：标准输入（stdin）、标准输出（stdout）和标准错误（stderr）。退出码 <code>0</code> 通常表示成功，非零值表示不同失败。管道主要连接前一个命令的标准输出与后一个命令的标准输入；标准错误不会自动进入管道。</p>
+<div class="admonition warning">
+<p class="admonition-title">Shell 会先解析，再执行</p>
+<p>空格、通配符、分号、美元符号和重定向符都可能改变命令结构。不可信输入不能拼接成命令字符串；应使用参数数组、正确引用或语言提供的进程 API。</p>
+</div>
+<h3 id="_5">观测应从现象到资源<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
+<p>排障的目标不是尽快运行“修复命令”，而是用最少侵入的观测区分假设：</p>
+<ol>
+<li><strong>范围</strong>：一个请求、一个进程、一台机器、一个可用区还是全局？</li>
+<li><strong>时间</strong>：何时开始，是否与发布、流量、证书或配额变化重合？</li>
+<li><strong>资源</strong>：CPU 是否饱和，内存是否回收，存储是否拥塞，网络是否丢包或等待？</li>
+<li><strong>依赖</strong>：名称解析、路由、TCP、TLS、HTTP 和下游业务分别是否成功？</li>
+<li><strong>变化</strong>：先保存时间戳和原始证据，再执行最小、可回滚且有验证指标的动作。</li>
+</ol>
+<p>单个瞬时数值通常不足以下结论。例如负载平均值不等于 CPU 使用率，空闲内存少不一定是内存不足，<code>ping</code> 失败也不证明 HTTP 服务不可达。</p>
+<h2 id="bash">Bash<a class="headerlink" href="#bash" title="Permanent link">&para;</a></h2>
+<p><strong>重点掌握</strong>。Bash 广泛存在于 Linux 和许多 Unix 类管理环境中。它适合组合成熟命令和编写较短的胶水脚本；数据结构复杂、错误恢复困难或需要大量测试时，应转用通用编程语言。</p>
+<h3 id="_6">解析、引用与展开<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
+<ul>
+<li>单引号保留其中字符的字面意义；双引号允许变量和命令替换，但阻止分词与路径名展开。</li>
+<li>变量引用通常写成 <code>"${name}"</code>。未引用的空值、空格和 <code>*</code> 可能改变参数个数。</li>
+<li>数组用 <code>items=("one" "two words")</code> 定义，以 <code>"${items[@]}"</code> 逐项传参。不要用空格分隔字符串模拟数组。</li>
+<li>命令替换 <code>$(command)</code> 会去掉末尾换行，不适合保存任意二进制数据。</li>
+<li><code>--</code> 常用于结束选项解析，例如 <code>rm -- "$path"</code>，但是否支持取决于具体命令。</li>
+</ul>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nv">name</span><span class="o">=</span><span class="s1">'release notes.txt'</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="nb">printf</span><span class="w"> </span><span class="s1">'file=%s\n'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$name</span><span class="s2">"</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="nv">files</span><span class="o">=(</span><span class="s2">"alpha.txt"</span><span class="w"> </span><span class="s2">"two words.txt"</span><span class="o">)</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="nb">printf</span><span class="w"> </span><span class="s1">'&lt;%s&gt;\n'</span><span class="w"> </span><span class="s2">"</span><span class="si">${</span><span class="nv">files</span><span class="p">[@]</span><span class="si">}</span><span class="s2">"</span>
+</span></code></pre></div>
+<h3 id="_7">错误与组合<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>&amp;&amp;</code> 只在前一命令成功时执行后一命令，<code>||</code> 只在失败时执行；二者适合表达条件，不应用来隐藏错误。</li>
+<li>管道退出码默认常取最后一个命令。脚本可启用 <code>set -o pipefail</code>，让管道中的前序失败可见。</li>
+<li><code>set -e</code> 的行为受条件、子 Shell 和命令替换影响，不能代替显式错误处理。常见脚本基线是 <code>set -Eeuo pipefail</code>，但引入既有脚本前必须测试其语义。</li>
+<li><code>trap</code> 可在退出或信号到达时清理当前脚本创建的临时资源；清理应限定明确路径并保持幂等。</li>
+<li>使用 <code>mktemp</code> 创建临时文件或目录，避免可预测名称和符号链接竞争。</li>
+</ul>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="ch">#!/usr/bin/env bash</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="nb">set</span><span class="w"> </span>-Eeuo<span class="w"> </span>pipefail
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="nv">work_dir</span><span class="o">=</span><span class="s2">"</span><span class="k">$(</span>mktemp<span class="w"> </span>-d<span class="k">)</span><span class="s2">"</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>cleanup<span class="o">()</span><span class="w"> </span><span class="o">{</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">    </span>rm<span class="w"> </span>-rf<span class="w"> </span>--<span class="w"> </span><span class="s2">"</span><span class="nv">$work_dir</span><span class="s2">"</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="o">}</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="nb">trap</span><span class="w"> </span>cleanup<span class="w"> </span>EXIT
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="nb">printf</span><span class="w"> </span><span class="s1">'%s\n'</span><span class="w"> </span><span class="s1">'safe temporary data'</span><span class="w"> </span>&gt;<span class="w"> </span><span class="s2">"</span><span class="si">${</span><span class="nv">work_dir</span><span class="si">}</span><span class="s2">/input.txt"</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>wc<span class="w"> </span>-c<span class="w"> </span>&lt;<span class="w"> </span><span class="s2">"</span><span class="si">${</span><span class="nv">work_dir</span><span class="si">}</span><span class="s2">/input.txt"</span>
+</span></code></pre></div>
+<p>脚本应由 ShellCheck 等工具检查，并在目标 Bash 版本上测试。<code>sh</code> 不一定是 Bash；以 <code>#!/bin/sh</code> 声明的脚本不能假设数组、<code>[[ ... ]]</code> 或 <code>pipefail</code> 可用。</p>
+<h2 id="powershell">PowerShell<a class="headerlink" href="#powershell" title="Permanent link">&para;</a></h2>
+<p><strong>重点掌握</strong>。PowerShell 可用于 Windows、Linux 和 macOS，核心差异是管道传递 .NET 对象，而不是只传文本行。对象保留属性和类型，筛选、排序与导出时不必先解析屏幕格式。</p>
+<h3 id="_8">对象管道<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
+<div class="language-powershell highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nb">Get-Process</span> <span class="p">|</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>    <span class="nb">Where-Object</span> <span class="n">CPU</span> <span class="o">-GT</span> <span class="n">1</span> <span class="p">|</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>    <span class="nb">Sort-Object</span> <span class="n">CPU</span> <span class="n">-Descending</span> <span class="p">|</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a>    <span class="nb">Select-Object</span> <span class="n">-First</span> <span class="n">5</span> <span class="n">Name</span><span class="p">,</span> <span class="n">Id</span><span class="p">,</span> <span class="n">CPU</span>
+</span></code></pre></div>
+<p><code>Format-Table</code> 和 <code>Format-List</code> 只应放在交互输出末端。格式化后管道中是展示指令而非原始业务对象，继续导出会得到意外数据。需要机器读取时使用 <code>ConvertTo-Json</code>、<code>Export-Csv</code> 等明确格式。</p>
+<h3 id="_9">参数、错误与作用域<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
+<ul>
+<li>单引号字符串通常不展开变量，双引号字符串会展开。复杂表达式在插值中写作 <code>$($value.Property)</code>。</li>
+<li>调用 PowerShell 命令时使用命名参数；调用本机程序时要分别传递参数，避免 <code>Invoke-Expression</code>。</li>
+<li>非终止错误默认可能继续执行。自动化脚本可设置 <code>$ErrorActionPreference = 'Stop'</code>，并使用 <code>try</code> / <code>catch</code> / <code>finally</code> 处理边界。</li>
+<li><code>$LASTEXITCODE</code> 表示最近本机程序退出码，<code>$?</code> 表示最近操作是否成功，两者语义不同。调用本机工具后应立即检查所需状态。</li>
+<li>函数或脚本应声明 <code>[CmdletBinding()]</code> 与参数类型；危险修改支持 <code>ShouldProcess</code>，使调用者能用 <code>-WhatIf</code> 预览。</li>
+</ul>
+<div class="language-powershell highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="p">[</span><span class="k">CmdletBinding</span><span class="p">()]</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="k">param</span><span class="p">(</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>    <span class="p">[</span><span class="k">Parameter</span><span class="p">(</span><span class="k">Mandatory</span><span class="p">)]</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>    <span class="p">[</span><span class="n">ValidateScript</span><span class="p">({</span> <span class="nb">Test-Path</span> <span class="n">-LiteralPath</span> <span class="nv">$_</span> <span class="n">-PathType</span> <span class="n">Leaf</span> <span class="p">})]</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>    <span class="no">[string]</span><span class="nv">$Path</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="p">)</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="nv">$ErrorActionPreference</span> <span class="p">=</span> <span class="s1">'Stop'</span>
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="k">try</span> <span class="p">{</span>
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>    <span class="nb">Get-Item</span> <span class="n">-LiteralPath</span> <span class="nv">$Path</span> <span class="p">|</span>
+</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>        <span class="nb">Select-Object</span> <span class="n">FullName</span><span class="p">,</span> <span class="n">Length</span><span class="p">,</span> <span class="n">LastWriteTimeUtc</span>
+</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="p">}</span>
+</span><span id="__span-3-13"><a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="k">catch</span> <span class="p">{</span>
+</span><span id="__span-3-14"><a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a>    <span class="nb">Write-Error</span> <span class="s2">"无法读取指定文件：</span><span class="p">$(</span><span class="nv">$_</span><span class="p">.</span><span class="n">Exception</span><span class="p">.</span><span class="n">Message</span><span class="p">)</span><span class="s2">"</span>
+</span><span id="__span-3-15"><a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a>    <span class="n">exit</span> <span class="n">2</span>
+</span><span id="__span-3-16"><a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>Windows PowerShell 5.1 与现代 PowerShell 7+ 使用不同运行时，模块兼容性和默认编码可能不同。生产脚本应声明并测试目标版本。</p>
+<h2 id="_10">进程监控<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
+<p>进程监控回答“谁正在消耗资源、在等待什么、由谁启动”。先记录进程 ID、父进程、启动时间、命令、用户和状态，再决定是否重启。PID 会复用，只保存 PID 不能长期唯一标识进程。</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Linux / BSD</label><label for="__tabbed_1_2">PowerShell</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>ps<span class="w"> </span>-A<span class="w"> </span>-o<span class="w"> </span>pid,ppid,user,state,lstart,pcpu,pmem,args
+</span></code></pre></div>
+<p><code>ps</code> 参数在 Linux 与 BSD 间存在差异；先运行 <code>man ps</code> 确认本机实现，GNU/Linux 也可使用 <code>ps --help</code>。交互观察常用 <code>top</code>，若已安装可使用 <code>htop</code>，但保存证据应优先选择可脚本化输出。</p>
+</div>
+<div class="tabbed-block">
+<div class="language-powershell highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nb">Get-Process</span> <span class="p">|</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>    <span class="nb">Sort-Object</span> <span class="n">CPU</span> <span class="n">-Descending</span> <span class="p">|</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>    <span class="nb">Select-Object</span> <span class="n">-First</span> <span class="n">10</span> <span class="n">Name</span><span class="p">,</span> <span class="n">Id</span><span class="p">,</span> <span class="n">StartTime</span><span class="p">,</span> <span class="n">CPU</span><span class="p">,</span> <span class="n">WorkingSet64</span>
+</span></code></pre></div>
+</div>
+</div>
+</div>
+<p>重点字段：</p>
+<ul>
+<li><strong>状态</strong>：运行、睡眠、不可中断等待、停止或僵尸。僵尸进程几乎不消耗 CPU，但说明父进程没有回收退出状态。</li>
+<li><strong>CPU 时间与瞬时占比</strong>：累计 CPU 时间适合发现长期消耗者，瞬时占比需要结合采样间隔和 CPU 核数解释。</li>
+<li><strong>常驻内存</strong>：进程当前映射的物理内存近似值，可能含共享页；不能直接相加当作整机实际占用。</li>
+<li><strong>打开资源</strong>：Linux 常用 <code>lsof</code> 或 <code>/proc/&lt;pid&gt;/fd</code> 查看文件和套接字；Windows 可使用受支持的系统工具和性能计数器。读取其他用户进程可能需要权限。</li>
+</ul>
+<p>停止进程时，优先通过服务管理器请求有序停止并观察超时。强制终止可能跳过缓冲区刷新、锁释放和状态保存，只作为已知后果的最后手段。</p>
+<h2 id="_11">性能监控<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
+<p>性能问题应同时观察利用率、饱和度和错误：资源很忙不一定有问题，队列持续增长或请求超时才说明容量不能满足需求。</p>
+<h3 id="cpu">CPU 与调度<a class="headerlink" href="#cpu" title="Permanent link">&para;</a></h3>
+<ul>
+<li>查看用户态、内核态、I/O 等待、空闲时间和运行队列，而不是只看总 CPU。</li>
+<li>Linux 可使用 <code>uptime</code> 查看负载趋势，<code>vmstat 1 5</code> 观察调度、内存和 I/O；BSD 的字段和工具选项需读本机手册。</li>
+<li>Windows 可用 <code>Get-Counter</code> 读取处理器时间和队列等性能计数器。</li>
+<li>高系统态时间可能来自网络、存储或系统调用；先剖析再优化应用代码。</li>
+</ul>
+<h3 id="_12">内存<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h3>
+<ul>
+<li>“已使用”内存包含可回收缓存。关注可用内存、换页、内存压力、OOM 或提交限制。</li>
+<li>持续换入换出、请求延迟升高和进程被终止比缓存占比较高更值得关注。</li>
+<li>泄漏判断需要时间序列和工作负载对照，单次进程内存快照不能证明泄漏。</li>
+</ul>
+<h3 id="_13">存储<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h3>
+<ul>
+<li>容量、inode 或元数据、吞吐、IOPS、延迟和队列是不同维度。</li>
+<li>Linux 常见 <code>df -hP</code> 查文件系统容量、<code>df -iP</code> 查 inode，<code>iostat</code> 需要相应工具包。Windows 使用 <code>Get-Volume</code> 与性能计数器。</li>
+<li>删除仍被进程打开的文件可能不释放空间；应定位持有者并通过应用流程处理，不能盲目重启整机。</li>
+</ul>
+<h3 id="_14">证据窗口<a class="headerlink" href="#_14" title="Permanent link">&para;</a></h3>
+<p><code>top</code> 等实时界面适合探索，但事故复盘需要带时间戳的采样、监控时间序列和变更记录。采样工具本身会消耗资源；高频跟踪或系统调用追踪应先在测试环境评估开销并限制持续时间。</p>
+<h2 id="_15">网络工具<a class="headerlink" href="#_15" title="Permanent link">&para;</a></h2>
+<p>网络排障应逐层验证，不要从“网页打不开”直接跳到防火墙结论。</p>
+<table>
+<thead>
+<tr>
+<th>层次</th>
+<th>要回答的问题</th>
+<th>常用只读工具</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>本机配置</td>
+<td>地址、接口、路由是否符合预期？</td>
+<td><code>ip</code>、<code>ss</code>、<code>ifconfig</code>、<code>route</code>、<code>Get-NetIPConfiguration</code></td>
+</tr>
+<tr>
+<td>名称解析</td>
+<td>名称由谁解析，得到什么记录？</td>
+<td><code>dig</code>、<code>host</code>、<code>Resolve-DnsName</code></td>
+</tr>
+<tr>
+<td>路径与连接</td>
+<td>路径在哪里中断，目标端口能否建立连接？</td>
+<td><code>traceroute</code>、<code>tracepath</code>、<code>Test-NetConnection</code>、<code>nc</code></td>
+</tr>
+<tr>
+<td>TLS</td>
+<td>证书、名称、协议和信任链是否正确？</td>
+<td><code>openssl s_client</code>、<code>curl -v</code></td>
+</tr>
+<tr>
+<td>应用协议</td>
+<td>HTTP 状态、头和响应时间是否符合预期？</td>
+<td><code>curl</code>、<code>Invoke-WebRequest</code></td>
+</tr>
+</tbody>
+</table>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Linux / BSD</label><label for="__tabbed_2_2">Windows PowerShell</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>curl<span class="w"> </span>--fail<span class="w"> </span>--show-error<span class="w"> </span>--silent<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="w">    </span>--connect-timeout<span class="w"> </span><span class="m">3</span><span class="w"> </span>--max-time<span class="w"> </span><span class="m">10</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="w">    </span>--output<span class="w"> </span>/dev/null<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="w">    </span>--write-out<span class="w"> </span><span class="s1">'code=%{http_code} remote=%{remote_ip} total=%{time_total}\n'</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="w">    </span>https://example.com/
+</span></code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="language-powershell highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="nb">Resolve-DnsName</span> <span class="n">example</span><span class="p">.</span><span class="n">com</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="nb">Test-NetConnection</span> <span class="n">example</span><span class="p">.</span><span class="n">com</span> <span class="n">-Port</span> <span class="n">443</span> <span class="n">-InformationLevel</span> <span class="n">Detailed</span>
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a><span class="nv">$response</span> <span class="p">=</span> <span class="nb">Invoke-WebRequest</span> <span class="n">-Uri</span> <span class="s1">'https://example.com/'</span> <span class="n">-TimeoutSec</span> <span class="n">10</span>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a><span class="no">[pscustomobject]</span><span class="p">@{</span>
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>    <span class="n">StatusCode</span> <span class="p">=</span> <span class="nv">$response</span><span class="p">.</span><span class="n">StatusCode</span>
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>    <span class="n">ContentLength</span> <span class="p">=</span> <span class="nv">$response</span><span class="p">.</span><span class="n">RawContentLength</span>
+</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a><span class="p">}</span>
+</span></code></pre></div>
+</div>
+</div>
+</div>
+<p><code>ping</code> 使用 ICMP，而服务可能使用 TCP 或 UDP；中间设备可以阻止 ICMP 但允许业务流量。<code>traceroute</code> 显示的是探测响应路径，路由不对称和限速会造成缺口。抓包可能包含凭据和个人数据，只能在授权范围内最小化采集、安全保存并及时删除。</p>
+<h2 id="_16">文本处理<a class="headerlink" href="#_16" title="Permanent link">&para;</a></h2>
+<p>Unix 管道通常传递字节或文本行，PowerShell 管道通常传递对象。选择工具时先明确输入契约。</p>
+<h3 id="unix">Unix 文本工具<a class="headerlink" href="#unix" title="Permanent link">&para;</a></h3>
+<ul>
+<li><code>grep</code> 按模式筛选行，固定字符串优先 <code>grep -F</code>，扩展正则使用 <code>grep -E</code>。</li>
+<li><code>cut</code> 适合简单、固定分隔字段；含引号和转义的 CSV 应使用 CSV 解析器。</li>
+<li><code>sort</code> 排序，<code>uniq</code> 只合并相邻重复行，常与 <code>sort</code> 组合；区域设置会影响排序和字符分类。</li>
+<li><code>awk</code> 按记录与字段执行规则，适合轻量汇总；<code>sed</code> 适合流式替换。GNU 与 BSD 实现的选项可能不同。</li>
+<li>JSON、YAML、XML 应使用理解格式的解析器，如 <code>jq</code>、<code>yq</code> 或语言库，不要用正则猜测嵌套结构。</li>
+<li>对可能含空格、换行和前导连字符的文件名，使用 NUL 分隔接口（若工具支持），不要解析 <code>ls</code> 输出。</li>
+</ul>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="nb">printf</span><span class="w"> </span><span class="s1">'%s\n'</span><span class="w"> </span><span class="s1">'200 GET /health'</span><span class="w"> </span><span class="s1">'503 GET /api'</span><span class="w"> </span><span class="s1">'200 GET /'</span><span class="w"> </span><span class="p">|</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="w">    </span>awk<span class="w"> </span><span class="s1">'$1 &gt;= 500 {count += 1} END {print "server_errors=" count + 0}'</span>
+</span></code></pre></div>
+<h3 id="powershell_1">PowerShell 对象处理<a class="headerlink" href="#powershell_1" title="Permanent link">&para;</a></h3>
+<div class="language-powershell highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nv">$records</span> <span class="p">=</span> <span class="p">@(</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>    <span class="no">[pscustomobject]</span><span class="p">@{</span> <span class="n">Status</span> <span class="p">=</span> <span class="n">200</span><span class="p">;</span> <span class="n">Path</span> <span class="p">=</span> <span class="s1">'/health'</span> <span class="p">}</span>
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>    <span class="no">[pscustomobject]</span><span class="p">@{</span> <span class="n">Status</span> <span class="p">=</span> <span class="n">503</span><span class="p">;</span> <span class="n">Path</span> <span class="p">=</span> <span class="s1">'/api'</span> <span class="p">}</span>
+</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a><span class="p">)</span>
+</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>
+</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a><span class="nv">$records</span> <span class="p">|</span>
+</span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>    <span class="nb">Where-Object</span> <span class="n">Status</span> <span class="o">-GE</span> <span class="n">500</span> <span class="p">|</span>
+</span><span id="__span-9-8"><a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>    <span class="nb">Group-Object</span> <span class="n">Status</span> <span class="p">|</span>
+</span><span id="__span-9-9"><a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>    <span class="nb">Select-Object</span> <span class="n">Name</span><span class="p">,</span> <span class="n">Count</span>
+</span></code></pre></div>
+<p><code>Select-String</code> 搜索文本，<code>Import-Csv</code>、<code>ConvertFrom-Json</code> 将标准格式转换为对象。<code>ConvertFrom-Json</code> 后应检查字段和类型，不能因解析成功就信任内容。</p>
+<div class="admonition tip">
+<p class="admonition-title">先保留原始数据</p>
+<p>把筛选命令和原始证据分开保存。只保留最后几行结论会丢失上下文，也无法在提出新假设后重新分析。</p>
+</div>
+<h2 id="_17">终端编辑器<a class="headerlink" href="#_17" title="Permanent link">&para;</a></h2>
+<p>远程节点上不一定有图形界面。至少应掌握一种编辑器的打开、搜索、修改、保存和不保存退出；更稳妥的生产方式仍是修改版本控制中的配置并通过自动化发布。</p>
+<h3 id="vim">Vim<a class="headerlink" href="#vim" title="Permanent link">&para;</a></h3>
+<p><strong>重点掌握</strong>。Vim 采用模式编辑：普通模式用于移动和命令，插入模式输入文本，命令行模式保存与退出。无需掌握复杂配置，但应能完成应急编辑。</p>
+<ul>
+<li>打开：<code>vim file.conf</code></li>
+<li>进入插入模式：按 <code>i</code>；返回普通模式：按 <code>Esc</code></li>
+<li>搜索：普通模式输入 <code>/pattern</code>，用 <code>n</code> 跳到下一个结果</li>
+<li>保存：<code>:w</code>；保存并退出：<code>:wq</code>；不保存退出：<code>:q!</code></li>
+<li>显示行号：<code>:set number</code>；撤销：普通模式按 <code>u</code></li>
+</ul>
+<p>以管理员权限打开后，编辑器插件、配置和 Shell 转义都可能扩大权限。优先编辑临时副本、校验语法、显示差异，再通过受控方式安装。</p>
+<h3 id="nano">Nano<a class="headerlink" href="#nano" title="Permanent link">&para;</a></h3>
+<p><strong>替代方案</strong>。Nano 的快捷键显示在底部，学习成本低，适合偶发的小修改。</p>
+<ul>
+<li>打开：<code>nano file.conf</code></li>
+<li>搜索：<code>Ctrl+W</code></li>
+<li>写入：<code>Ctrl+O</code>，确认文件名后按 Enter</li>
+<li>退出：<code>Ctrl+X</code>，有未保存内容时会询问</li>
+<li>显示位置：<code>Ctrl+C</code>；剪切与粘贴行使用界面提示的快捷键</li>
+</ul>
+<p>Nano 操作直接，但同样缺少配置事务。保存前确认文件路径，保存后运行对应语法检查。</p>
+<h3 id="emacs">Emacs<a class="headerlink" href="#emacs" title="Permanent link">&para;</a></h3>
+<p><strong>替代方案</strong>。Emacs 是可扩展编辑环境，也可在终端运行。记号 <code>C-x</code> 表示按住 Ctrl 再按 x，<code>M-x</code> 通常表示 Alt+x。</p>
+<ul>
+<li>终端打开：<code>emacs -nw file.conf</code></li>
+<li>搜索：<code>C-s</code></li>
+<li>保存：<code>C-x C-s</code></li>
+<li>退出：<code>C-x C-c</code></li>
+<li>撤销：<code>C-/</code>；取消当前命令：<code>C-g</code></li>
+</ul>
+<p>Emacs 可通过 Lisp 深度扩展，适合已有配置和长期使用者；在受控服务器上不应临时安装未经审核的包。</p>
+<p>设置命令行工具默认编辑器时，可在个人环境中统一 <code>EDITOR</code>，需要等待编辑器关闭的工具还可能读取 <code>VISUAL</code>：</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="nb">export</span><span class="w"> </span><span class="nv">EDITOR</span><span class="o">=</span><span class="s1">'vim'</span>
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="nb">export</span><span class="w"> </span><span class="nv">VISUAL</span><span class="o">=</span><span class="s1">'vim'</span>
+</span></code></pre></div>
+<p>不要把交互式编辑作为大规模配置管理方法。紧急修改必须记录原因、备份、语法验证和回归自动化的后续事项。</p>
+<h2 id="_18">选型比较<a class="headerlink" href="#_18" title="Permanent link">&para;</a></h2>
+<h3 id="bash-powershell">Bash 与 PowerShell<a class="headerlink" href="#bash-powershell" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>Bash</th>
+<th>PowerShell</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>管道数据</td>
+<td>字节或文本</td>
+<td>.NET 对象，本机程序仍输出文本</td>
+</tr>
+<tr>
+<td>主要环境</td>
+<td>Linux、Unix 类系统</td>
+<td>Windows 管理，也支持 Linux 与 macOS</td>
+</tr>
+<tr>
+<td>组合优势</td>
+<td>Unix 小工具和重定向生态</td>
+<td>结构化系统管理、对象筛选与 .NET API</td>
+</tr>
+<tr>
+<td>主要风险</td>
+<td>引用、分词、隐式退出语义</td>
+<td>非终止错误、格式化对象、版本差异</td>
+</tr>
+<tr>
+<td>转向通用语言的信号</td>
+<td>复杂数据、并发、恢复、跨平台测试</td>
+<td>大型模块、复杂领域模型、严格性能要求</td>
+</tr>
+</tbody>
+</table>
+<p>团队可以同时保留两者，但每类脚本应明确目标 Shell、最低版本、格式化和测试规则。跨平台自动化若大量调用平台特有命令，强行使用同一个脚本通常只会隐藏分支复杂度。</p>
+<h3 id="_19">编辑器<a class="headerlink" href="#_19" title="Permanent link">&para;</a></h3>
+<p>选择团队在应急环境中确实可用的工具：Vim 常预装且远程效率高，Nano 易于临时上手，Emacs 适合已采用其工作流的工程师。生产标准不应要求所有人使用同一编辑器，而应要求变更可审查、可验证和可恢复。</p>
+<h2 id="_20">最小实践：安全分析样例日志<a class="headerlink" href="#_20" title="Permanent link">&para;</a></h2>
+<p>该练习只操作由当前命令创建的临时目录，不读取真实日志。目标是统计 5xx 响应并确保清理路径明确。</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="ch">#!/usr/bin/env bash</span>
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a><span class="nb">set</span><span class="w"> </span>-Eeuo<span class="w"> </span>pipefail
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>
+</span><span id="__span-11-4"><a id="__codelineno-11-4" name="__codelineno-11-4" href="#__codelineno-11-4"></a><span class="nv">work_dir</span><span class="o">=</span><span class="s2">"</span><span class="k">$(</span>mktemp<span class="w"> </span>-d<span class="k">)</span><span class="s2">"</span>
+</span><span id="__span-11-5"><a id="__codelineno-11-5" name="__codelineno-11-5" href="#__codelineno-11-5"></a>cleanup<span class="o">()</span><span class="w"> </span><span class="o">{</span>
+</span><span id="__span-11-6"><a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a><span class="w">    </span>rm<span class="w"> </span>-rf<span class="w"> </span>--<span class="w"> </span><span class="s2">"</span><span class="nv">$work_dir</span><span class="s2">"</span>
+</span><span id="__span-11-7"><a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a><span class="o">}</span>
+</span><span id="__span-11-8"><a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a><span class="nb">trap</span><span class="w"> </span>cleanup<span class="w"> </span>EXIT
+</span><span id="__span-11-9"><a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>
+</span><span id="__span-11-10"><a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a><span class="nv">log_file</span><span class="o">=</span><span class="s2">"</span><span class="si">${</span><span class="nv">work_dir</span><span class="si">}</span><span class="s2">/access.log"</span>
+</span><span id="__span-11-11"><a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a>cat<span class="w"> </span>&gt;<span class="w"> </span><span class="s2">"</span><span class="nv">$log_file</span><span class="s2">"</span><span class="w"> </span><span class="s">&lt;&lt;'LOG'</span>
+</span><span id="__span-11-12"><a id="__codelineno-11-12" name="__codelineno-11-12" href="#__codelineno-11-12"></a><span class="s">2026-08-13T10:00:00Z 200 GET /health 0.003</span>
+</span><span id="__span-11-13"><a id="__codelineno-11-13" name="__codelineno-11-13" href="#__codelineno-11-13"></a><span class="s">2026-08-13T10:00:01Z 503 GET /api 0.250</span>
+</span><span id="__span-11-14"><a id="__codelineno-11-14" name="__codelineno-11-14" href="#__codelineno-11-14"></a><span class="s">2026-08-13T10:00:02Z 502 GET /api 0.180</span>
+</span><span id="__span-11-15"><a id="__codelineno-11-15" name="__codelineno-11-15" href="#__codelineno-11-15"></a><span class="s">2026-08-13T10:00:03Z 200 GET / 0.010</span>
+</span><span id="__span-11-16"><a id="__codelineno-11-16" name="__codelineno-11-16" href="#__codelineno-11-16"></a><span class="s">LOG</span>
+</span><span id="__span-11-17"><a id="__codelineno-11-17" name="__codelineno-11-17" href="#__codelineno-11-17"></a>
+</span><span id="__span-11-18"><a id="__codelineno-11-18" name="__codelineno-11-18" href="#__codelineno-11-18"></a>awk<span class="w"> </span><span class="s1">'</span>
+</span><span id="__span-11-19"><a id="__codelineno-11-19" name="__codelineno-11-19" href="#__codelineno-11-19"></a><span class="s1">    $2 ~ /^5[0-9][0-9]$/ { count += 1; latency += $5 }</span>
+</span><span id="__span-11-20"><a id="__codelineno-11-20" name="__codelineno-11-20" href="#__codelineno-11-20"></a><span class="s1">    END { printf "server_errors=%d total_latency=%.3f\n", count, latency }</span>
+</span><span id="__span-11-21"><a id="__codelineno-11-21" name="__codelineno-11-21" href="#__codelineno-11-21"></a><span class="s1">'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$log_file</span><span class="s2">"</span>
+</span></code></pre></div>
+<p>预期输出为：</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>server_errors=2 total_latency=0.430
+</span></code></pre></div>
+<p>PowerShell 中可使用对象完成同样任务：</p>
+<div class="language-powershell highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="nv">$workDir</span> <span class="p">=</span> <span class="nb">Join-Path</span> <span class="p">(</span><span class="no">[System.IO.Path]</span><span class="p">::</span><span class="n">GetTempPath</span><span class="p">())</span> <span class="p">(</span><span class="no">[guid]</span><span class="p">::</span><span class="n">NewGuid</span><span class="p">())</span>
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="nb">New-Item</span> <span class="n">-ItemType</span> <span class="n">Directory</span> <span class="n">-Path</span> <span class="nv">$workDir</span> <span class="p">|</span> <span class="nb">Out-Null</span>
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="k">try</span> <span class="p">{</span>
+</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>    <span class="nv">$records</span> <span class="p">=</span> <span class="p">@(</span>
+</span><span id="__span-13-5"><a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>        <span class="no">[pscustomobject]</span><span class="p">@{</span> <span class="n">Status</span> <span class="p">=</span> <span class="n">200</span><span class="p">;</span> <span class="n">Latency</span> <span class="p">=</span> <span class="n">0</span><span class="p">.</span><span class="n">003</span> <span class="p">}</span>
+</span><span id="__span-13-6"><a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>        <span class="no">[pscustomobject]</span><span class="p">@{</span> <span class="n">Status</span> <span class="p">=</span> <span class="n">503</span><span class="p">;</span> <span class="n">Latency</span> <span class="p">=</span> <span class="n">0</span><span class="p">.</span><span class="n">250</span> <span class="p">}</span>
+</span><span id="__span-13-7"><a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a>        <span class="no">[pscustomobject]</span><span class="p">@{</span> <span class="n">Status</span> <span class="p">=</span> <span class="n">502</span><span class="p">;</span> <span class="n">Latency</span> <span class="p">=</span> <span class="n">0</span><span class="p">.</span><span class="n">180</span> <span class="p">}</span>
+</span><span id="__span-13-8"><a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a>        <span class="no">[pscustomobject]</span><span class="p">@{</span> <span class="n">Status</span> <span class="p">=</span> <span class="n">200</span><span class="p">;</span> <span class="n">Latency</span> <span class="p">=</span> <span class="n">0</span><span class="p">.</span><span class="n">010</span> <span class="p">}</span>
+</span><span id="__span-13-9"><a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a>    <span class="p">)</span>
+</span><span id="__span-13-10"><a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a>    <span class="nv">$serverErrors</span> <span class="p">=</span> <span class="nv">$records</span> <span class="p">|</span> <span class="nb">Where-Object</span> <span class="n">Status</span> <span class="o">-GE</span> <span class="n">500</span>
+</span><span id="__span-13-11"><a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a>    <span class="no">[pscustomobject]</span><span class="p">@{</span>
+</span><span id="__span-13-12"><a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a>        <span class="n">ServerErrors</span> <span class="p">=</span> <span class="p">@(</span><span class="nv">$serverErrors</span><span class="p">).</span><span class="n">Count</span>
+</span><span id="__span-13-13"><a id="__codelineno-13-13" name="__codelineno-13-13" href="#__codelineno-13-13"></a>        <span class="n">TotalLatency</span> <span class="p">=</span> <span class="p">(</span><span class="nv">$serverErrors</span> <span class="p">|</span> <span class="nb">Measure-Object</span> <span class="n">Latency</span> <span class="n">-Sum</span><span class="p">).</span><span class="n">Sum</span>
+</span><span id="__span-13-14"><a id="__codelineno-13-14" name="__codelineno-13-14" href="#__codelineno-13-14"></a>    <span class="p">}</span>
+</span><span id="__span-13-15"><a id="__codelineno-13-15" name="__codelineno-13-15" href="#__codelineno-13-15"></a><span class="p">}</span>
+</span><span id="__span-13-16"><a id="__codelineno-13-16" name="__codelineno-13-16" href="#__codelineno-13-16"></a><span class="k">finally</span> <span class="p">{</span>
+</span><span id="__span-13-17"><a id="__codelineno-13-17" name="__codelineno-13-17" href="#__codelineno-13-17"></a>    <span class="nb">Remove-Item</span> <span class="n">-LiteralPath</span> <span class="nv">$workDir</span> <span class="n">-Recurse</span> <span class="n">-Force</span>
+</span><span id="__span-13-18"><a id="__codelineno-13-18" name="__codelineno-13-18" href="#__codelineno-13-18"></a><span class="p">}</span>
+</span></code></pre></div>
+<p>真实日志可能存在字段缺失、时区差异、轮转、压缩和敏感数据。先确认格式契约与授权范围，再调整解析器，禁止直接把生产日志上传到公共服务。</p>
+<h2 id="_21">生产实践<a class="headerlink" href="#_21" title="Permanent link">&para;</a></h2>
+<h3 id="_22">安全操作<a class="headerlink" href="#_22" title="Permanent link">&para;</a></h3>
+<ul>
+<li>用普通权限观测，以单条、短时、可审计方式提权；不要启动永久管理员 Shell。</li>
+<li>运行命令前确认主机、账户、命名空间、当前目录和时间范围。终端标题或提示符不能替代身份验证。</li>
+<li>修改前读取当前状态、保存差异、运行语法检查并准备恢复命令。批量操作先在一个非关键目标演练。</li>
+<li>历史记录、进程参数和终端录屏都可能保存命令。令牌通过受控输入或文件描述符传递，不写在命令行。</li>
+<li>不运行来源不明的 <code>curl ... | sh</code>。下载、校验签名或摘要、阅读内容后再在隔离环境执行。</li>
+</ul>
+<h3 id="_23">可靠排障<a class="headerlink" href="#_23" title="Permanent link">&para;</a></h3>
+<ul>
+<li>为每条假设记录时间、命令、退出码和关键输出；命令前可先记录 UTC 时间。</li>
+<li>使用超时限制网络和跟踪工具，使用采样窗口避免无限运行。</li>
+<li>先观测再变更，一次只改变一个变量。重启可能暂时消除症状，也会销毁内存、连接和队列证据。</li>
+<li>通过<a href="../version-control-systems/">版本控制系统</a>保存可复用脚本，并使用 ShellCheck、PSScriptAnalyzer 和自动测试。</li>
+<li>长命令整理成参数明确的脚本；脚本支持只读模式、目标范围、并发上限和失败汇总。</li>
+</ul>
+<h3 id="_24">可观测与成本<a class="headerlink" href="#_24" title="Permanent link">&para;</a></h3>
+<ul>
+<li>临时终端命令用于验证监控结论，不替代持续指标、日志和追踪。</li>
+<li>不在全量节点高频执行昂贵查询。先抽样并测量命令本身的 CPU、I/O 和网络开销。</li>
+<li>输出机器可读格式时固定字段与版本；输出给人阅读时保留单位、时间和主机上下文。</li>
+<li>事故结束后删除包含敏感数据的临时文件，并把真正有用的检测转成受保留策略管理的遥测。</li>
+</ul>
+<h2 id="_25">常见误区<a class="headerlink" href="#_25" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>复制命令但不理解 Shell</strong>：命令可能包含重定向、命令替换或环境相关通配符，应逐段解释后运行。</li>
+<li><strong>用 <code>kill -9</code> 作为默认重启方式</strong>：强制信号不给进程清理机会，应先通过服务管理器优雅停止。</li>
+<li><strong>把负载平均值等同于 CPU 百分比</strong>：负载还可能包含等待资源的任务，必须结合运行队列和 I/O。</li>
+<li><strong>看到空闲内存低就清缓存</strong>：缓存通常可回收，人工清理会降低性能并掩盖真正压力。</li>
+<li><strong>用 <code>ping</code> 判断服务健康</strong>：ICMP、TCP、TLS 与应用请求是不同层次。</li>
+<li><strong>用正则解析 JSON 或 CSV</strong>：转义、嵌套和换行会破坏简单模式，应使用格式解析器。</li>
+<li><strong>解析 <code>ls</code> 输出处理文件</strong>：显示格式、区域设置和特殊文件名都会导致错误。</li>
+<li><strong>在管道中途使用 PowerShell 格式化命令</strong>：后续收到的不是原始对象。</li>
+<li><strong>认为 <code>set -e</code> 捕获所有 Bash 错误</strong>：其上下文规则复杂，关键边界必须显式检查和测试。</li>
+<li><strong>直接在生产节点编辑配置</strong>：会制造漂移；紧急修改也要尽快回写声明式来源并重新发布。</li>
+</ul>
+<h2 id="_26">动手练习<a class="headerlink" href="#_26" title="Permanent link">&para;</a></h2>
+<ol>
+<li>分别写一个 Bash 和 PowerShell 命令，输出当前时间、用户、主机和 Shell / PowerShell 版本，结果必须具有稳定字段名。</li>
+<li>修改最小实践，使格式错误的行写入标准错误并导致退出码 <code>2</code>，但不得执行任何系统修改。</li>
+<li>对 <code>https://example.com/</code> 依次验证 DNS、TCP 443、TLS 与 HTTP，记录每层成功的独立证据以及工具超时。</li>
+<li>在非生产机器采样 CPU、内存和磁盘 30 秒，解释利用率、饱和度和错误各来自哪个字段，不只粘贴输出。</li>
+<li>用 Vim、Nano 或 Emacs 在临时目录编辑一个文件，完成搜索、替换、保存、撤销和不保存退出；删除临时目录前用 <code>diff</code> 验证结果。</li>
+<li>找一个自己的旧 Shell 脚本，检查未引用变量、未处理退出码、可预测临时文件和无限重试，提交一份风险清单。</li>
+</ol>
+<h2 id="_27">完成检查<a class="headerlink" href="#_27" title="Permanent link">&para;</a></h2>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能区分终端、Shell、外部进程、标准流和退出码。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能正确解释 Bash 单引号、双引号、数组、管道和 <code>pipefail</code>。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能使用 PowerShell 对象管道并区分终止错误与本机程序退出码。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能从进程、CPU、内存、磁盘和网络逐层收集证据。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能说明 <code>ping</code>、DNS 查询、TCP 连接、TLS 与 HTTP 检查的边界。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能用格式感知工具处理 JSON、CSV 等结构化数据。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能在 Vim、Nano 或 Emacs 中安全完成最小编辑流程。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能把排障命令限制在授权范围并避免泄露凭据。</li>
+</ul>
+<h2 id="_28">官方延伸阅读<a class="headerlink" href="#_28" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="https://www.gnu.org/software/bash/manual/">GNU Bash 手册</a>、<a href="https://www.gnu.org/software/coreutils/manual/">GNU Coreutils 手册</a>与<a href="https://www.shellcheck.net/">ShellCheck</a></li>
+<li><a href="https://learn.microsoft.com/powershell/">PowerShell 文档</a>、<a href="https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_pipelines">关于管道</a>与<a href="https://learn.microsoft.com/powershell/utility-modules/psscriptanalyzer/overview">PSScriptAnalyzer</a></li>
+<li><a href="https://docs.kernel.org/filesystems/proc.html">Linux proc 文件系统文档</a>与<a href="https://perf.wiki.kernel.org/"><code>perf</code> 文档</a></li>
+<li><a href="https://curl.se/docs/">curl 文档</a>、<a href="https://www.openssh.com/manual.html">OpenSSH 手册页</a>与<a href="https://www.wireshark.org/docs/wsug_html_chunked/">Wireshark 用户指南</a></li>
+<li><a href="https://www.gnu.org/software/gawk/manual/">GNU <code>awk</code> 用户指南</a>、<a href="https://jqlang.github.io/jq/manual/"><code>jq</code> 手册</a>与<a href="https://learn.microsoft.com/powershell/module/microsoft.powershell.core/about/about_objects">PowerShell <code>about_Objects</code></a></li>
+<li><a href="https://vimhelp.org/">Vim 帮助</a>、<a href="https://www.nano-editor.org/docs.php">GNU nano 文档</a>与<a href="https://www.gnu.org/software/emacs/manual/emacs.html">GNU Emacs 手册</a></li>
+</ul>
+
+
+  <nav class="md-tags" >
+    
+      
+      
+      
+      
+        <span class="md-tag">基础能力</span>
+      
+    
+      
+      
+      
+      
+        <span class="md-tag">系统与网络</span>
+      
+    
+      
+      
+      
+      
+        <span class="md-tag">可观测性</span>
+      
+    
+  </nav>
+
+
+
+
+
+
+
+
+  
+  
+
+
+
+  
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-circle-arrow-up" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16 12-4-4-4 4M12 16V8"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="页脚" >
+        
+          
+          <a href="../operating-system/" class="md-footer__link md-footer__link--prev" aria-label="上一页: 操作系统">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                上一页
+              </span>
+              <div class="md-ellipsis">
+                操作系统
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../version-control-systems/" class="md-footer__link md-footer__link--next" aria-label="下一页: 版本控制系统">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                下一页
+              </span>
+              <div class="md-ellipsis">
+                版本控制系统
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://zensical.org/" target="_blank" rel="noopener">
+      Zensical
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate":null,"base":"..","features":["announce.dismiss","content.action.edit","content.action.view","content.code.annotate","content.code.copy","content.code.select","content.footnote.tooltips","content.tabs.link","content.tooltips","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.path","navigation.sections","navigation.top","navigation.tracking","search.highlight","toc.follow"],"search":"../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"已复制","clipboard.copy":"复制","search.result.more.one":"在该页上还有 1 个符合条件的结果","search.result.more.other":"在该页上还有 # 个符合条件的结果","search.result.none":"没有找到符合条件的结果","search.result.one":"找到 1 个符合条件的结果","search.result.other":"# 个符合条件的结果","search.result.placeholder":"键入以开始搜索","search.result.term.missing":"缺少","select.version":"选择当前版本"},"version":null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.e886cdf1.min.js"></script>
+      
+    
+  </body>
+</html>

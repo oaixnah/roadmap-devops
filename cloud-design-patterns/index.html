@@ -1,0 +1,3350 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="本章从 SLO、RPO、RTO、一致性和故障模型出发，系统讲解超时重试、舱壁、队列、幂等、发件箱、Saga、CQRS 与多地域等云设计模式，帮助读者以正确性、可靠性和成本验证架构取舍。">
+      
+      
+        <meta name="author" content="oaixnah">
+      
+      
+        <link rel="canonical" href="https://devops.roadmap.oaix.tech/cloud-design-patterns/">
+      
+      
+        <link rel="prev" href="../service-mesh/">
+      
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/favicon.svg">
+      <meta name="generator" content="zensical-0.0.55">
+    
+    
+      
+        <title>云设计模式 - DevOps Roadmap 中文手册</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../assets/stylesheets/modern/main.20815dad.min.css">
+      
+        
+          
+        
+        <link rel="stylesheet" href="../assets/stylesheets/modern/palette.dfe2e883.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+  
+
+
+  
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FLXQC4YQJF"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-FLXQC4YQJF');
+</script>
+
+  
+  
+
+
+<script type="text/javascript">
+    (function(c,l,a,r,i,t,y){
+        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+    })(window, document, "clarity", "script", "y3p2irnl2z");
+</script>
+
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-label="导航栏"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#_1" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href="./.." title="DevOps Roadmap 中文手册" class="md-header__button md-logo" aria-label="DevOps Roadmap 中文手册" data-md-component="logo">
+      
+  <img src="../assets/logo.svg" alt="DevOps Roadmap 中文手册">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer" aria-label="导航栏">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            DevOps Roadmap 中文手册
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              云设计模式
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun-moon" viewBox="0 0 24 24"><path d="M12 2v2M14.837 16.385a6 6 0 1 1-7.223-7.222c.624-.147.97.66.715 1.248a4 4 0 0 0 5.26 5.259c.589-.255 1.396.09 1.248.715M16 12a4 4 0 0 0-4-4M19 5l-1.256 1.256M20 12h2"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search" aria-label="查找">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="查找">
+  <button type="button" class="md-search__button">
+    查找
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+    </div>
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="./.." title="DevOps Roadmap 中文手册" class="md-nav__button md-logo" aria-label="DevOps Roadmap 中文手册" data-md-component="logo">
+      
+  <img src="../assets/logo.svg" alt="DevOps Roadmap 中文手册">
+
+    </a>
+    DevOps Roadmap 中文手册
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  首页
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  基础能力
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  基础能力
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../learn-a-programming-language/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  学习一种编程语言
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../operating-system/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  操作系统
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../terminal-knowledge/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  终端知识
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../version-control-systems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  版本控制系统
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../vcs-hosting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  版本控制托管
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../containers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  容器
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  基础设施与云
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  基础设施与云
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../common-infrastructure-services/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  常见基础设施服务
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../networking-and-protocols/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  网络与协议
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cloud-providers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  云服务商
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../serverless/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  无服务器计算
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../provisioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  基础设施置备
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  配置管理
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  持续交付与运行
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  持续交付与运行
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ci-cd-tools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  CI/CD 工具
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../secret-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  机密管理
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../infrastructure-monitoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  基础设施监控
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../logs-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  日志管理
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../container-orchestration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  容器编排
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../observability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  可观测性
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  平台与架构治理
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  平台与架构治理
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../artifact-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  制品管理
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gitops/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  GitOps
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../service-mesh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  服务网格
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  云设计模式
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  云设计模式
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        学习目标
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        前置知识
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        先定义约束，再选择模式
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="先定义约束，再选择模式">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        从用户目标反推可靠性
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        建立故障模型
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        用六个维度评估模式
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        可用性模式
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="可用性模式">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        超时与截止期限
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        有界重试与指数退避
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        断路器
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        舱壁隔离
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        健康端点与自动修复
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_14" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        优雅降级与静态稳定性
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_15" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        多可用区与多地域
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_16" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        数据管理模式
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="数据管理模式">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_17" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        幂等消费者与幂等键
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_18" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        事务性发件箱
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#saga" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Saga 与补偿事务
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cqrs" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        命令查询职责分离（CQRS）
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_19" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        事件溯源
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_20" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        分片、分区与热点
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_21" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        缓存旁路
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_22" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        设计与实现模式
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="设计与实现模式">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_23" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        队列削峰
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_24" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        竞争消费者
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        异步请求-响应
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_25" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        防腐层
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#strangler-fig-pattern" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        绞杀者模式（Strangler Fig Pattern）
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sidecarambassador" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        边车（Sidecar）与大使代理（Ambassador）
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#api" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        API 网关与后端适配
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_26" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        管理与监控模式
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="管理与监控模式">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_27" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        基础设施即代码与不可变基础设施
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_28" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        部署戳与单元化架构
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_29" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        领导者选举与租约
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_30" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        外部配置与功能开关
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_31" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        聚合日志与关联标识
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_32" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        指标、分布式追踪与合成探测
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_33" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        健康模型与自动化运行手册
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_34" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        组合模式：可靠订单接收
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="组合模式：可靠订单接收">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_35" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        架构权衡
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_36" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        选型比较
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_37" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        最小实践：幂等的至少一次消费者
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="最小实践：幂等的至少一次消费者">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        1. 创建实验脚本
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        2. 扩展验证
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_38" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        生产实践
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="生产实践">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_39" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        可靠性与恢复
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_40" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        数据正确性
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_41" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        安全
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_42" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        性能与成本
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_43" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        可观测性与运维
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_44" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        可维护性与迁移
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_45" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        常见误区
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="常见误区">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_46" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        把多可用区当成自动高可用
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_47" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        无限重试提高成功率
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_48" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        队列能解决长期容量不足
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_49" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        宣称端到端“恰好一次”
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_50" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        用事件溯源解决所有审计需求
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cqrssaga" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        同时采用 CQRS、Saga 和事件溯源
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_51" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        深度健康检查所有依赖
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_52" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        只监控资源使用率
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_53" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        为可移植性构建最低公分母
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_54" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        动手练习
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_55" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        完成检查
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_56" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        官方延伸阅读
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        学习目标
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        前置知识
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        先定义约束，再选择模式
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="先定义约束，再选择模式">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        从用户目标反推可靠性
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        建立故障模型
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        用六个维度评估模式
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        可用性模式
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="可用性模式">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        超时与截止期限
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        有界重试与指数退避
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        断路器
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        舱壁隔离
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        健康端点与自动修复
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_14" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        优雅降级与静态稳定性
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_15" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        多可用区与多地域
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_16" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        数据管理模式
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="数据管理模式">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_17" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        幂等消费者与幂等键
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_18" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        事务性发件箱
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#saga" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Saga 与补偿事务
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cqrs" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        命令查询职责分离（CQRS）
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_19" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        事件溯源
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_20" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        分片、分区与热点
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_21" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        缓存旁路
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_22" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        设计与实现模式
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="设计与实现模式">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_23" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        队列削峰
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_24" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        竞争消费者
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#-" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        异步请求-响应
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_25" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        防腐层
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#strangler-fig-pattern" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        绞杀者模式（Strangler Fig Pattern）
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sidecarambassador" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        边车（Sidecar）与大使代理（Ambassador）
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#api" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        API 网关与后端适配
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_26" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        管理与监控模式
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="管理与监控模式">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_27" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        基础设施即代码与不可变基础设施
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_28" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        部署戳与单元化架构
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_29" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        领导者选举与租约
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_30" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        外部配置与功能开关
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_31" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        聚合日志与关联标识
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_32" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        指标、分布式追踪与合成探测
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_33" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        健康模型与自动化运行手册
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_34" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        组合模式：可靠订单接收
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="组合模式：可靠订单接收">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_35" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        架构权衡
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_36" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        选型比较
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_37" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        最小实践：幂等的至少一次消费者
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="最小实践：幂等的至少一次消费者">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        1. 创建实验脚本
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        2. 扩展验证
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_38" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        生产实践
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="生产实践">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_39" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        可靠性与恢复
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_40" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        数据正确性
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_41" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        安全
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_42" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        性能与成本
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_43" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        可观测性与运维
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_44" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        可维护性与迁移
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_45" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        常见误区
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="常见误区">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_46" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        把多可用区当成自动高可用
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_47" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        无限重试提高成功率
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_48" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        队列能解决长期容量不足
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_49" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        宣称端到端“恰好一次”
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_50" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        用事件溯源解决所有审计需求
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#cqrssaga" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        同时采用 CQRS、Saga 和事件溯源
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_51" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        深度健康检查所有依赖
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_52" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        只监控资源使用率
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_53" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        为可移植性构建最低公分母
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_54" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        动手练习
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_55" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        完成检查
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_56" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        官方延伸阅读
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+  <nav class="md-path" aria-label="导航栏" >
+    <ol class="md-path__list">
+      
+        
+  
+  
+    <li class="md-path__item">
+      <a href="./.." class="md-path__link">
+        
+  
+  <span class="md-ellipsis">
+    首页
+  </span>
+
+      </a>
+    </li>
+  
+
+      
+      
+        
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      <li class="md-path__item">
+        <a href="../artifact-management/" class="md-path__link">
+          
+  
+  <span class="md-ellipsis">
+    平台与架构治理
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ol>
+  </nav>
+
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+<h1 id="_1">云设计模式<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<p>云平台提供弹性计算、托管数据服务、消息系统和自动化 API，但“用了云产品”不等于“具备云架构”。分布式系统会出现部分失败、网络延迟、重复消息、并发更新、配额和成本波动；跨区域部署还会面对更高延迟与一致性权衡。云设计模式（Cloud Design Patterns）是这些重复问题的可迁移解法及其适用条件。</p>
+<p>模式不是复制即用的产品清单。每个模式都在吞吐、延迟、一致性、可用性、复杂度和成本之间做交换。采用前应从用户旅程、服务级目标（SLO）、恢复点目标（RPO）、恢复时间目标（RTO）和故障模型出发，采用后则必须用故障注入与运行指标验证假设。</p>
+<p><strong>通用主题</strong>：本章按可用性、数据管理、设计与实现、管理与监控四类问题组织。分类用于学习，一个实际方案往往同时涉及多类模式。</p>
+<h2 id="_2">学习目标<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>完成本章后，你应能够：</p>
+<ul>
+<li>从依赖、状态和故障域画出系统故障模型，而不是只画正常请求路径。</li>
+<li>使用超时、退避重试、断路器、舱壁、健康端点和优雅降级提高可用性。</li>
+<li>根据一致性需求选择幂等、事务性发件箱、Saga、CQRS、事件溯源或分片等数据模式。</li>
+<li>使用队列削峰、竞争消费者、异步请求-响应、防腐层、Sidecar 和 Strangler Fig 演进系统。</li>
+<li>以基础设施即代码、部署单元、领导者选举、外部配置、聚合日志与分布式追踪治理运行系统。</li>
+<li>解释每项模式增加的延迟、状态、操作面、成本和新的失败方式。</li>
+<li>运行一个本地幂等消费者，验证重复消息不会重复产生业务效果。</li>
+</ul>
+<h2 id="_3">前置知识<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<ul>
+<li>熟悉 <a href="../cloud-providers/">云服务商</a> 中的计算、存储、网络、地域与可用区概念。</li>
+<li>理解 <a href="../provisioning/">基础设施置备</a> 中声明式资源和变更计划。</li>
+<li>掌握 <a href="../container-orchestration/">容器编排</a> 中的副本、调度、健康检查与滚动更新。</li>
+<li>能使用 <a href="../observability/">可观测性</a> 中的指标、日志和追踪描述系统状态。</li>
+<li>了解 <a href="../gitops/">GitOps</a> 中期望状态和持续协调，有助于理解自动修复与配置治理。</li>
+</ul>
+<h2 id="_4">先定义约束，再选择模式<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<h3 id="_5">从用户目标反推可靠性<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
+<p>先描述关键用户旅程，例如“用户提交订单后 2 秒内得到可追踪的接收结果”。再定义：</p>
+<ul>
+<li><strong>SLI/SLO</strong>：成功率、延迟、数据新鲜度或正确性目标。</li>
+<li><strong>RTO</strong>：故障后可接受的最长恢复时间。</li>
+<li><strong>RPO</strong>：可接受的数据丢失时间窗口。</li>
+<li><strong>一致性</strong>：哪些读必须立即看到写，哪些可以最终一致。</li>
+<li><strong>负载</strong>：平均值、峰值、突发持续时间、单租户热点和增长率。</li>
+<li><strong>法规与边界</strong>：数据驻留、删除、审计、密钥和供应商约束。</li>
+</ul>
+<p>“四个九可用”不能单靠多副本获得。它要求年度不可用预算约 52.6 分钟，并覆盖应用、依赖、变更和人为操作。每个关键依赖的目标、冗余和降级路径必须支持端到端目标。</p>
+<h3 id="_6">建立故障模型<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
+<p>至少枚举：实例崩溃、可用区不可达、地域中断、网络分区、高延迟、依赖限流、凭据过期、消息重复或乱序、存储满、错误发布与运营误操作。然后标注系统对每种故障是停止、重试、降级、切换还是等待人工处理。</p>
+<pre class="mermaid"><code>flowchart LR
+    Client[客户端] --&gt; Edge[入口与限流]
+    Edge --&gt; API[无状态 API]
+    API --&gt; Queue[持久队列]
+    Queue --&gt; Worker[竞争消费者]
+    Worker --&gt; DB[(主数据存储)]
+    Worker --&gt; Outbox[(事务性发件箱)]
+    Outbox --&gt; Events[事件总线]
+    API -. 超时/断路器 .-&gt; Dependency[外部依赖]
+    API --&gt; Telemetry[指标、日志、追踪]
+    Worker --&gt; Telemetry</code></pre>
+<p>该图表达了几个关键边界：队列吸收突发但增加延迟；消费者必须处理重复；数据库与事件之间需要一致性策略；外部依赖必须有期限与降级；每一段都要可观测。</p>
+<h3 id="_7">用六个维度评估模式<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
+<ol>
+<li><strong>正确性</strong>：是否保持业务不变量，失败与重放会发生什么。</li>
+<li><strong>可用性与延迟</strong>：故障时继续服务还是快速失败，正常路径增加多少跳。</li>
+<li><strong>一致性</strong>：强一致、会话一致还是最终一致，用户会看到哪些中间状态。</li>
+<li><strong>扩展性与隔离</strong>：热点如何处理，故障和租户是否互相影响。</li>
+<li><strong>可运维性</strong>：新增哪些队列、控制器、状态机、告警和人工补偿。</li>
+<li><strong>成本与可迁移性</strong>：空闲容量、跨区流量、存储放大、专有 API 和数据搬迁成本。</li>
+</ol>
+<h2 id="_8">可用性模式<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<p>可用性不是“永不失败”，而是系统在规定条件下继续提供足够正确的服务，并能在预算内恢复。冗余、故障检测和恢复机制必须同时存在；只有副本，没有隔离和验证，仍可能被同一错误同时击穿。</p>
+<h3 id="_9">超时与截止期限<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
+<p>所有远程调用都可能无限等待。调用方应设置连接超时、每次尝试超时和端到端截止期限。下游应接收并尊重剩余期限，避免在上游已经放弃后继续消耗资源。</p>
+<p>权衡：超时过短会把正常慢请求误判为失败，过长则占满线程、连接和队列。应根据延迟分布、用户目标和下游处理预算设置，并监控由哪一层触发超时。</p>
+<h3 id="_10">有界重试与指数退避<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h3>
+<p>瞬时网络错误、限流或服务切换可能通过重试恢复。重试应满足：操作可安全重放、错误被明确判为暂时性、次数与总时长有上限、使用指数退避和随机抖动，并计入端到端期限。</p>
+<p>权衡：重试提高瞬时故障下的成功率，却增加负载和尾延迟。所有客户端同步重试会形成重试风暴。服务端可通过 <code>Retry-After</code> 提示恢复时间；客户端仍需总预算。非幂等写入应先引入幂等键。</p>
+<h3 id="_11">断路器<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h3>
+<p>断路器根据近期失败或慢请求把调用状态从关闭切换为打开，暂时快速失败；等待后进入半开，用少量请求试探恢复。它保护调用方资源，也给下游恢复时间。</p>
+<p>权衡：阈值不当会在少量波动时误打开，或在真正故障时反应过慢。断路器是本地判断，不代表依赖全局不可用；应按目标、错误类型和调用池隔离统计。它也不能代替超时，因为没有超时就无法及时计入失败。</p>
+<h3 id="_12">舱壁隔离<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h3>
+<p>舱壁（Bulkhead）将线程池、连接池、队列、实例或租户容量分区，使一个工作负载耗尽资源时不拖垮全局。例如为在线请求和批处理设置独立消费者池，为高风险租户设置并发上限。</p>
+<p>权衡：隔离缩小爆炸半径，却会降低资源共享效率，某一分区拥塞时其他分区可能闲置。分区应根据风险和优先级设置，并保留可控的借用或动态调整机制。</p>
+<h3 id="_13">健康端点与自动修复<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h3>
+<p>存活检查回答“进程是否需要重启”，就绪检查回答“是否能接收流量”，启动检查保护慢启动过程。深度健康检查若同步探测全部下游，可能在依赖波动时把所有实例同时摘除；就绪逻辑只应包含接收请求必需的本地条件和经过设计的关键依赖。</p>
+<p>自动修复适合已知、可重放且受限的动作，例如替换无状态实例。对数据损坏、未知故障和跨区切换，应设置保护条件和人工升级路径，避免自动化扩大事故。</p>
+<h3 id="_14">优雅降级与静态稳定性<a class="headerlink" href="#_14" title="Permanent link">&para;</a></h3>
+<p>当个性化服务不可用时返回基础内容、缓存数据或稍后处理回执，比整个请求失败更可用。静态稳定性强调故障时不依赖立即创建新资源，例如预留足够实例跨可用区承载单区故障，而不是假设故障发生后一定能扩容。</p>
+<p>权衡：降级结果可能陈旧或功能受限，必须向用户表达；预留容量增加常态成本。降级路径也要持续测试，否则只会在事故中第一次运行。</p>
+<h3 id="_15">多可用区与多地域<a class="headerlink" href="#_15" title="Permanent link">&para;</a></h3>
+<p>多可用区副本能处理局部基础设施故障，但数据库仲裁、负载均衡、身份和部署系统仍可能是共同故障点。多地域可降低大范围故障风险并接近用户，却引入数据复制延迟、冲突、跨区费用和更复杂的发布。</p>
+<p>主动-被动地域通常更易保持单写一致性，但切换慢且备用容量利用率低；主动-主动提高地域可用性和就近访问，却要求分区所有权、冲突解决或可接受最终一致。选型必须由 RPO、RTO 和业务写入语义决定，而不是追求地域数量。</p>
+<h2 id="_16">数据管理模式<a class="headerlink" href="#_16" title="Permanent link">&para;</a></h2>
+<p>分布式数据的难点不是选哪种数据库，而是保持业务不变量、处理并发与重复，并让数据生命周期可治理。跨服务强事务成本高且可用性受协调者影响，最终一致则把中间状态和补偿复杂度暴露给应用。</p>
+<h3 id="_17">幂等消费者与幂等键<a class="headerlink" href="#_17" title="Permanent link">&para;</a></h3>
+<p>可靠消息处理常采用“至少一次”交付，消费者可能在完成业务写入后、确认消息前崩溃，从而再次收到同一消息。消费者应使用稳定消息 ID，在与业务变更相同的原子边界内记录已处理标识；重复消息返回既有结果。部分系统能在限定边界内提供更强保证，但不能据此假设外部副作用也恰好发生一次。</p>
+<p>API 写入也可要求客户端提供幂等键，将键、请求摘要与结果关联。若同一个键对应不同请求，应拒绝而不是复用旧结果。</p>
+<p>权衡：去重记录占用存储，需要定义作用域和保留期。保留期短于消息可能重放的时间时，旧重复仍会生效；全局永久去重则成本很高。</p>
+<h3 id="_18">事务性发件箱<a class="headerlink" href="#_18" title="Permanent link">&para;</a></h3>
+<p>服务既要更新数据库又要发布事件时，先写数据库再发消息会在两步之间崩溃。事务性发件箱（Transactional Outbox）把业务变更和待发事件写入同一数据库事务，再由独立发布器读取发件箱并发送，成功后标记。</p>
+<p>权衡：它消除了数据库写入与“记录待发送”之间的双写窗口，但发布仍可能重复，因此消费者必须幂等。发件箱会增长，需要索引、清理、积压监控和事件顺序策略。数据库变更数据捕获可减少轮询，但增加专用基础设施和迁移约束。</p>
+<h3 id="saga">Saga 与补偿事务<a class="headerlink" href="#saga" title="Permanent link">&para;</a></h3>
+<p>Saga 将跨服务业务事务拆成多个本地事务，每一步发布结果并触发下一步；失败时执行补偿动作。编排式 Saga 由中央状态机决定流程，便于查看与超时；协同式 Saga 由事件驱动，耦合较松但全局路径难以理解。</p>
+<p>补偿不是数据库回滚。例如退款可能产生费用，取消发货也可能已经太晚。每一步都应定义幂等、超时、重试、不可补偿状态和人工介入。Saga 提高参与服务的自治与可用性，代价是用户会看到“处理中”等中间状态，测试空间也显著扩大。</p>
+<h3 id="cqrs">命令查询职责分离（CQRS）<a class="headerlink" href="#cqrs" title="Permanent link">&para;</a></h3>
+<p>该模式使用不同模型处理写入意图与读取视图。写模型保护不变量，读模型按查询优化，并可由事件异步更新。</p>
+<p>权衡：CQRS 能独立扩展读写、降低复杂查询对事务模型的影响，但引入模型同步、最终一致、重建和版本管理。如果普通 CRUD 数据库已满足负载与模型需求，不应仅为“架构先进”拆分。</p>
+<h3 id="_19">事件溯源<a class="headerlink" href="#_19" title="Permanent link">&para;</a></h3>
+<p>事件溯源把不可变领域事件作为事实来源，当前状态由事件重放得到。它适合强审计、时态查询和需要重建多种投影的领域。</p>
+<p>权衡：事件模式演进、重放成本、隐私删除、外部副作用和调试都更复杂。事件是业务事实，不应直接等同于数据库行变化。快照可加速重建，但必须能从受信事件验证；删除法规也要求加密擦除、裁剪或专门的数据设计。</p>
+<h3 id="_20">分片、分区与热点<a class="headerlink" href="#_20" title="Permanent link">&para;</a></h3>
+<p>分片按键把数据和负载分散到多个节点或服务单元。好的分区键具有足够基数、访问均匀，并支持主要查询；坏的键会形成热点或要求跨分片聚合。</p>
+<p>权衡：分片提升容量和故障隔离，却让跨分片事务、唯一约束、二级索引、再平衡和备份更困难。开始时可在逻辑层保留租户或键边界，但只有容量或隔离证据支持时才物理分片。对超大租户可采用专属分片，避免平均哈希掩盖热点。</p>
+<h3 id="_21">缓存旁路<a class="headerlink" href="#_21" title="Permanent link">&para;</a></h3>
+<p>缓存旁路（Cache-Aside）由应用先查缓存，未命中时查主存储并回填。写入时更新数据库后删除或更新缓存。</p>
+<p>权衡：缓存降低读取延迟和数据库负载，却引入陈旧数据、击穿和不一致。TTL 不是一致性保证；热点键应使用请求合并、抖动过期或预热，不能在缓存故障时让所有请求无界回源。缓存内容也需要访问控制和敏感数据策略。</p>
+<h2 id="_22">设计与实现模式<a class="headerlink" href="#_22" title="Permanent link">&para;</a></h2>
+<h3 id="_23">队列削峰<a class="headerlink" href="#_23" title="Permanent link">&para;</a></h3>
+<p>队列将接收与处理解耦，在突发时暂存工作，消费者按可持续速率处理。入口可快速返回任务 ID，再由客户端查询或接收回调。</p>
+<p>权衡：队列平滑负载，却把同步结果变成最终完成，增加排队延迟、重复、乱序、死信和积压治理。容量规划要关注到达率与处理率：长期到达率大于处理率时，再大的队列也只会延迟失败。</p>
+<h3 id="_24">竞争消费者<a class="headerlink" href="#_24" title="Permanent link">&para;</a></h3>
+<p>多个消费者从同一队列取任务，可按积压和处理时长水平扩展。消息可见性超时或租约使崩溃消费者的任务重新可用。</p>
+<p>权衡：并行提高吞吐，但破坏全局顺序，并可能争用同一数据。需要按键分区、幂等、并发上限和背压。自动扩缩容应同时考虑队列深度、最老消息年龄、单任务耗时和下游容量，不能只追求清空队列。</p>
+<h3 id="-">异步请求-响应<a class="headerlink" href="#-" title="Permanent link">&para;</a></h3>
+<p>对耗时操作，服务先验证并返回 <code>202 Accepted</code> 与任务位置，后台处理后更新状态。客户端轮询、使用 webhook 或订阅事件获取完成结果。</p>
+<p>权衡：减少长连接和网关超时，但 API 必须定义任务状态、过期、取消、幂等、授权与结果保留。<code>202</code> 只代表已接收，不代表成功；监控应覆盖从接收到最终完成的端到端时间。</p>
+<h3 id="_25">防腐层<a class="headerlink" href="#_25" title="Permanent link">&para;</a></h3>
+<p>防腐层（Anti-Corruption Layer）在新领域模型与旧系统/外部供应商之间转换协议、模型和错误，阻止外部概念渗入核心业务。</p>
+<p>权衡：隔离变化并利于替换供应商，但增加一次网络跳、映射维护和潜在吞吐瓶颈。转换逻辑要有契约测试、版本策略和原始关联 ID；不能把所有业务规则堆进一个“万能适配器”。</p>
+<h3 id="strangler-fig-pattern">绞杀者模式（Strangler Fig Pattern）<a class="headerlink" href="#strangler-fig-pattern" title="Permanent link">&para;</a></h3>
+<p>Strangler Fig 模式在旧系统前建立可路由边界，逐个能力将流量迁移到新实现，确认稳定后移除旧路径。它降低一次性重写风险，并允许按业务价值分批交付。</p>
+<p>权衡：过渡期会同时运营新旧系统，数据所有权和双写尤其危险。优先明确每类数据的唯一写入者，使用事件或变更捕获同步只读副本，并设置迁移完成和删除旧路径的条件，避免“临时层”永久存在。</p>
+<h3 id="sidecarambassador">边车（Sidecar）与大使代理（Ambassador）<a class="headerlink" href="#sidecarambassador" title="Permanent link">&para;</a></h3>
+<p>Sidecar 将日志代理、配置刷新或网络代理等辅助能力与应用部署在同一调度单元；Ambassador 代理代表应用访问外部服务，集中协议转换、认证或路由。</p>
+<p>权衡：它们跨语言复用能力并独立升级，但共享资源和生命周期，可能拖慢启动或成为请求路径故障点。若每个实例都不需要独立辅助进程，节点级守护进程或托管网关成本可能更低。<a href="../service-mesh/">服务网格</a> 是网络 sidecar/代理大规模治理的一种实现，不代表所有 sidecar 都需要网格。</p>
+<h3 id="api">API 网关与后端适配<a class="headerlink" href="#api" title="Permanent link">&para;</a></h3>
+<p>API 网关集中处理外部认证、限流、路由和协议边界；面向前端的后端（Backend for Frontend，BFF）则为 Web、移动端等不同客户端聚合合适的数据。</p>
+<p>权衡：边界统一可减少客户端复杂度，但网关不应承载大量领域逻辑，否则会成为组织和性能瓶颈。BFF 减少客户端往返，却可能复制逻辑；共享规则应下沉到领域服务，客户端特定编排保留在 BFF。</p>
+<h2 id="_26">管理与监控模式<a class="headerlink" href="#_26" title="Permanent link">&para;</a></h2>
+<p>管理与监控不是部署后的附加工作，而是使前述模式可安全运行的反馈系统。不能观测队列积压、补偿状态或断路器，就无法判断系统是在降级、恢复还是悄悄丢失工作。</p>
+<h3 id="_27">基础设施即代码与不可变基础设施<a class="headerlink" href="#_27" title="Permanent link">&para;</a></h3>
+<p>网络、计算、数据服务和策略应通过版本化声明创建，变更先预览差异再执行。对无状态计算优先替换镜像或实例，而不是登录后原地修改，以减少配置漂移。</p>
+<p>权衡：声明提高可重复性，但状态导入、提供商版本和破坏性计划仍需治理。不可变替换会增加临时容量和发布时间；数据库等有状态组件仍需要兼容迁移，不能简单删除重建。</p>
+<h3 id="_28">部署戳与单元化架构<a class="headerlink" href="#_28" title="Permanent link">&para;</a></h3>
+<p>部署戳（Deployment Stamp）把计算、数据和配置作为可重复单元，按租户、地域或容量部署多个实例。每个单元限制规模和故障影响，控制面负责分配流量和生命周期。</p>
+<p>权衡：故障隔离与水平扩展更清晰，但单元间容量不均、版本漂移、租户迁移和全局查询更复杂。部署戳应有最大容量、放置策略和自动化创建流程；手工复制环境会失去模式价值。</p>
+<h3 id="_29">领导者选举与租约<a class="headerlink" href="#_29" title="Permanent link">&para;</a></h3>
+<p>定时任务或协调器运行多副本时，可通过带过期时间的租约选出一个领导者执行单例工作。领导者必须续租，失去租约后停止写入。</p>
+<p>权衡：租约提高控制面可用性，却无法单独防止暂停进程恢复后继续写入。对关键写入使用单调递增的栅栏令牌（Fencing Token），存储端拒绝旧领导者令牌。时钟偏差、网络分区和续租延迟都必须纳入设计。</p>
+<h3 id="_30">外部配置与功能开关<a class="headerlink" href="#_30" title="Permanent link">&para;</a></h3>
+<p>把环境配置与构建制品分离，可让同一制品跨环境晋级。配置需要模式校验、版本、审计和分阶段发布。功能开关可把代码部署与功能启用分离，支持小范围验证和快速关闭。</p>
+<p>权衡：动态配置降低重新构建成本，却创建了一条绕过部署流程的变更通道。权限、评审、缓存失效和回退同样重要。功能开关必须有负责人和到期时间，长期叠加会扩大测试组合。</p>
+<h3 id="_31">聚合日志与关联标识<a class="headerlink" href="#_31" title="Permanent link">&para;</a></h3>
+<p>实例是短暂的，日志应从标准输出或受控接口集中采集，使用结构化字段表达时间、级别、服务、版本、追踪 ID 和错误类型。关联标识帮助跨异步边界串联一次业务流程。</p>
+<p>权衡：详细日志利于排障，但高吞吐、敏感数据和高基数索引会增加风险与成本。对令牌、个人信息和支付数据默认不记录；设置采样、保留、访问审计和删除策略。日志采集失败不应阻塞关键业务请求。</p>
+<h3 id="_32">指标、分布式追踪与合成探测<a class="headerlink" href="#_32" title="Permanent link">&para;</a></h3>
+<p>指标适合聚合趋势和告警，追踪适合定位跨服务单次请求，日志提供离散上下文，合成探测则从用户边界持续验证关键旅程。三者通过服务、版本、地域和追踪上下文关联。</p>
+<p>权衡：全量追踪和无限标签不可持续。按 SLO 选择指标，采用头部/尾部采样并控制属性；对低流量关键错误保留足够样本。合成探测会产生真实写入时，应使用隔离租户、可识别数据和清理流程。</p>
+<h3 id="_33">健康模型与自动化运行手册<a class="headerlink" href="#_33" title="Permanent link">&para;</a></h3>
+<p>组件健康、依赖健康和用户旅程健康应分别建模。仪表盘展示状态，告警只覆盖需要行动且有负责人/运行手册的条件。对可安全重复的恢复动作可自动化，例如扩展消费者或切换只读模式；高影响操作需要审批和停止条件。</p>
+<p>权衡：自动化降低平均恢复时间，也会以机器速度扩大错误。运行手册应包含前置检查、作用范围、成功信号、回滚和升级路径，并通过定期演练验证，而不是只存一段命令。</p>
+<h2 id="_34">组合模式：可靠订单接收<a class="headerlink" href="#_34" title="Permanent link">&para;</a></h2>
+<p>假设订单 API 在峰值每秒接收 2,000 个请求，支付服务可持续处理每秒 800 个请求，要求用户 2 秒内获得接收结果，订单最终完成目标为 10 分钟。</p>
+<p>可以组合：</p>
+<ol>
+<li>入口用限流保护租户公平性，要求幂等键。</li>
+<li>API 在本地事务中创建 <code>PENDING</code> 订单和发件箱记录，快速返回订单 ID。</li>
+<li>发件箱发布器把任务发送到持久队列；重复发布由消费者去重。</li>
+<li>竞争消费者按支付系统安全容量扩展，并使用超时、有界重试和断路器。</li>
+<li>Saga 记录支付、库存和发货步骤；不可自动补偿时进入人工队列。</li>
+<li>查询模型异步更新订单进度，API 明确返回“处理中”而不是虚假成功。</li>
+<li>监控最老消息年龄、端到端完成时间、重复率、补偿率和各租户拒绝率。</li>
+</ol>
+<h3 id="_35">架构权衡<a class="headerlink" href="#_35" title="Permanent link">&para;</a></h3>
+<ul>
+<li>队列让系统吸收短时峰值，但输入长期超过 800/s 时积压持续增长，必须限流、扩容或降低接收承诺。</li>
+<li>快速返回提高入口可用性，却把“请求成功”改为“已接受”，客户端和客服流程都要支持中间状态。</li>
+<li>发件箱保证订单与待发事件同时记录，但增加表、发布器和清理任务；消息仍需幂等处理。</li>
+<li>Saga 避免长时间锁定跨服务资源，却引入补偿和人工处理，业务不能承诺瞬时强一致。</li>
+<li>CQRS 提升高频状态查询能力，但读模型有延迟；页面要显示更新时间，强一致核对仍访问权威写模型。</li>
+<li>多地域主动接收若共享订单键，需要明确地域所有权或冲突规则；否则同一幂等键可能在两个地域分别生效。</li>
+<li>为单区故障预留容量会增加成本，但依赖故障后即时扩容可能不满足 RTO。应比较常态冗余成本与不可用预算价值。</li>
+</ul>
+<p>模式组合会相互作用。断路器打开后，消费者不应高速重试；队列积压扩大时，扩容不能超过数据库和支付依赖容量；降级页面不能把未完成订单显示为成功。架构评审应验证整体状态机，而不是逐个模式打勾。</p>
+<h2 id="_36">选型比较<a class="headerlink" href="#_36" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>目标约束</th>
+<th>优先评估</th>
+<th>接受的代价</th>
+<th>不适用信号</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>短暂依赖故障且操作可重放</td>
+<td>有界重试、退避和抖动</td>
+<td>尾延迟与额外下游负载</td>
+<td>非幂等副作用、长期过载</td>
+</tr>
+<tr>
+<td>依赖持续失败时保护调用方</td>
+<td>超时、断路器与舱壁</td>
+<td>快速失败、隔离容量利用率下降</td>
+<td>没有可靠失败分类或降级结果</td>
+</tr>
+<tr>
+<td>突发输入超过短期处理能力</td>
+<td>队列削峰、竞争消费者</td>
+<td>最终完成、重复和积压治理</td>
+<td>长期输入率超过最大处理率</td>
+</tr>
+<tr>
+<td>跨服务维持业务流程</td>
+<td>Saga、幂等与发件箱</td>
+<td>中间状态、补偿和状态机运维</td>
+<td>必须即时强一致且可由单库事务完成</td>
+</tr>
+<tr>
+<td>读写负载和模型显著不同</td>
+<td>CQRS，必要时配合事件投影</td>
+<td>读延迟、模型同步和重建</td>
+<td>普通 CRUD 已满足目标</td>
+</tr>
+<tr>
+<td>单区故障仍需继续服务</td>
+<td>多可用区与静态稳定性</td>
+<td>常态冗余成本</td>
+<td>共享依赖仍在单一故障域</td>
+</tr>
+<tr>
+<td>地域级 RTO/RPO 无法由恢复满足</td>
+<td>主动-被动或主动-主动多地域</td>
+<td>复制、冲突、演练和跨区费用</td>
+<td>业务无法定义写入所有权与一致性语义</td>
+</tr>
+<tr>
+<td>渐进替换遗留系统</td>
+<td>防腐层与 Strangler Fig</td>
+<td>过渡期双栈运维和路由复杂度</td>
+<td>没有数据唯一写入者和退役条件</td>
+</tr>
+</tbody>
+</table>
+<p>表格给出的是候选起点，不是固定组合。选型时先排除不满足正确性的不适用方案，再用代表性负载和故障演练比较 SLO、恢复、操作人数及总成本。更复杂的模式只有在简单方案无法满足已量化约束时才值得采用。</p>
+<h2 id="_37">最小实践：幂等的至少一次消费者<a class="headerlink" href="#_37" title="Permanent link">&para;</a></h2>
+<p>本实践只使用 Python 3 标准库和本地 SQLite。脚本模拟同一事件被投递两次，并在一个事务中同时写入业务结果和去重记录。它不会访问网络，也不会修改项目文件以外的持久数据。</p>
+<h3 id="1">1. 创建实验脚本<a class="headerlink" href="#1" title="Permanent link">&para;</a></h3>
+<p>在临时目录创建 <code>consumer.py</code>：</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">sqlite3</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="n">database</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="n">connection</span> <span class="o">=</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">database</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="n">connection</span><span class="o">.</span><span class="n">executescript</span><span class="p">(</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="w">    </span><span class="sd">"""</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="sd">    CREATE TABLE IF NOT EXISTS accounts (</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="sd">        account_id TEXT PRIMARY KEY,</span>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="sd">        credits INTEGER NOT NULL</span>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="sd">    );</span>
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="sd">    CREATE TABLE IF NOT EXISTS processed_messages (</span>
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="sd">        consumer TEXT NOT NULL,</span>
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="sd">        message_id TEXT NOT NULL,</span>
+</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="sd">        processed_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,</span>
+</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="sd">        PRIMARY KEY (consumer, message_id)</span>
+</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="sd">    );</span>
+</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="sd">    INSERT OR IGNORE INTO accounts(account_id, credits)</span>
+</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="sd">    VALUES ('demo-account', 0);</span>
+</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="sd">    """</span>
+</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="p">)</span>
+</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a>
+</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a>
+</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a><span class="k">def</span><span class="w"> </span><span class="nf">handle</span><span class="p">(</span><span class="n">message_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">account_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">amount</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a>    <span class="k">try</span><span class="p">:</span>
+</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a>        <span class="k">with</span> <span class="n">connection</span><span class="p">:</span>
+</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a>            <span class="n">connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+</span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a>                <span class="s2">"INSERT INTO processed_messages(consumer, message_id) VALUES (?, ?)"</span><span class="p">,</span>
+</span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a>                <span class="p">(</span><span class="s2">"credit-consumer"</span><span class="p">,</span> <span class="n">message_id</span><span class="p">),</span>
+</span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a>            <span class="p">)</span>
+</span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a>            <span class="n">connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+</span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a>                <span class="s2">"UPDATE accounts SET credits = credits + ? WHERE account_id = ?"</span><span class="p">,</span>
+</span><span id="__span-0-35"><a id="__codelineno-0-35" name="__codelineno-0-35" href="#__codelineno-0-35"></a>                <span class="p">(</span><span class="n">amount</span><span class="p">,</span> <span class="n">account_id</span><span class="p">),</span>
+</span><span id="__span-0-36"><a id="__codelineno-0-36" name="__codelineno-0-36" href="#__codelineno-0-36"></a>            <span class="p">)</span>
+</span><span id="__span-0-37"><a id="__codelineno-0-37" name="__codelineno-0-37" href="#__codelineno-0-37"></a>        <span class="k">return</span> <span class="kc">True</span>
+</span><span id="__span-0-38"><a id="__codelineno-0-38" name="__codelineno-0-38" href="#__codelineno-0-38"></a>    <span class="k">except</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">IntegrityError</span><span class="p">:</span>
+</span><span id="__span-0-39"><a id="__codelineno-0-39" name="__codelineno-0-39" href="#__codelineno-0-39"></a>        <span class="k">return</span> <span class="kc">False</span>
+</span><span id="__span-0-40"><a id="__codelineno-0-40" name="__codelineno-0-40" href="#__codelineno-0-40"></a>
+</span><span id="__span-0-41"><a id="__codelineno-0-41" name="__codelineno-0-41" href="#__codelineno-0-41"></a>
+</span><span id="__span-0-42"><a id="__codelineno-0-42" name="__codelineno-0-42" href="#__codelineno-0-42"></a><span class="n">event</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"event-0001"</span><span class="p">,</span> <span class="s2">"demo-account"</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+</span><span id="__span-0-43"><a id="__codelineno-0-43" name="__codelineno-0-43" href="#__codelineno-0-43"></a><span class="nb">print</span><span class="p">(</span><span class="s2">"first delivery applied:"</span><span class="p">,</span> <span class="n">handle</span><span class="p">(</span><span class="o">*</span><span class="n">event</span><span class="p">))</span>
+</span><span id="__span-0-44"><a id="__codelineno-0-44" name="__codelineno-0-44" href="#__codelineno-0-44"></a><span class="nb">print</span><span class="p">(</span><span class="s2">"second delivery applied:"</span><span class="p">,</span> <span class="n">handle</span><span class="p">(</span><span class="o">*</span><span class="n">event</span><span class="p">))</span>
+</span><span id="__span-0-45"><a id="__codelineno-0-45" name="__codelineno-0-45" href="#__codelineno-0-45"></a><span class="n">credits</span> <span class="o">=</span> <span class="n">connection</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+</span><span id="__span-0-46"><a id="__codelineno-0-46" name="__codelineno-0-46" href="#__codelineno-0-46"></a>    <span class="s2">"SELECT credits FROM accounts WHERE account_id = 'demo-account'"</span>
+</span><span id="__span-0-47"><a id="__codelineno-0-47" name="__codelineno-0-47" href="#__codelineno-0-47"></a><span class="p">)</span><span class="o">.</span><span class="n">fetchone</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+</span><span id="__span-0-48"><a id="__codelineno-0-48" name="__codelineno-0-48" href="#__codelineno-0-48"></a><span class="nb">print</span><span class="p">(</span><span class="s2">"credits:"</span><span class="p">,</span> <span class="n">credits</span><span class="p">)</span>
+</span><span id="__span-0-49"><a id="__codelineno-0-49" name="__codelineno-0-49" href="#__codelineno-0-49"></a><span class="n">connection</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</span></code></pre></div>
+<p>运行：</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nv">LAB_DIR</span><span class="o">=</span><span class="s2">"</span><span class="k">$(</span>mktemp<span class="w"> </span>-d<span class="k">)</span><span class="s2">"</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="si">${</span><span class="nv">EDITOR</span><span class="k">:-</span><span class="nv">vi</span><span class="si">}</span><span class="w"> </span><span class="s2">"</span><span class="si">${</span><span class="nv">LAB_DIR</span><span class="si">}</span><span class="s2">/consumer.py"</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>python3<span class="w"> </span><span class="s2">"</span><span class="si">${</span><span class="nv">LAB_DIR</span><span class="si">}</span><span class="s2">/consumer.py"</span><span class="w"> </span><span class="s2">"</span><span class="si">${</span><span class="nv">LAB_DIR</span><span class="si">}</span><span class="s2">/lab.db"</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="o">[</span><span class="w"> </span>-n<span class="w"> </span><span class="s2">"</span><span class="si">${</span><span class="nv">LAB_DIR</span><span class="k">:-</span><span class="si">}</span><span class="s2">"</span><span class="w"> </span><span class="o">]</span><span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span>rm<span class="w"> </span>-rf<span class="w"> </span>--<span class="w"> </span><span class="s2">"</span><span class="si">${</span><span class="nv">LAB_DIR</span><span class="si">}</span><span class="s2">"</span>
+</span></code></pre></div>
+<p>预期输出：</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>first delivery applied: True
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>second delivery applied: False
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a>credits: 10
+</span></code></pre></div>
+<p>关键点是 <code>processed_messages</code> 与余额变更处于同一个数据库事务。如果先写余额、后写去重记录，进程在两者之间崩溃就可能重复增加余额。</p>
+<div class="admonition note">
+<p class="admonition-title">实验边界</p>
+<p>SQLite 适合演示原子性，不代表生产消息系统配置。生产消费者还要在数据库提交后确认消息、处理可见性超时、并发、死信、毒消息和去重记录保留。所谓“恰好一次”通常只在特定系统边界内成立，端到端副作用仍应按可能重复设计。</p>
+</div>
+<h3 id="2">2. 扩展验证<a class="headerlink" href="#2" title="Permanent link">&para;</a></h3>
+<p>把第二次事件的 <code>amount</code> 改为 <code>20</code>，但保留 <code>message_id</code>。安全实现应将其识别为冲突，而不仅仅返回“已处理”。为此可在去重表保存请求摘要，重复 ID 到来时比较摘要；不同摘要应记录安全事件并拒绝处理。</p>
+<h2 id="_38">生产实践<a class="headerlink" href="#_38" title="Permanent link">&para;</a></h2>
+<h3 id="_39">可靠性与恢复<a class="headerlink" href="#_39" title="Permanent link">&para;</a></h3>
+<ul>
+<li>为每个关键依赖定义超时、失败分类、降级路径和容量边界。</li>
+<li>跨可用区部署前确认数据仲裁、负载均衡和身份服务没有同域单点。</li>
+<li>备份必须通过恢复验证；分别测量数据恢复、基础设施重建和流量恢复时间。</li>
+<li>使用故障注入验证实例、可用区、依赖高延迟、消息重复和凭据过期，而不是只演练进程崩溃。</li>
+<li>把错误发布视为主要故障源，采用小批次、暂停条件和不可变回退制品。</li>
+</ul>
+<h3 id="_40">数据正确性<a class="headerlink" href="#_40" title="Permanent link">&para;</a></h3>
+<ul>
+<li>明确定义主数据所有者、事件模式、顺序范围和重复处理语义。</li>
+<li>业务不变量在权威写入边界执行；缓存和读模型不能成为隐含真相源。</li>
+<li>为 Saga 中间状态、补偿失败和人工处理建立可查询队列及服务级目标。</li>
+<li>进行在线模式迁移时遵循扩展/收缩：先兼容新增字段，再迁移数据，最后删除旧字段。</li>
+<li>加密、驻留、保留和删除要求要覆盖副本、缓存、事件日志、备份与可观测数据。</li>
+</ul>
+<h3 id="_41">安全<a class="headerlink" href="#_41" title="Permanent link">&para;</a></h3>
+<ul>
+<li>服务与自动化使用短期工作负载身份和最小权限；不把静态云密钥放进镜像或配置仓库。</li>
+<li>网络分段不是身份授权的替代品；敏感操作同时验证身份、权限和请求上下文。</li>
+<li>队列、对象存储、备份和遥测都可能包含敏感数据，应加密并记录访问审计。</li>
+<li>防止 SSRF、租户越权和不受控回调：外部 URL 使用允许规则、独立出口和签名验证。</li>
+<li>灾难恢复账号和跨地域复制权限爆炸半径很大，应隔离、定期轮换并演练。</li>
+</ul>
+<h3 id="_42">性能与成本<a class="headerlink" href="#_42" title="Permanent link">&para;</a></h3>
+<p>弹性并不等于无限容量。为 API、队列消费者、数据库连接和第三方配额建立联动容量模型。扩展某一层前确认下一层能承受新增并发；无法承受时实施背压或准入控制。</p>
+<p>成本模型至少包含常态与故障冗余计算、跨可用区/地域流量、队列请求、日志和追踪字节、备份与事件长期保留。按租户和功能分摊成本，但避免把用户 ID 等无限维度直接放入指标标签。</p>
+<h3 id="_43">可观测性与运维<a class="headerlink" href="#_43" title="Permanent link">&para;</a></h3>
+<ul>
+<li>用用户旅程 SLI 告警，同时保留组件饱和度作为诊断信号。</li>
+<li>异步系统重点监控最老消息年龄和端到端完成时间，仅看队列长度会受任务大小影响。</li>
+<li>记录每次重试、断路器状态变化、Saga 步骤和补偿结果，但控制敏感信息与基数。</li>
+<li>发布事件、配置变化和基础设施计划应成为可观测时间线的一部分。</li>
+<li>告警关联运行手册、所有者和升级路径；定期删除没有行动价值的噪声告警。</li>
+</ul>
+<h3 id="_44">可维护性与迁移<a class="headerlink" href="#_44" title="Permanent link">&para;</a></h3>
+<p>优先使用开放协议、可导出的数据格式和清晰适配层，隔离云厂商特有 API。抽象并非越多越好：若为了理论可移植性封装所有服务，可能丢失托管能力并创建自有平台负担。应识别最可能迁移、最昂贵锁定的边界，例如身份、事件格式和大规模数据，而不是追求任意组件随时替换。</p>
+<p>每个模式要有采用记录：问题、假设、被否决方案、成功指标、退出条件和负责人。定期检查已无价值的缓存、功能开关、双写和迁移适配层，减少架构沉积。</p>
+<h2 id="_45">常见误区<a class="headerlink" href="#_45" title="Permanent link">&para;</a></h2>
+<h3 id="_46">把多可用区当成自动高可用<a class="headerlink" href="#_46" title="Permanent link">&para;</a></h3>
+<p>若副本共享单一数据库、部署错误、身份服务或容量不足，多区仍会同时失败。必须验证端到端故障域和单区剩余容量。</p>
+<h3 id="_47">无限重试提高成功率<a class="headerlink" href="#_47" title="Permanent link">&para;</a></h3>
+<p>无界重试会占用资源并放大故障。应有总期限、次数、抖动、可重试分类和背压。</p>
+<h3 id="_48">队列能解决长期容量不足<a class="headerlink" href="#_48" title="Permanent link">&para;</a></h3>
+<p>队列只能吸收有限突发。平均输入持续高于处理能力时，积压和完成时间必然增长。</p>
+<h3 id="_49">宣称端到端“恰好一次”<a class="headerlink" href="#_49" title="Permanent link">&para;</a></h3>
+<p>事务边界之外仍可能重复调用支付、邮件等副作用。应明确保证边界，并用幂等、去重或对账处理重复。</p>
+<h3 id="_50">用事件溯源解决所有审计需求<a class="headerlink" href="#_50" title="Permanent link">&para;</a></h3>
+<p>普通不可变审计日志可能已经足够。事件溯源改变主存储和领域建模，带来重放、模式演进与删除难题。</p>
+<h3 id="cqrssaga">同时采用 CQRS、Saga 和事件溯源<a class="headerlink" href="#cqrssaga" title="Permanent link">&para;</a></h3>
+<p>这些模式可以组合，但各自解决不同问题。没有独立需求和运营能力时叠加，只会扩大状态空间。</p>
+<h3 id="_51">深度健康检查所有依赖<a class="headerlink" href="#_51" title="Permanent link">&para;</a></h3>
+<p>依赖短暂波动可能让所有实例同时不就绪，造成原本局部的故障扩散。就绪条件应基于是否还能安全提供目标能力。</p>
+<h3 id="_52">只监控资源使用率<a class="headerlink" href="#_52" title="Permanent link">&para;</a></h3>
+<p>CPU 正常不代表用户请求完成。必须观察成功率、延迟、数据正确性、积压年龄和业务终态。</p>
+<h3 id="_53">为可移植性构建最低公分母<a class="headerlink" href="#_53" title="Permanent link">&para;</a></h3>
+<p>完全回避云原生能力可能增加自建成本，却没有真实迁移收益。应量化退出成本，在关键边界保留可迁移性。</p>
+<h2 id="_54">动手练习<a class="headerlink" href="#_54" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>故障建模</strong>：选择一个现有服务，画出正常路径和五种故障：超时、限流、区域中断、重复消息、错误发布。为每种故障写出检测、自动动作、用户表现和升级条件。</li>
+<li><strong>计算重试预算</strong>：为端到端 1 秒的请求设计最多两次尝试，包含连接、处理与退避时间。验证最坏情况不超过上游截止期限，并说明哪些错误不可重试。</li>
+<li><strong>扩展幂等实验</strong>：在最小实践中保存请求 SHA-256；同 ID、同内容返回原结果，同 ID、不同内容拒绝并记录冲突。用两个并发进程验证唯一约束。</li>
+<li><strong>设计发件箱</strong>：为“创建订单并发布 <code>OrderCreated</code>”定义业务表、发件箱表、发布器状态和清理策略。结果应解释发布器崩溃前后为何不会丢事件，以及重复如何处理。</li>
+<li><strong>评审多地域方案</strong>：分别设计主动-被动与主动-主动写入，比较 RPO、RTO、延迟、冲突、成本和演练难度，依据业务不变量选择而不是按地域数量选择。</li>
+<li><strong>建立异步 SLO</strong>：为队列任务定义接收成功率、最老消息年龄和 95% 完成时间，设计一个下游变慢实验，确认告警先于用户承诺被突破。</li>
+<li><strong>清理架构沉积</strong>：盘点功能开关、缓存、旧 API、防腐层和双写路径，为每项记录所有者、用途、成本和删除条件。</li>
+</ol>
+<h2 id="_55">完成检查<a class="headerlink" href="#_55" title="Permanent link">&para;</a></h2>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能从 SLO、RPO、RTO、一致性和负载约束开始设计。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能解释超时、重试、断路器和舱壁如何组合及相互影响。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能判断多可用区、多地域主动-被动和主动-主动的权衡。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能说明幂等、发件箱、Saga、CQRS、事件溯源与分片分别解决什么问题。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 已运行重复消息实验，并确认业务效果只发生一次。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能使用队列削峰和竞争消费者，同时识别积压、乱序与下游过载风险。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能用防腐层或 Strangler Fig 设计渐进迁移，并避免无所有者双写。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能解释基础设施即代码、部署戳、领导者选举和外部配置的操作成本。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能为同步与异步用户旅程设计指标、日志、追踪、告警和运行手册。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能针对安全、可靠性、性能、成本和可迁移性给出架构取舍，而非罗列产品。</li>
+</ul>
+<h2 id="_56">官方延伸阅读<a class="headerlink" href="#_56" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="https://learn.microsoft.com/en-us/azure/architecture/patterns/">Microsoft Azure Architecture Center：Cloud Design Patterns</a>：按问题与权衡整理的云模式目录。</li>
+<li><a href="https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html">AWS Well-Architected Framework</a>：从运营、安全、可靠性、性能、成本和可持续性评审架构。</li>
+<li><a href="https://cloud.google.com/architecture/framework">Google Cloud Architecture Framework</a>：云工作负载架构原则与评审方法。</li>
+<li><a href="https://sre.google/workbook/implementing-slos/">Google SRE Workbook：Implementing SLOs</a>：从用户旅程建立 SLI 与 SLO。</li>
+<li><a href="https://opentelemetry.io/docs/">OpenTelemetry 官方文档</a>：跨厂商生成和传输指标、日志与追踪遥测。</li>
+<li><a href="https://www.w3.org/TR/trace-context/">W3C Trace Context</a>：分布式追踪上下文标准。</li>
+<li><a href="https://cloudevents.io/">CloudEvents Specification</a>：跨系统描述事件元数据的开放规范。</li>
+<li><a href="https://csrc.nist.gov/pubs/sp/800/204/a/final">NIST SP 800-204A</a>：微服务部署中的安全策略与工程考虑。</li>
+</ul>
+
+
+  <nav class="md-tags" >
+    
+      
+      
+      
+      
+        <span class="md-tag">云与架构</span>
+      
+    
+      
+      
+      
+      
+        <span class="md-tag">可靠性工程</span>
+      
+    
+      
+      
+      
+      
+        <span class="md-tag">配置与状态</span>
+      
+    
+  </nav>
+
+
+
+
+
+
+
+
+  
+  
+
+
+
+  
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-circle-arrow-up" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16 12-4-4-4 4M12 16V8"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="页脚" >
+        
+          
+          <a href="../service-mesh/" class="md-footer__link md-footer__link--prev" aria-label="上一页: 服务网格">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                上一页
+              </span>
+              <div class="md-ellipsis">
+                服务网格
+              </div>
+            </div>
+          </a>
+        
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://zensical.org/" target="_blank" rel="noopener">
+      Zensical
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate":null,"base":"..","features":["announce.dismiss","content.action.edit","content.action.view","content.code.annotate","content.code.copy","content.code.select","content.footnote.tooltips","content.tabs.link","content.tooltips","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.path","navigation.sections","navigation.top","navigation.tracking","search.highlight","toc.follow"],"search":"../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"已复制","clipboard.copy":"复制","search.result.more.one":"在该页上还有 1 个符合条件的结果","search.result.more.other":"在该页上还有 # 个符合条件的结果","search.result.none":"没有找到符合条件的结果","search.result.one":"找到 1 个符合条件的结果","search.result.other":"# 个符合条件的结果","search.result.placeholder":"键入以开始搜索","search.result.term.missing":"缺少","select.version":"选择当前版本"},"version":null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.e886cdf1.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,2461 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="本章围绕基础设施即代码的期望状态、依赖图、计划、状态文件、漂移和资源替换，比较 CloudFormation、AWS CDK、Pulumi 与 Terraform，并建立安全审批、执行、验证和恢复流程。">
+      
+      
+        <meta name="author" content="oaixnah">
+      
+      
+        <link rel="canonical" href="https://devops.roadmap.oaix.tech/provisioning/">
+      
+      
+        <link rel="prev" href="../serverless/">
+      
+      
+        <link rel="next" href="../configuration-management/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/favicon.svg">
+      <meta name="generator" content="zensical-0.0.55">
+    
+    
+      
+        <title>基础设施置备 - DevOps Roadmap 中文手册</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../assets/stylesheets/modern/main.20815dad.min.css">
+      
+        
+          
+        
+        <link rel="stylesheet" href="../assets/stylesheets/modern/palette.dfe2e883.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+  
+
+
+  
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FLXQC4YQJF"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-FLXQC4YQJF');
+</script>
+
+  
+  
+
+
+<script type="text/javascript">
+    (function(c,l,a,r,i,t,y){
+        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+    })(window, document, "clarity", "script", "y3p2irnl2z");
+</script>
+
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-label="导航栏"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#_1" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href="./.." title="DevOps Roadmap 中文手册" class="md-header__button md-logo" aria-label="DevOps Roadmap 中文手册" data-md-component="logo">
+      
+  <img src="../assets/logo.svg" alt="DevOps Roadmap 中文手册">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer" aria-label="导航栏">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            DevOps Roadmap 中文手册
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              基础设施置备
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun-moon" viewBox="0 0 24 24"><path d="M12 2v2M14.837 16.385a6 6 0 1 1-7.223-7.222c.624-.147.97.66.715 1.248a4 4 0 0 0 5.26 5.259c.589-.255 1.396.09 1.248.715M16 12a4 4 0 0 0-4-4M19 5l-1.256 1.256M20 12h2"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search" aria-label="查找">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="查找">
+  <button type="button" class="md-search__button">
+    查找
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+    </div>
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="./.." title="DevOps Roadmap 中文手册" class="md-nav__button md-logo" aria-label="DevOps Roadmap 中文手册" data-md-component="logo">
+      
+  <img src="../assets/logo.svg" alt="DevOps Roadmap 中文手册">
+
+    </a>
+    DevOps Roadmap 中文手册
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  首页
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  基础能力
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  基础能力
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../learn-a-programming-language/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  学习一种编程语言
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../operating-system/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  操作系统
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../terminal-knowledge/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  终端知识
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../version-control-systems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  版本控制系统
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../vcs-hosting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  版本控制托管
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../containers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  容器
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  基础设施与云
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  基础设施与云
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../common-infrastructure-services/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  常见基础设施服务
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../networking-and-protocols/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  网络与协议
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cloud-providers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  云服务商
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../serverless/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  无服务器计算
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  基础设施置备
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  基础设施置备
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        学习目标
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        前置知识
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#iac" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        IaC 管理什么
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        核心原理：执行模型
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="核心原理：执行模型">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        期望状态与资源图
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        幂等与不可变替换
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        状态
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        漂移
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        模块、环境与仓库结构
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#aws-cloudformation" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        AWS CloudFormation
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#aws-cdk" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        AWS CDK
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pulumi" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Pulumi
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#terraform" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Terraform
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        选型比较
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#terraform_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        最小实践：本地 Terraform 状态
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="最小实践：本地 Terraform 状态">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        1. 编写配置
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        2. 校验并保存计划
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        3. 验证幂等与校验
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        4. 销毁与清理
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        生产实践：变更流程
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="生产实践：变更流程">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        提交前
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        计划与审批
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_14" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        执行与验证
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_15" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        恢复
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_16" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        安全与可维护性
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_17" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        常见误区
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_18" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        动手练习
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_19" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        完成检查
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_20" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        官方延伸阅读
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  配置管理
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  持续交付与运行
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  持续交付与运行
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ci-cd-tools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  CI/CD 工具
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../secret-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  机密管理
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../infrastructure-monitoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  基础设施监控
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../logs-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  日志管理
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../container-orchestration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  容器编排
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../observability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  可观测性
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  平台与架构治理
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  平台与架构治理
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../artifact-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  制品管理
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gitops/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  GitOps
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../service-mesh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  服务网格
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cloud-design-patterns/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  云设计模式
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        学习目标
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        前置知识
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#iac" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        IaC 管理什么
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        核心原理：执行模型
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="核心原理：执行模型">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        期望状态与资源图
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        幂等与不可变替换
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        状态
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        漂移
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        模块、环境与仓库结构
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#aws-cloudformation" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        AWS CloudFormation
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#aws-cdk" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        AWS CDK
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pulumi" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Pulumi
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#terraform" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Terraform
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        选型比较
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#terraform_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        最小实践：本地 Terraform 状态
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="最小实践：本地 Terraform 状态">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        1. 编写配置
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        2. 校验并保存计划
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        3. 验证幂等与校验
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        4. 销毁与清理
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        生产实践：变更流程
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="生产实践：变更流程">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        提交前
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        计划与审批
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_14" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        执行与验证
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_15" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        恢复
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_16" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        安全与可维护性
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_17" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        常见误区
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_18" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        动手练习
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_19" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        完成检查
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_20" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        官方延伸阅读
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+  <nav class="md-path" aria-label="导航栏" >
+    <ol class="md-path__list">
+      
+        
+  
+  
+    <li class="md-path__item">
+      <a href="./.." class="md-path__link">
+        
+  
+  <span class="md-ellipsis">
+    首页
+  </span>
+
+      </a>
+    </li>
+  
+
+      
+      
+        
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      <li class="md-path__item">
+        <a href="../common-infrastructure-services/" class="md-path__link">
+          
+  
+  <span class="md-ellipsis">
+    基础设施与云
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ol>
+  </nav>
+
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+<h1 id="_1">基础设施置备<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<p>手工点击控制台可以快速验证想法，却很难回答“谁改了什么、能否在另一个环境重建、失败后如何恢复”。基础设施即代码（Infrastructure as Code，IaC）把云资源及其关系表达为可审查、可测试、可重复执行的代码。本章围绕状态、依赖图、计划、漂移和生命周期讲解置备，并比较 AWS CDK、CloudFormation、Pulumi 与 Terraform。</p>
+<h2 id="_2">学习目标<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>完成本章后，你应当能够：</p>
+<ul>
+<li>区分基础设施置备、镜像构建、配置管理、应用部署和编排的职责。</li>
+<li>解释声明式期望状态、资源依赖图、幂等、状态文件、漂移和替换语义。</li>
+<li>设计包含格式化、校验、计划、审批、应用和验证的安全 IaC 流程。</li>
+<li>说明 AWS CDK 如何合成为 CloudFormation，以及 constructs、tokens 与 bootstrap 的作用。</li>
+<li>使用 CloudFormation 模板、变更集、栈、漂移检测和 StackSets 管理 AWS 资源。</li>
+<li>比较 Pulumi 的通用语言模型与 Terraform 的 HCL、provider、module 和 state 模型。</li>
+<li>在本机运行不调用云 API 的 Terraform 最小实践，并检查计划与幂等结果。</li>
+<li>根据云范围、团队语言、治理、状态运维和迁移成本选择工具。</li>
+</ul>
+<h2 id="_3">前置知识<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<ul>
+<li>理解云资源、身份、网络、区域和共享责任，参见<a href="../cloud-providers/">云服务商</a>。</li>
+<li>熟悉 Git 分支、评审和变更历史，参见<a href="../version-control-systems/">版本控制系统</a>。</li>
+<li>能阅读至少一种编程语言或配置语言，参见<a href="../learn-a-programming-language/">学习一种编程语言</a>。</li>
+<li>配置主机内部状态属于下一章<a href="../configuration-management/">配置管理</a>，两者可组合但不应混淆。</li>
+</ul>
+<h2 id="iac">IaC 管理什么<a class="headerlink" href="#iac" title="Permanent link">&para;</a></h2>
+<p>基础设施置备通常负责生命周期较长、由控制面 API 管理的资源，例如虚拟网络、子网、负载均衡、数据库、队列、身份角色和 Kubernetes 集群。相邻能力包括：</p>
+<ul>
+<li><strong>镜像构建</strong>：把操作系统、软件和基线配置烘焙成不可变虚拟机或容器镜像。</li>
+<li><strong>配置管理</strong>：在已有机器上安装软件、管理文件和启动服务。</li>
+<li><strong>应用部署</strong>：选择应用版本、发布顺序、健康检查和回滚。</li>
+<li><strong>编排</strong>：持续调度容器或工作负载，并根据运行状态采取动作。</li>
+</ul>
+<p>边界可以重叠，但资源所有权必须唯一。例如 Terraform 创建虚拟机，Ansible 配置系统；不要让两者同时争夺同一防火墙规则或服务配置。对频繁替换的计算节点，优先把大部分配置放入版本化镜像，减少启动时长和收敛失败面。</p>
+<h2 id="_4">核心原理：执行模型<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<h3 id="_5">期望状态与资源图<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
+<p>声明式 IaC 描述“最终应存在什么”。工具读取代码和必要状态，查询远端 API，构建依赖图，再计算创建、更新、替换或删除操作。显式引用通常自动形成依赖，只有无法从数据流推导时才应手工增加依赖。</p>
+<pre class="mermaid"><code>flowchart LR
+    C[版本化 IaC] --&gt; V[格式化、校验与策略]
+    S[(状态或云栈记录)] --&gt; P[计划或变更集]
+    V --&gt; P
+    R[远端资源] --&gt; P
+    P --&gt; A{人工或策略审批}
+    A --&gt;|批准同一制品| E[执行变更]
+    E --&gt; R
+    E --&gt; S
+    E --&gt; O[验证、审计与监控]</code></pre>
+<p>依赖图允许无依赖资源并行，提高速度；错误依赖会导致竞争，过多手工依赖则降低并行度并隐藏真正的数据关系。资源“已创建”也不一定“业务已就绪”，因此应用层验证不能只依赖控制面成功响应。</p>
+<h3 id="_6">幂等与不可变替换<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
+<p>理想情况下，同一代码对已满足期望的环境再次执行不会产生变更，这称为幂等。云 API 的最终一致性、默认值、集合排序或提供商缺陷可能制造永久差异，需要定位根因，而不是每次忽略计划。</p>
+<p>有些属性可原地更新，有些只能替换资源。数据库、网段和持久磁盘的替换尤其危险。计划必须清楚标示 <code>create</code>、<code>update</code>、<code>replace</code> 和 <code>delete</code>，并用生命周期保护、删除策略、先建后删或显式迁移降低数据损失与停机风险。生命周期规则是最后护栏，不是跳过备份和评审的理由。</p>
+<h3 id="_7">状态<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
+<p>IaC 工具需要把代码中的逻辑地址关联到远端资源 ID。CloudFormation 由 AWS 维护栈状态；Terraform 和 Pulumi 通常使用本地或远端后端保存状态及元数据。</p>
+<p>状态可能包含资源属性、连接信息甚至敏感值。把输出标记为 <code>sensitive</code> 主要防止正常 CLI 显示，并不保证状态内容被删除或加密。生产后端应具备：</p>
+<ul>
+<li>静态与传输加密。</li>
+<li>最小权限和短期身份。</li>
+<li>并发锁或平台事务，防止两次应用互相覆盖。</li>
+<li>版本历史、备份与恢复测试。</li>
+<li>审计日志和跨环境隔离。</li>
+</ul>
+<p>状态不能随意手工编辑。移动或重命名资源时使用工具提供的 <code>moved</code>、导入或状态迁移功能，并先备份和在非生产环境演练。</p>
+<h3 id="_8">漂移<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
+<p>漂移（Drift）是远端实际配置与代码或栈记录不一致。它可能来自控制台热修复、其他自动化、服务默认值变化或外部系统。检测漂移前先规定处置策略：</p>
+<ol>
+<li>临时修复若合理，应回写代码并走正常评审。</li>
+<li>未授权变更应由代码恢复，同时调查身份和流程。</li>
+<li>明确由其他控制器管理的属性不应被 IaC 同时声明。</li>
+<li>高风险漂移先保全数据和业务，再恢复一致，不能机械覆盖。</li>
+</ol>
+<p>频繁定时执行 <code>apply</code> 可能把故障现场覆盖掉。更稳妥的是定期只读计划或原生漂移检测，产生可审查告警，再由负责人决定修复。</p>
+<h2 id="_9">模块、环境与仓库结构<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<p>模块封装一组有明确输入、输出和生命周期的资源。好模块表达业务能力，例如“带日志与加密的对象存储”，而不是把每个资源包装一遍。输入应有类型、描述和校验，输出只暴露调用方需要的稳定接口。</p>
+<p>生产与非生产环境应使用独立状态和权限边界。仅使用一个变量切换环境，无法阻止测试身份误改生产状态。常见结构是共享版本化模块，每个环境有小型根配置和独立流水线。模块版本升级通过显式提交进行，不自动追踪浮动分支。</p>
+<p>不要创建一个包含全部公司的巨型状态：它会扩大锁冲突、计划耗时、权限和故障爆炸半径。也不要拆成每个资源一个状态，否则跨栈依赖和发布顺序会失控。按团队所有权、变更频率、权限边界和故障域划分，并通过稳定输出或参数服务传递必要信息。</p>
+<h2 id="aws-cloudformation">AWS CloudFormation<a class="headerlink" href="#aws-cloudformation" title="Permanent link">&para;</a></h2>
+<p><strong>重点掌握（AWS 原生场景）</strong>。AWS CloudFormation 使用 JSON 或 YAML 模板声明 AWS 资源，以栈（Stack）为部署和生命周期单元。模板主要包含 <code>Parameters</code>、<code>Mappings</code>、<code>Conditions</code>、<code>Resources</code>、<code>Outputs</code> 和可选的转换；<code>Resources</code> 是核心。</p>
+<p>CloudFormation 根据资源引用推导依赖，并通过栈事件展示执行过程。更新前创建变更集（Change Set），检查新增、修改、替换和删除；然后执行同一变更集，避免审批后重新生成不同计划。失败更新通常触发回滚，但外部副作用、数据资源和无法恢复的 API 操作仍需人工预案。</p>
+<p>关键能力包括：</p>
+<ul>
+<li><strong>DeletionPolicy 与 UpdateReplacePolicy</strong>：决定栈删除或资源替换时保留、删除或快照数据资源。</li>
+<li><strong>Drift Detection</strong>：检查受支持资源属性是否偏离模板，但并非所有资源和属性都完整支持。</li>
+<li><strong>Nested Stacks 与 Modules</strong>：复用资源组合，需管理版本和失败传播。</li>
+<li><strong>StackSets</strong>：跨多个账号和区域部署标准资源，适合组织基线，但爆炸半径大，应分阶段推出。</li>
+<li><strong>Hooks、Guard 与策略</strong>：在部署前或部署中执行组织约束。</li>
+<li><strong>Stack Policy</strong>：限制关键资源被栈更新，修改流程也要受控。</li>
+</ul>
+<p>参数的 <code>NoEcho</code> 不能保证机密不会出现在资源属性、输出、元数据或 API 中。优先让模板引用 Secrets Manager 或 Parameter Store 的受控值，并避免在计划和日志中展开。模板中的动态引用也要检查目标服务是否最终保存明文。</p>
+<p>CloudFormation 的优势是 AWS 原生托管状态、权限与审计集成，以及新服务通常有原生资源类型。约束是仅面向 AWS，模板规模较大时抽象与测试成本上升，回滚时间和资源支持差异需要实际验证。</p>
+<h2 id="aws-cdk">AWS CDK<a class="headerlink" href="#aws-cdk" title="Permanent link">&para;</a></h2>
+<p><strong>替代方案（AWS 原生场景）</strong>。AWS Cloud Development Kit（AWS CDK）允许使用 TypeScript、JavaScript、Python、Java、C#、Go 等语言定义 constructs。CDK 应用经 <code>synth</code> 生成 CloudFormation 模板，最终仍由 CloudFormation 创建和维护资源。</p>
+<p>construct 分为不同抽象层级：底层资源通常接近 CloudFormation 属性，高层 construct 提供合理组合和默认值。高层默认值提高效率，但升级库后合成模板可能变化，因此依赖必须锁定，升级时审查 <code>cdk diff</code> 与合成产物。</p>
+<p>CDK 中许多值在合成时未知，以 token 表示，部署时由 CloudFormation 解析。不要用普通字符串或条件分支假设 token 已有真实值。环境查询可能写入 context；需要可重复合成时应审查并版本化适当的 context，避免同一提交因当前账号查询结果不同而生成不同模板。</p>
+<p><code>cdk bootstrap</code> 会在目标账号和区域创建部署所需资源及角色，是高权限的先决步骤。组织应集中维护 bootstrap 模板、可信账号和角色权限，而不是让每个开发者随意执行默认引导。部署流水线先执行单元测试、<code>cdk synth</code>、策略检查与 <code>cdk diff</code>，审批后由受控角色部署。</p>
+<p>CDK 适合 AWS 团队希望用熟悉语言、测试和 construct 库表达基础设施。通用语言也允许网络调用、随机值和任意副作用；基础设施代码应保持确定性，不在合成阶段创建资源或读取未固定外部数据。</p>
+<h2 id="pulumi">Pulumi<a class="headerlink" href="#pulumi" title="Permanent link">&para;</a></h2>
+<p><strong>替代方案</strong>。Pulumi 使用 TypeScript、JavaScript、Python、Go、C#、Java 或 YAML 等方式定义云资源。Pulumi 引擎执行程序获得资源图，provider 与云 API 交互，状态由 Pulumi Cloud 或自管后端保存。<code>pulumi preview</code> 展示计划，<code>pulumi up</code> 执行变更。</p>
+<p>资源输出（Output）表示部署时才确定的异步值。应通过 <code>apply</code> 或语言对应的输出组合机制传递，不能把它当普通字符串同步读取。程序在 preview 与 update 阶段都会运行，因此顶层代码必须确定且无不受控副作用；网络查询、当前时间和随机值都可能导致计划与执行不一致。</p>
+<p>Pulumi Config 管理环境配置，<code>--secret</code> 值在配置和状态中以所选机密提供者加密。机密传播可保护派生输出，但明文仍可能被应用代码、provider、云 API 或日志接触。需要管理密钥提供者、恢复材料、轮换和后端权限，而不是只依赖“secret”标签。</p>
+<p>Stacks 隔离不同环境，组件资源封装可复用组合，Policy as Code 可执行治理。Pulumi 适合希望复用通用语言、包管理和测试生态，或同时管理多云与 SaaS API 的团队。约束包括语言依赖供应链、程序确定性、Pulumi 状态运营，以及团队必须同时理解编程语言和资源生命周期。</p>
+<h2 id="terraform">Terraform<a class="headerlink" href="#terraform" title="Permanent link">&para;</a></h2>
+<p><strong>重点掌握（通用场景）</strong>。Terraform 使用 HashiCorp Configuration Language（HCL）声明资源，通过 provider 调用云、SaaS 或基础设施 API。核心对象包括：</p>
+<ul>
+<li><strong>resource</strong>：由 Terraform 管理生命周期的对象。</li>
+<li><strong>data</strong>：只读查询外部已有信息；查询结果变化也可能改变计划。</li>
+<li><strong>provider</strong>：实现资源和数据源，版本应受约束并通过 lock file 固定选择及校验和。</li>
+<li><strong>module</strong>：一组配置的复用边界；根模块调用本地或注册模块。</li>
+<li><strong>variable、local 与 output</strong>：构成输入、内部表达式和对外接口。</li>
+</ul>
+<p>典型流程为 <code>init</code>、<code>fmt</code>、<code>validate</code>、<code>plan</code> 和 <code>apply</code>。<code>plan -out</code> 生成已保存计划，审批后应应用该文件；直接再次执行无参数 <code>apply</code> 会重新生成计划。即使使用已保存计划，远端状态或凭据变化仍可能让执行失败，所以要保留回滚与恢复路径。</p>
+<p>Terraform state 将资源地址映射到远端 ID。团队环境使用支持锁、版本、加密和审计的远端后端。CLI workspace 可以共享代码和后端配置，但隔离能力有限；高风险环境通常再结合独立账号、状态键、流水线和身份。</p>
+<p>导入现有资源后还要编写匹配配置并检查下一次计划。重构地址使用 <code>moved</code> block，跨状态迁移要逐步执行和验证。<code>lifecycle.ignore_changes</code> 只用于某属性明确由其他系统管理的场景；滥用会把真实漂移永久藏起来。</p>
+<p>Terraform 适合多平台、成熟 provider 生态和偏好声明式 HCL 的团队。需要评估 provider 质量、许可与使用方式、状态后端、模块治理和升级工作。若组织采用兼容生态中的其他实现，也应单独验证状态、provider 与命令行为，不能假设完全互换。</p>
+<h2 id="_10">选型比较<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>CloudFormation</th>
+<th>AWS CDK</th>
+<th>Pulumi</th>
+<th>Terraform</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>主要范围</td>
+<td>AWS</td>
+<td>AWS，合成为 CloudFormation</td>
+<td>多云与多类 provider</td>
+<td>多云与多类 provider</td>
+</tr>
+<tr>
+<td>表达方式</td>
+<td>YAML 或 JSON 模板</td>
+<td>通用语言与 constructs</td>
+<td>通用语言或 YAML</td>
+<td>声明式 HCL</td>
+</tr>
+<tr>
+<td>状态运营</td>
+<td>AWS 托管栈</td>
+<td>AWS 托管栈</td>
+<td>Pulumi Cloud 或自管后端</td>
+<td>本地或远端后端</td>
+</tr>
+<tr>
+<td>预览机制</td>
+<td>Change Set</td>
+<td><code>cdk diff</code> 与 Change Set</td>
+<td><code>pulumi preview</code></td>
+<td><code>terraform plan</code></td>
+</tr>
+<tr>
+<td>抽象能力</td>
+<td>嵌套栈、模块、宏</td>
+<td>语言、construct 库</td>
+<td>语言、组件资源</td>
+<td>module、表达式</td>
+</tr>
+<tr>
+<td>主要风险</td>
+<td>模板规模、AWS 绑定、回滚边界</td>
+<td>合成差异、语言副作用、bootstrap 权限</td>
+<td>语言副作用、状态与依赖供应链</td>
+<td>状态治理、provider 差异、HCL 抽象边界</td>
+</tr>
+</tbody>
+</table>
+<p>选择步骤：</p>
+<ol>
+<li>仅管理 AWS 且希望服务商托管状态时，从 CloudFormation 与 CDK 开始评估。需要直接透明模板时选 CloudFormation，需要高层 construct 和语言测试时评估 CDK。</li>
+<li>跨多个云或 SaaS API 时比较 Pulumi 与 Terraform。团队偏好通用语言和组件抽象可试点 Pulumi；偏好专用声明语言、成熟模块和广泛运维经验可试点 Terraform。</li>
+<li>用同一小型环境验证首次创建、无变更执行、原地更新、强制替换、失败回滚、导入、漂移检测和工具升级。</li>
+<li>比较的不是代码行数，而是五年内的权限、状态、升级、调试、模块所有权和人员培训成本。</li>
+<li>确认关键资源的 provider 或原生类型支持质量。工具支持某云不代表每个新资源和属性都完整可用。</li>
+</ol>
+<p>一个组织可以在明确边界内使用多种工具，例如 CDK 管理 AWS 产品栈、Terraform 管理跨云共享服务。但同一资源只能有一个所有者，并应记录工具间输出契约，避免循环依赖。</p>
+<h2 id="terraform_1">最小实践：本地 Terraform 状态<a class="headerlink" href="#terraform_1" title="Permanent link">&para;</a></h2>
+<p>该实验使用 Terraform 内置的 <code>terraform_data</code> 资源，只创建当前目录中的状态文件，不安装 provider、不访问云 API，也不需要凭据。建议使用 Terraform <code>1.6</code> 或更高且低于 <code>2.0</code> 的兼容版本。</p>
+<h3 id="1">1. 编写配置<a class="headerlink" href="#1" title="Permanent link">&para;</a></h3>
+<p>在空目录创建 <code>main.tf</code>：</p>
+<div class="language-hcl highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nb">terraform</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span><span class="na">required_version</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"&gt;= 1.6.0, &lt; 2.0.0"</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="p">}</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="kr">variable</span><span class="w"> </span><span class="nv">"environment"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span><span class="na">description</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"The environment represented by this local lab."</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">  </span><span class="na">type</span><span class="w">        </span><span class="o">=</span><span class="w"> </span><span class="kt">string</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a><span class="w">  </span><span class="na">default</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="s2">"development"</span>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">  </span><span class="nb">validation</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">    </span><span class="na">condition</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="nf">contains</span><span class="p">([</span><span class="s2">"development", "staging"</span><span class="p">],</span><span class="w"> </span><span class="nv">var.environment</span><span class="p">)</span>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">    </span><span class="na">error_message</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"environment must be development or staging."</span>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a><span class="p">}</span>
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a>
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="nb">locals</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="w">  </span><span class="nb">common_tags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="w">    </span><span class="na">environment</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nv">var.environment</span>
+</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="w">    </span><span class="na">managed_by</span><span class="w">  </span><span class="o">=</span><span class="w"> </span><span class="s2">"terraform"</span>
+</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="w">    </span><span class="na">purpose</span><span class="w">     </span><span class="o">=</span><span class="w"> </span><span class="s2">"handbook-lab"</span>
+</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="p">}</span>
+</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a>
+</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a><span class="kr">resource</span><span class="w"> </span><span class="nc">"terraform_data"</span><span class="w"> </span><span class="nv">"handbook"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-0-25"><a id="__codelineno-0-25" name="__codelineno-0-25" href="#__codelineno-0-25"></a><span class="w">  </span><span class="nb">input</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-0-26"><a id="__codelineno-0-26" name="__codelineno-0-26" href="#__codelineno-0-26"></a><span class="w">    </span><span class="na">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"safe-local-example"</span>
+</span><span id="__span-0-27"><a id="__codelineno-0-27" name="__codelineno-0-27" href="#__codelineno-0-27"></a><span class="w">    </span><span class="na">tags</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="nv">local.common_tags</span>
+</span><span id="__span-0-28"><a id="__codelineno-0-28" name="__codelineno-0-28" href="#__codelineno-0-28"></a><span class="w">  </span><span class="p">}</span>
+</span><span id="__span-0-29"><a id="__codelineno-0-29" name="__codelineno-0-29" href="#__codelineno-0-29"></a><span class="p">}</span>
+</span><span id="__span-0-30"><a id="__codelineno-0-30" name="__codelineno-0-30" href="#__codelineno-0-30"></a>
+</span><span id="__span-0-31"><a id="__codelineno-0-31" name="__codelineno-0-31" href="#__codelineno-0-31"></a><span class="kr">output</span><span class="w"> </span><span class="nv">"validated_model"</span><span class="w"> </span><span class="p">{</span>
+</span><span id="__span-0-32"><a id="__codelineno-0-32" name="__codelineno-0-32" href="#__codelineno-0-32"></a><span class="w">  </span><span class="na">description</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">"The normalized model stored only in local Terraform state."</span>
+</span><span id="__span-0-33"><a id="__codelineno-0-33" name="__codelineno-0-33" href="#__codelineno-0-33"></a><span class="w">  </span><span class="na">value</span><span class="w">       </span><span class="o">=</span><span class="w"> </span><span class="nv">terraform_data.handbook.output</span>
+</span><span id="__span-0-34"><a id="__codelineno-0-34" name="__codelineno-0-34" href="#__codelineno-0-34"></a><span class="p">}</span>
+</span></code></pre></div>
+<h3 id="2">2. 校验并保存计划<a class="headerlink" href="#2" title="Permanent link">&para;</a></h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>terraform<span class="w"> </span>init
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>terraform<span class="w"> </span>fmt<span class="w"> </span>-check
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>terraform<span class="w"> </span>validate
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>terraform<span class="w"> </span>plan<span class="w"> </span>-out<span class="o">=</span>handbook.tfplan
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>terraform<span class="w"> </span>show<span class="w"> </span>handbook.tfplan
+</span></code></pre></div>
+<p>检查计划应只创建 <code>terraform_data.handbook</code>，没有云 provider 和外部资源。确认后应用<strong>同一个</strong>计划文件：</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>terraform<span class="w"> </span>apply<span class="w"> </span>handbook.tfplan
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>terraform<span class="w"> </span>output<span class="w"> </span>-json
+</span></code></pre></div>
+<h3 id="3">3. 验证幂等与校验<a class="headerlink" href="#3" title="Permanent link">&para;</a></h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>terraform<span class="w"> </span>plan<span class="w"> </span>-detailed-exitcode
+</span></code></pre></div>
+<p>无变更时命令退出码为 <code>0</code>；有差异为 <code>2</code>；错误为 <code>1</code>。不要在脚本中把非零一律当成失败。</p>
+<p>再验证非法输入会在计划阶段被拒绝：</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>terraform<span class="w"> </span>plan<span class="w"> </span>-var<span class="o">=</span><span class="s1">'environment=production'</span>
+</span></code></pre></div>
+<p>本实验有意不允许 <code>production</code>，命令应输出变量校验错误。</p>
+<h3 id="4">4. 销毁与清理<a class="headerlink" href="#4" title="Permanent link">&para;</a></h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>terraform<span class="w"> </span>destroy<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span>rm<span class="w"> </span>-r<span class="w"> </span>--<span class="w"> </span>./.terraform<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">  </span>rm<span class="w"> </span>-f<span class="w"> </span>--<span class="w"> </span>terraform.tfstate<span class="w"> </span>terraform.tfstate.backup<span class="w"> </span>handbook.tfplan
+</span></code></pre></div>
+<p>删除前确认当前目录是专用实验目录。只有销毁成功后才会继续清理本地文件；若命令失败，应保留状态并排查，不能手工跳过到 <code>rm</code>。<code>.terraform.lock.hcl</code> 在真实项目中应提交版本控制；本实验没有外部 provider，是否生成取决于 Terraform 版本。</p>
+<div class="admonition warning">
+<p class="admonition-title">本地状态只适合实验</p>
+<p><code>terraform.tfstate</code> 未提供团队锁、集中审计和独立备份。生产环境使用经过批准的远端后端，并把状态视为敏感数据。不要把状态文件或保存的计划提交到 Git。</p>
+</div>
+<h2 id="_11">生产实践：变更流程<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
+<h3 id="_12">提交前<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h3>
+<ul>
+<li>固定 CLI、provider、模块和语言依赖版本，验证来源与校验和。</li>
+<li>执行格式化、语法、类型、单元和静态安全检查。</li>
+<li>对网络全开放、未加密存储、公开数据、长期密钥和无删除保护等规则执行策略检查。</li>
+<li>在临时环境测试模块，包括创建、更新、替换、销毁和失败恢复。</li>
+</ul>
+<h3 id="_13">计划与审批<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h3>
+<ul>
+<li>CI 使用只读规划身份生成计划，不让不受信任的拉取请求取得生产凭据。</li>
+<li>计划绑定提交摘要、工具版本、依赖锁和目标环境，过期后重新生成。</li>
+<li>评审者重点查看删除、替换、权限扩大、公开访问、跨区和预估成本变化。</li>
+<li>高风险数据库、网络和身份变更需要服务负责人及安全或数据负责人审批。</li>
+</ul>
+<h3 id="_14">执行与验证<a class="headerlink" href="#_14" title="Permanent link">&para;</a></h3>
+<ul>
+<li>受保护流水线使用短期工作负载身份应用已审批计划，禁止个人长期密钥。</li>
+<li>同一状态同一时间只允许一次写操作；环境级部署锁不能替代状态后端锁。</li>
+<li>变更分阶段进行，先非生产、单一区域或小范围账号，再逐步推广。</li>
+<li>执行后运行 DNS、网络、权限和应用健康验证，并观察错误率和延迟。</li>
+<li>保存计划摘要、执行日志、审批和状态版本，但对机密字段脱敏并设置保留期限。</li>
+</ul>
+<h3 id="_15">恢复<a class="headerlink" href="#_15" title="Permanent link">&para;</a></h3>
+<p>IaC 回滚不是简单执行旧代码：如果数据库已迁移、对象已删除或资源名不可复用，旧配置可能无法恢复。每项高风险变更都要说明：</p>
+<ul>
+<li>原地回滚、向前修复还是从备份恢复。</li>
+<li>谁决定中止，观察窗口多长。</li>
+<li>数据是否兼容旧应用和旧资源。</li>
+<li>状态损坏或锁遗留时如何恢复。</li>
+<li>控制面不可用时业务能否继续，以及哪些操作必须暂停。</li>
+</ul>
+<h2 id="_16">安全与可维护性<a class="headerlink" href="#_16" title="Permanent link">&para;</a></h2>
+<ul>
+<li>IaC 仓库不保存云密钥、私钥、状态和包含机密的计划文件。扫描只能作为最后防线。</li>
+<li>使用 OIDC 或平台工作负载身份让 CI 获取短期角色；规划和应用角色权限分离。</li>
+<li>模块有负责人、版本、变更记录、弃用周期和升级指南，不直接追踪 Git 默认分支。</li>
+<li>定期只读检测漂移并分类告警，控制台紧急修改必须设置期限和回写任务。</li>
+<li>为资源设置统一命名、标签、日志、加密、备份和删除保护基线，允许经过记录的例外。</li>
+<li>估算每次计划的成本变化，但把估算视为决策输入，不保证与账单完全一致。</li>
+<li>对 IaC 指标进行监控：计划失败率、应用时长、回滚次数、漂移数量和模块版本分布。</li>
+</ul>
+<h2 id="_17">常见误区<a class="headerlink" href="#_17" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>把 IaC 当作控制台操作的文本备份</strong>：真正价值来自可重复执行、状态关联、评审、测试和治理。</li>
+<li><strong>计划后再次无参数执行</strong>：重新生成的计划可能与审批内容不同，应应用同一已保存制品或平台锁定的变更集。</li>
+<li><strong>把状态文件提交 Git</strong>：状态会变化、产生冲突且可能含机密，应使用受控远端后端。</li>
+<li><strong>认为 <code>sensitive</code> 会从状态中删除值</strong>：它通常只隐藏界面输出，状态仍须加密并限制访问。</li>
+<li><strong>依赖目标式应用作为常规流程</strong>：只应用图的一部分可能跳过必要变更，目标参数应只用于受控恢复。</li>
+<li><strong>滥用 <code>ignore_changes</code> 消除噪声</strong>：它也会隐藏安全漂移和失效配置，必须有明确的其他所有者。</li>
+<li><strong>一个状态管理所有环境</strong>：锁、权限、错误和删除的爆炸半径会过大。</li>
+<li><strong>模块越通用越好</strong>：包含大量布尔开关的万能模块难测试、难升级，也无法表达清晰所有权。</li>
+<li><strong>用 IaC 自动修复所有运行时故障</strong>：持续重建可能覆盖证据或扩大事故，应先区分配置漂移与服务故障。</li>
+<li><strong>认为删除后一定可由旧代码恢复</strong>：持久数据、唯一名称和外部依赖可能不可逆，必须有备份和恢复验证。</li>
+</ul>
+<h2 id="_18">动手练习<a class="headerlink" href="#_18" title="Permanent link">&para;</a></h2>
+<ol>
+<li>完成 Terraform 本地实验，保存首次创建计划并应用，再确认第二次计划退出码为 <code>0</code>。</li>
+<li>给实验增加一个 <code>owner</code> 变量，要求非空且不超过 40 个字符。分别用合法和非法值验证，不要在变量中写邮箱或个人信息。</li>
+<li>重命名 <code>terraform_data.handbook</code> 的资源地址，先观察无迁移声明时的删除与创建计划，再添加 <code>moved</code> block，确认计划不再替换资源。</li>
+<li>为一个包含网络、数据库和应用的系统划分状态边界，说明每个状态的所有者、变更频率、权限及跨状态输出契约。</li>
+<li>分别用 CloudFormation、AWS CDK、Pulumi 和 Terraform 的官方文档设计同一个加密对象存储。比较代码之外的状态、预览、策略、测试和删除保护流程。</li>
+<li>编写一份高风险数据库替换的变更清单，必须包含备份验证、兼容窗口、已审批计划、停止条件和恢复责任人。</li>
+</ol>
+<h2 id="_19">完成检查<a class="headerlink" href="#_19" title="Permanent link">&para;</a></h2>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能区分置备、镜像构建、配置管理、应用部署和编排。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能解释期望状态、依赖图、幂等、状态、漂移和资源替换。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能说明 CloudFormation 栈、变更集、删除策略、漂移和 StackSets。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能说明 AWS CDK construct、token、context、synth 与 bootstrap。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能说明 Pulumi program、Output、stack、state 和 secret 传播。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能说明 Terraform provider、resource、data、module、plan 和 state。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 已完成不访问云 API 的 Terraform 实验并验证无变更计划。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能为 IaC 设计安全的计划、审批、执行、验证和恢复流程。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能根据范围、团队、治理、状态和迁移成本选择工具。</li>
+</ul>
+<h2 id="_20">官方延伸阅读<a class="headerlink" href="#_20" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/Welcome.html">AWS CloudFormation User Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/security-best-practices.html">CloudFormation 安全最佳实践</a></li>
+<li><a href="https://docs.aws.amazon.com/cdk/v2/guide/home.html">AWS CDK Developer Guide</a></li>
+<li><a href="https://docs.aws.amazon.com/cdk/v2/guide/constructs.html">AWS CDK Constructs</a></li>
+<li><a href="https://www.pulumi.com/docs/">Pulumi 文档</a></li>
+<li><a href="https://www.pulumi.com/docs/iac/concepts/">Pulumi IaC Concepts</a></li>
+<li><a href="https://developer.hashicorp.com/terraform/docs">Terraform 文档</a></li>
+<li><a href="https://developer.hashicorp.com/terraform/language/state">Terraform State</a></li>
+<li><a href="https://developer.hashicorp.com/terraform/language/modules/develop/structure">Terraform Module 设计指南</a></li>
+</ul>
+
+
+  <nav class="md-tags" >
+    
+      
+      
+      
+      
+        <span class="md-tag">云与架构</span>
+      
+    
+      
+      
+      
+      
+        <span class="md-tag">配置与状态</span>
+      
+    
+      
+      
+      
+      
+        <span class="md-tag">自动化交付</span>
+      
+    
+  </nav>
+
+
+
+
+
+
+
+
+  
+  
+
+
+
+  
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-circle-arrow-up" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16 12-4-4-4 4M12 16V8"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="页脚" >
+        
+          
+          <a href="../serverless/" class="md-footer__link md-footer__link--prev" aria-label="上一页: 无服务器计算">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                上一页
+              </span>
+              <div class="md-ellipsis">
+                无服务器计算
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../configuration-management/" class="md-footer__link md-footer__link--next" aria-label="下一页: 配置管理">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                下一页
+              </span>
+              <div class="md-ellipsis">
+                配置管理
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://zensical.org/" target="_blank" rel="noopener">
+      Zensical
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate":null,"base":"..","features":["announce.dismiss","content.action.edit","content.action.view","content.code.annotate","content.code.copy","content.code.select","content.footnote.tooltips","content.tabs.link","content.tooltips","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.path","navigation.sections","navigation.top","navigation.tracking","search.highlight","toc.follow"],"search":"../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"已复制","clipboard.copy":"复制","search.result.more.one":"在该页上还有 1 个符合条件的结果","search.result.more.other":"在该页上还有 # 个符合条件的结果","search.result.none":"没有找到符合条件的结果","search.result.one":"找到 1 个符合条件的结果","search.result.other":"# 个符合条件的结果","search.result.placeholder":"键入以开始搜索","search.result.term.missing":"缺少","select.version":"选择当前版本"},"version":null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.e886cdf1.min.js"></script>
+      
+    
+  </body>
+</html>

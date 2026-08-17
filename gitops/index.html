@@ -1,0 +1,2671 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="本章解释 GitOps 的期望状态、拉取式交付、持续协调、漂移修复和清理风险，比较 Argo CD 与 Flux CD 的工作模型，并通过临时集群实践建立可审计、可恢复的多环境交付流程。">
+      
+      
+        <meta name="author" content="oaixnah">
+      
+      
+        <link rel="canonical" href="https://devops.roadmap.oaix.tech/gitops/">
+      
+      
+        <link rel="prev" href="../artifact-management/">
+      
+      
+        <link rel="next" href="../service-mesh/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/favicon.svg">
+      <meta name="generator" content="zensical-0.0.55">
+    
+    
+      
+        <title>声明式运维（GitOps） - DevOps Roadmap 中文手册</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../assets/stylesheets/modern/main.20815dad.min.css">
+      
+        
+          
+        
+        <link rel="stylesheet" href="../assets/stylesheets/modern/palette.dfe2e883.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+  
+
+
+  
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FLXQC4YQJF"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-FLXQC4YQJF');
+</script>
+
+  
+  
+
+
+<script type="text/javascript">
+    (function(c,l,a,r,i,t,y){
+        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+    })(window, document, "clarity", "script", "y3p2irnl2z");
+</script>
+
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-label="导航栏"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#gitops" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href="./.." title="DevOps Roadmap 中文手册" class="md-header__button md-logo" aria-label="DevOps Roadmap 中文手册" data-md-component="logo">
+      
+  <img src="../assets/logo.svg" alt="DevOps Roadmap 中文手册">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer" aria-label="导航栏">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            DevOps Roadmap 中文手册
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              声明式运维（GitOps）
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun-moon" viewBox="0 0 24 24"><path d="M12 2v2M14.837 16.385a6 6 0 1 1-7.223-7.222c.624-.147.97.66.715 1.248a4 4 0 0 0 5.26 5.259c.589-.255 1.396.09 1.248.715M16 12a4 4 0 0 0-4-4M19 5l-1.256 1.256M20 12h2"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search" aria-label="查找">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="查找">
+  <button type="button" class="md-search__button">
+    查找
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+    </div>
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="./.." title="DevOps Roadmap 中文手册" class="md-nav__button md-logo" aria-label="DevOps Roadmap 中文手册" data-md-component="logo">
+      
+  <img src="../assets/logo.svg" alt="DevOps Roadmap 中文手册">
+
+    </a>
+    DevOps Roadmap 中文手册
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  首页
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  基础能力
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  基础能力
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../learn-a-programming-language/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  学习一种编程语言
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../operating-system/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  操作系统
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../terminal-knowledge/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  终端知识
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../version-control-systems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  版本控制系统
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../vcs-hosting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  版本控制托管
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../containers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  容器
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  基础设施与云
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  基础设施与云
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../common-infrastructure-services/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  常见基础设施服务
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../networking-and-protocols/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  网络与协议
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cloud-providers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  云服务商
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../serverless/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  无服务器计算
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../provisioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  基础设施置备
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  配置管理
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  持续交付与运行
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  持续交付与运行
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ci-cd-tools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  CI/CD 工具
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../secret-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  机密管理
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../infrastructure-monitoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  基础设施监控
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../logs-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  日志管理
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../container-orchestration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  容器编排
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../observability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  可观测性
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  平台与架构治理
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  平台与架构治理
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../artifact-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  制品管理
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  GitOps
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  GitOps
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        学习目标
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        前置知识
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        核心原理
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="核心原理">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#git" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Git 是期望状态入口，不是运行时数据库
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        协调是一个持续控制环
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        拉取式交付重画凭据边界
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        漂移、清理与回退
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        仓库结构表达职责
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#argo-cd" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Argo CD
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#flux-cd" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Flux CD
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        选型比较
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#argo-cd_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        最小实践：用 Argo CD 协调临时集群
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="最小实践：用 Argo CD 协调临时集群">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        1. 准备工具与集群
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        2. 安装控制器
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        3. 声明并同步应用
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        4. 观察漂移修复
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        5. 清理
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        生产实践
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="生产实践">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        仓库与变更治理
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        机密与来源
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        权限与多租户
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        发布安全与回退
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_14" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        清理与防误删
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_15" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        可观测性与服务级目标
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_16" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        控制器恢复
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_17" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        常见误区
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="常见误区">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#gitops_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        把自动同步等同于 GitOps
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ci-gitops" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        让 CI 直接改集群，再让 GitOps 接管
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_18" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        把明文机密放进私有仓库
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_19" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        默认开启全局自动清理
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_20" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        认为回退提交一定安全
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_21" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        忽略字段所有权
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_22" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        直接跟踪上游主分支
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_23" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        动手练习
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_24" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        完成检查
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_25" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        官方延伸阅读
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../service-mesh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  服务网格
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cloud-design-patterns/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  云设计模式
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        学习目标
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        前置知识
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        核心原理
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="核心原理">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#git" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Git 是期望状态入口，不是运行时数据库
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        协调是一个持续控制环
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        拉取式交付重画凭据边界
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        漂移、清理与回退
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        仓库结构表达职责
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#argo-cd" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Argo CD
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#flux-cd" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Flux CD
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        选型比较
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#argo-cd_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        最小实践：用 Argo CD 协调临时集群
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="最小实践：用 Argo CD 协调临时集群">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        1. 准备工具与集群
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        2. 安装控制器
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        3. 声明并同步应用
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#4" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        4. 观察漂移修复
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#5" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        5. 清理
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        生产实践
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="生产实践">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        仓库与变更治理
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        机密与来源
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        权限与多租户
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        发布安全与回退
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_14" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        清理与防误删
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_15" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        可观测性与服务级目标
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_16" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        控制器恢复
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_17" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        常见误区
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="常见误区">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#gitops_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        把自动同步等同于 GitOps
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#ci-gitops" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        让 CI 直接改集群，再让 GitOps 接管
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_18" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        把明文机密放进私有仓库
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_19" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        默认开启全局自动清理
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_20" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        认为回退提交一定安全
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_21" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        忽略字段所有权
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_22" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        直接跟踪上游主分支
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_23" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        动手练习
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_24" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        完成检查
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_25" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        官方延伸阅读
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+  <nav class="md-path" aria-label="导航栏" >
+    <ol class="md-path__list">
+      
+        
+  
+  
+    <li class="md-path__item">
+      <a href="./.." class="md-path__link">
+        
+  
+  <span class="md-ellipsis">
+    首页
+  </span>
+
+      </a>
+    </li>
+  
+
+      
+      
+        
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      <li class="md-path__item">
+        <a href="../artifact-management/" class="md-path__link">
+          
+  
+  <span class="md-ellipsis">
+    平台与架构治理
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ol>
+  </nav>
+
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+<h1 id="gitops">声明式运维（GitOps）<a class="headerlink" href="#gitops" title="Permanent link">&para;</a></h1>
+<p>当集群和应用由大量命令、控制台操作与流水线脚本共同修改时，团队很难回答“当前状态从哪里来、谁批准了变化、漂移后应以谁为准”。GitOps 把经过版本控制和评审的声明作为期望状态，由集群内的协调器（Reconciler）持续比较期望与实际状态，并通过幂等操作收敛差异。</p>
+<p>GitOps 不是“把 YAML 放进 Git”，也不等同于某个产品。它是一种运行模型：声明式描述、版本化且不可变的变更历史、自动拉取与持续协调。正确使用时，它缩小部署凭据的分发范围，统一变更审计和回退入口；错误使用时，也可能让一次错误提交迅速传播到所有环境。</p>
+<p><strong>重点掌握</strong>：期望状态、持续协调、漂移、健康状态、分层交付，以及以 Git 提交而不是集群命令驱动变更。</p>
+<h2 id="_1">学习目标<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h2>
+<p>完成本章后，你应能够：</p>
+<ul>
+<li>解释 GitOps 控制环以及拉取式交付与推送式流水线的信任边界。</li>
+<li>设计应用源、环境配置与机密之间的仓库边界。</li>
+<li>使用 Argo CD 或 Flux CD 将临时 Kubernetes 集群收敛到 Git 中的状态。</li>
+<li>判断自动同步、自动修复和自动清理应在哪些环境启用。</li>
+<li>比较 Argo CD 与 Flux CD 的操作模型、扩展方式和迁移成本。</li>
+<li>为多集群交付设计渐进发布、策略门禁、可观测性和灾难恢复流程。</li>
+</ul>
+<h2 id="_2">前置知识<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<ul>
+<li>熟悉 <a href="../version-control-systems/">版本控制系统</a> 中的分支、提交、标签和合并请求。</li>
+<li>理解 <a href="../ci-cd-tools/">CI/CD 工具</a> 中构建、测试和部署阶段的职责。</li>
+<li>能操作 <a href="../container-orchestration/">容器编排</a> 中的 Kubernetes 对象、命名空间和 RBAC。</li>
+<li>知道如何从 <a href="../artifact-management/">制品管理</a> 中按不可变摘要选择镜像。</li>
+<li>了解 <a href="../secret-management/">机密管理</a> 中的加密存储和外部机密引用。</li>
+</ul>
+<h2 id="_3">核心原理<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<h3 id="git">Git 是期望状态入口，不是运行时数据库<a class="headerlink" href="#git" title="Permanent link">&para;</a></h3>
+<p>Git 仓库保存的是经过授权的期望状态及其历史。Kubernetes API 保存运行时状态；云 API、数据库和外部控制器也可能拥有各自的真实状态。GitOps 不会消除这些状态源，而是明确哪些字段由谁负责，并让控制器将自己负责的字段持续收敛。</p>
+<p>适合声明式管理的内容通常包括：</p>
+<ul>
+<li>Kubernetes 工作负载、服务、策略与控制器自定义资源。</li>
+<li>以引用形式表达的镜像摘要和外部机密。</li>
+<li>可由控制器安全协调的云资源或平台能力。</li>
+</ul>
+<p>不应直接提交的内容包括明文机密、瞬时状态、完整数据库内容、未脱敏导出，以及由运行时控制器频繁写回的状态字段。</p>
+<h3 id="_4">协调是一个持续控制环<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h3>
+<p>协调器反复执行“观察、比较、行动、再观察”：</p>
+<pre class="mermaid"><code>flowchart LR
+    Git[Git 中的期望状态] --&gt; Fetch[获取并渲染]
+    Cluster[集群实际状态] --&gt; Compare[差异与健康判断]
+    Fetch --&gt; Compare
+    Compare --&gt;|有差异| Apply[应用、清理或告警]
+    Apply --&gt; Cluster
+    Compare --&gt;|已收敛| Wait[等待事件或下个周期]
+    Wait --&gt; Fetch</code></pre>
+<p>一个可靠控制环应具备：</p>
+<ul>
+<li><strong>幂等性</strong>：重复协调不会不断制造新变化。</li>
+<li><strong>最终一致性</strong>：短暂差异可以存在，但系统会在限定时间内收敛或报告失败。</li>
+<li><strong>所有权边界</strong>：避免多个控制器反复争夺同一字段。</li>
+<li><strong>可观察状态</strong>：能区分已同步、健康、正在推进、暂停与失败。</li>
+<li><strong>安全失败</strong>：无法验证来源、渲染失败或越权时停止，而不是猜测性部署。</li>
+</ul>
+<p>同步（Sync）与健康（Health）是不同维度。对象可以与 Git 一致，但应用仍因镜像拉取失败而不健康；也可以运行健康，却因人工修改副本数而产生漂移。</p>
+<h3 id="_5">拉取式交付重画凭据边界<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
+<p>传统推送式部署常让 CI 持有每个目标集群的高权限凭据。GitOps 通常在目标集群或受控管理集群中运行协调器，由它拉取 Git 与制品，并使用本地服务账号应用变更。CI 只需构建、测试、发布不可变制品，并提出环境仓库变更。</p>
+<p>这减少了 CI 凭据横向影响范围，但不会自动安全：协调器本身权限很高，Git 写权限可以间接变成部署权限，仓库凭据与 Webhook 也必须保护。管理多个集群的中央控制器还可能形成更大的爆炸半径，需要按租户、环境或信任域拆分。</p>
+<h3 id="_6">漂移、清理与回退<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
+<p>漂移是实际状态偏离期望状态。处理方式有三种：</p>
+<ul>
+<li><strong>只检测</strong>：报告差异，人工决定如何处理，适合刚接入或高风险资源。</li>
+<li><strong>自动修复</strong>：把手工修改恢复为 Git 状态，适合所有权清晰且可安全重放的资源。</li>
+<li><strong>接受差异</strong>：明确忽略由其他控制器拥有的字段，避免无意义抖动。</li>
+</ul>
+<p>清理（Prune）会删除 Git 中已移除的对象。它能消除孤儿资源，也可能因路径、渲染或仓库错误大规模删除，因此应有范围、顺序、保护规则和审计。</p>
+<p>Git 回退通常是创建一个恢复旧期望状态的新提交，而不是改写历史。若旧镜像已经删除、数据库发生不可逆迁移，或外部状态已变化，回退提交也无法自动恢复。因此部署回退、数据恢复和业务补偿必须分别设计。</p>
+<h3 id="_7">仓库结构表达职责<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
+<p>常见分层是：</p>
+<ol>
+<li>应用仓库构建并测试软件，发布带摘要的制品。</li>
+<li>环境仓库保存该摘要、部署参数和平台策略。</li>
+<li>自动化或发布人员提交环境变更，评审者批准。</li>
+<li>协调器只读取获准路径，并把变化应用到对应集群。</li>
+</ol>
+<p>单仓库便于原子修改和统一搜索，但权限边界较粗、规模增长快；多仓库可隔离团队与环境，却增加版本关联和批量变更成本。不要机械套用目录模板，应先明确谁能提议、谁能批准、哪个协调器能读、哪些变化必须原子发生。</p>
+<h2 id="argo-cd">Argo CD<a class="headerlink" href="#argo-cd" title="Permanent link">&para;</a></h2>
+<p><strong>重点掌握</strong>。Argo CD 是面向 Kubernetes 的声明式 GitOps 持续交付控制器。它以 <code>Application</code> 资源描述来源、目标和同步策略，并提供 API、CLI 与 Web UI 展示差异、资源树和健康状态。</p>
+<p>核心概念包括：</p>
+<ul>
+<li><strong>Application</strong>：关联 Git/Helm/OCI 来源与目标集群、命名空间。</li>
+<li><strong>Project</strong>：限制允许的来源仓库、目标和资源种类，是多租户安全边界之一。</li>
+<li><strong>Sync</strong>：把渲染结果应用到目标，可手动或自动执行。</li>
+<li><strong>Health</strong>：根据资源状态判断应用是否可用，不等于同步状态。</li>
+<li><strong>ApplicationSet</strong>：按集群、Git 目录或其他生成器批量生成 <code>Application</code>。</li>
+</ul>
+<p>Argo CD 的资源视图有利于排查依赖关系和人工审批。生产中应尽快关闭或保护初始管理员入口，接入单点登录，配置项目边界，并限制仓库凭据和目标集群。若启用多个配置管理插件，插件执行环境也属于供应链攻击面。</p>
+<h2 id="flux-cd">Flux CD<a class="headerlink" href="#flux-cd" title="Permanent link">&para;</a></h2>
+<p><strong>替代方案</strong>。Flux CD 是一组 Kubernetes 控制器与自定义资源的集合，常见组件分别负责来源获取、Kustomize 协调、Helm 发布、通知和镜像自动化。它更强调由 Kubernetes API 表达可组合的控制器工作流。</p>
+<p>典型资源包括：</p>
+<ul>
+<li><strong>GitRepository/OCIRepository</strong>：获取并验证来源制品。</li>
+<li><strong>Kustomization</strong>：选择路径、渲染并应用资源，可声明依赖、健康检查和清理。</li>
+<li><strong>HelmRepository/HelmRelease</strong>：获取 Helm 来源并协调发布。</li>
+<li><strong>Receiver/Alert/Provider</strong>：接收事件并发送状态通知。</li>
+<li><strong>ImageRepository/ImagePolicy/ImageUpdateAutomation</strong>：发现镜像并按策略提出或写入版本更新。</li>
+</ul>
+<p>Flux 可通过 <code>flux bootstrap</code> 把控制器及其同步配置写入 Git，使自身也由 Git 管理。生产引导时应使用短期、最小权限凭据，审查 bootstrap 产生的密钥和部署密钥，并为来源验证、租户隔离与控制器权限建立明确策略。</p>
+<h2 id="_8">选型比较<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>Argo CD</th>
+<th>Flux CD</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>主要交互</td>
+<td><code>Application</code>/<code>ApplicationSet</code>、API、CLI 和 Web UI</td>
+<td>可组合 CRD、<code>flux</code> CLI 与 Kubernetes 原生 API</td>
+</tr>
+<tr>
+<td>状态呈现</td>
+<td>内置应用资源树、差异和健康界面</td>
+<td>状态主要体现在 CRD、事件、通知和外接界面</td>
+</tr>
+<tr>
+<td>多实例生成</td>
+<td>ApplicationSet 生成器</td>
+<td>多个来源和 Kustomization/HelmRelease 组合</td>
+</tr>
+<tr>
+<td>引导方式</td>
+<td>安装控制器后声明应用，可再管理自身</td>
+<td><code>flux bootstrap</code> 强调把控制器同步配置纳入 Git</td>
+</tr>
+<tr>
+<td>迁移关注点</td>
+<td>Application/Project、健康定制、同步波次和忽略规则</td>
+<td>Source/Kustomization/HelmRelease、依赖与通知对象</td>
+</tr>
+</tbody>
+</table>
+<p>选择时应实际验证以下维度：</p>
+<ul>
+<li>团队是否需要内置的可视化审批和资源树，还是偏好纯 API/CRD 工作流。</li>
+<li>Helm、Kustomize、OCI 来源、签名验证和私有仓库的实际组合。</li>
+<li>多集群数量、租户边界、控制器放置方式及单点故障范围。</li>
+<li>失败重试、依赖排序、健康判定、渐进发布和通知如何实现。</li>
+<li>自定义扩展是否需要执行不受信代码，升级时 CRD 与行为如何兼容。</li>
+<li>从现有工具迁移时，哪些产品特定对象需要转换，如何并行观察而不让两个控制器争夺资源。</li>
+</ul>
+<p>两者都能实现可靠 GitOps。不要仅凭是否有 UI 选型；用一个包含自定义资源、失败回滚、机密引用和多环境覆盖的代表性服务做验证，并测量从合并到收敛、从漂移到修复的时间。</p>
+<h2 id="argo-cd_1">最小实践：用 Argo CD 协调临时集群<a class="headerlink" href="#argo-cd_1" title="Permanent link">&para;</a></h2>
+<p>本实践创建仅供本机实验的 <code>kind</code> 集群，安装固定版本的 Argo CD，并从固定提交的公开示例仓库同步一个 Web 服务。示例通过 Kustomize 把上游旧镜像替换成以多架构摘要固定的非特权 Nginx 镜像。它不会访问生产集群，也不要求把密码写入文件。</p>
+<h3 id="1">1. 准备工具与集群<a class="headerlink" href="#1" title="Permanent link">&para;</a></h3>
+<p>需要 Docker、<code>kubectl</code> 和 <code>kind</code>。创建独立集群，避免与现有上下文混淆：</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>kind<span class="w"> </span>create<span class="w"> </span>cluster<span class="w"> </span>--name<span class="w"> </span>gitops-lab<span class="w"> </span>--wait<span class="w"> </span>120s
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>kubectl<span class="w"> </span>config<span class="w"> </span>current-context
+</span></code></pre></div>
+<p>输出应为 <code>kind-gitops-lab</code>。后续命令都显式使用该上下文。</p>
+<h3 id="2">2. 安装控制器<a class="headerlink" href="#2" title="Permanent link">&para;</a></h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>kubectl<span class="w"> </span>--context<span class="w"> </span>kind-gitops-lab<span class="w"> </span>create<span class="w"> </span>namespace<span class="w"> </span>argocd
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>kubectl<span class="w"> </span>--context<span class="w"> </span>kind-gitops-lab<span class="w"> </span>apply<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span>--server-side<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">  </span>--force-conflicts<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="w">  </span>--namespace<span class="w"> </span>argocd<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">  </span>--filename<span class="w"> </span>https://raw.githubusercontent.com/argoproj/argo-cd/v3.5.1/manifests/install.yaml
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>kubectl<span class="w"> </span>--context<span class="w"> </span>kind-gitops-lab<span class="w"> </span><span class="nb">wait</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="w">  </span>--namespace<span class="w"> </span>argocd<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">  </span>--for<span class="o">=</span><span class="nv">condition</span><span class="o">=</span>Available<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">  </span>--timeout<span class="o">=</span>300s<span class="w"> </span>deployment/argocd-server
+</span></code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">远程清单必须先审查</p>
+<p>为保持篇幅最小，本实验直接应用固定发布版本的官方清单。生产中应先下载到受控仓库，审查内容，并校验清单及其中镜像的来源或摘要，再通过既有发布流程安装。不要使用随时间移动的 <code>stable</code> 或 <code>latest</code> URL。</p>
+</div>
+<h3 id="3">3. 声明并同步应用<a class="headerlink" href="#3" title="Permanent link">&para;</a></h3>
+<p>以下 <code>Application</code> 固定示例仓库的提交，避免实验内容随上游分支变化。目标命名空间由 Argo CD 创建；自动修复演示漂移收敛，自动清理只作用于这个临时应用。</p>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="nt">apiVersion</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">argoproj.io/v1alpha1</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Application</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="nt">metadata</span><span class="p">:</span>
+</span><span id="__span-2-4"><a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="w">  </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">guestbook-lab</span>
+</span><span id="__span-2-5"><a id="__codelineno-2-5" name="__codelineno-2-5" href="#__codelineno-2-5"></a><span class="w">  </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">argocd</span>
+</span><span id="__span-2-6"><a id="__codelineno-2-6" name="__codelineno-2-6" href="#__codelineno-2-6"></a><span class="nt">spec</span><span class="p">:</span>
+</span><span id="__span-2-7"><a id="__codelineno-2-7" name="__codelineno-2-7" href="#__codelineno-2-7"></a><span class="w">  </span><span class="nt">project</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">default</span>
+</span><span id="__span-2-8"><a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="w">  </span><span class="nt">source</span><span class="p">:</span>
+</span><span id="__span-2-9"><a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="w">    </span><span class="nt">repoURL</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">https://github.com/argoproj/argocd-example-apps.git</span>
+</span><span id="__span-2-10"><a id="__codelineno-2-10" name="__codelineno-2-10" href="#__codelineno-2-10"></a><span class="w">    </span><span class="nt">targetRevision</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">53e28ff20cc530b9ada2173fbbd64d48338583ba</span>
+</span><span id="__span-2-11"><a id="__codelineno-2-11" name="__codelineno-2-11" href="#__codelineno-2-11"></a><span class="w">    </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">kustomize-guestbook</span>
+</span><span id="__span-2-12"><a id="__codelineno-2-12" name="__codelineno-2-12" href="#__codelineno-2-12"></a><span class="w">    </span><span class="nt">kustomize</span><span class="p">:</span>
+</span><span id="__span-2-13"><a id="__codelineno-2-13" name="__codelineno-2-13" href="#__codelineno-2-13"></a><span class="w">      </span><span class="nt">images</span><span class="p">:</span>
+</span><span id="__span-2-14"><a id="__codelineno-2-14" name="__codelineno-2-14" href="#__codelineno-2-14"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">gcr.io/heptio-images/ks-guestbook-demo=nginxinc/nginx-unprivileged@sha256:44e36330f74d4f3a1d4e222acca9e23b401fb87811a7597024502bb759c4dd49</span>
+</span><span id="__span-2-15"><a id="__codelineno-2-15" name="__codelineno-2-15" href="#__codelineno-2-15"></a><span class="w">      </span><span class="nt">patches</span><span class="p">:</span>
+</span><span id="__span-2-16"><a id="__codelineno-2-16" name="__codelineno-2-16" href="#__codelineno-2-16"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">target</span><span class="p">:</span>
+</span><span id="__span-2-17"><a id="__codelineno-2-17" name="__codelineno-2-17" href="#__codelineno-2-17"></a><span class="w">            </span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Deployment</span>
+</span><span id="__span-2-18"><a id="__codelineno-2-18" name="__codelineno-2-18" href="#__codelineno-2-18"></a><span class="w">            </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">guestbook-ui</span>
+</span><span id="__span-2-19"><a id="__codelineno-2-19" name="__codelineno-2-19" href="#__codelineno-2-19"></a><span class="w">          </span><span class="nt">patch</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|-</span>
+</span><span id="__span-2-20"><a id="__codelineno-2-20" name="__codelineno-2-20" href="#__codelineno-2-20"></a><span class="w">            </span><span class="no">- op: replace</span>
+</span><span id="__span-2-21"><a id="__codelineno-2-21" name="__codelineno-2-21" href="#__codelineno-2-21"></a><span class="w">              </span><span class="no">path: /spec/template/spec/containers/0/ports/0/containerPort</span>
+</span><span id="__span-2-22"><a id="__codelineno-2-22" name="__codelineno-2-22" href="#__codelineno-2-22"></a><span class="w">              </span><span class="no">value: 8080</span>
+</span><span id="__span-2-23"><a id="__codelineno-2-23" name="__codelineno-2-23" href="#__codelineno-2-23"></a><span class="w">        </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">target</span><span class="p">:</span>
+</span><span id="__span-2-24"><a id="__codelineno-2-24" name="__codelineno-2-24" href="#__codelineno-2-24"></a><span class="w">            </span><span class="nt">kind</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Service</span>
+</span><span id="__span-2-25"><a id="__codelineno-2-25" name="__codelineno-2-25" href="#__codelineno-2-25"></a><span class="w">            </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">guestbook-ui</span>
+</span><span id="__span-2-26"><a id="__codelineno-2-26" name="__codelineno-2-26" href="#__codelineno-2-26"></a><span class="w">          </span><span class="nt">patch</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">|-</span>
+</span><span id="__span-2-27"><a id="__codelineno-2-27" name="__codelineno-2-27" href="#__codelineno-2-27"></a><span class="w">            </span><span class="no">- op: replace</span>
+</span><span id="__span-2-28"><a id="__codelineno-2-28" name="__codelineno-2-28" href="#__codelineno-2-28"></a><span class="w">              </span><span class="no">path: /spec/ports/0/targetPort</span>
+</span><span id="__span-2-29"><a id="__codelineno-2-29" name="__codelineno-2-29" href="#__codelineno-2-29"></a><span class="w">              </span><span class="no">value: 8080</span>
+</span><span id="__span-2-30"><a id="__codelineno-2-30" name="__codelineno-2-30" href="#__codelineno-2-30"></a><span class="w">  </span><span class="nt">destination</span><span class="p">:</span>
+</span><span id="__span-2-31"><a id="__codelineno-2-31" name="__codelineno-2-31" href="#__codelineno-2-31"></a><span class="w">    </span><span class="nt">server</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">https://kubernetes.default.svc</span>
+</span><span id="__span-2-32"><a id="__codelineno-2-32" name="__codelineno-2-32" href="#__codelineno-2-32"></a><span class="w">    </span><span class="nt">namespace</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">guestbook-lab</span>
+</span><span id="__span-2-33"><a id="__codelineno-2-33" name="__codelineno-2-33" href="#__codelineno-2-33"></a><span class="w">  </span><span class="nt">syncPolicy</span><span class="p">:</span>
+</span><span id="__span-2-34"><a id="__codelineno-2-34" name="__codelineno-2-34" href="#__codelineno-2-34"></a><span class="w">    </span><span class="nt">automated</span><span class="p">:</span>
+</span><span id="__span-2-35"><a id="__codelineno-2-35" name="__codelineno-2-35" href="#__codelineno-2-35"></a><span class="w">      </span><span class="nt">prune</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</span><span id="__span-2-36"><a id="__codelineno-2-36" name="__codelineno-2-36" href="#__codelineno-2-36"></a><span class="w">      </span><span class="nt">selfHeal</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</span><span id="__span-2-37"><a id="__codelineno-2-37" name="__codelineno-2-37" href="#__codelineno-2-37"></a><span class="w">    </span><span class="nt">syncOptions</span><span class="p">:</span>
+</span><span id="__span-2-38"><a id="__codelineno-2-38" name="__codelineno-2-38" href="#__codelineno-2-38"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">CreateNamespace=true</span>
+</span></code></pre></div>
+<p>将清单通过标准输入应用，无需创建持久临时文件：</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>kubectl<span class="w"> </span>--context<span class="w"> </span>kind-gitops-lab<span class="w"> </span>apply<span class="w"> </span>--filename<span class="w"> </span>-<span class="w"> </span><span class="s">&lt;&lt;'YAML'</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="s">apiVersion: argoproj.io/v1alpha1</span>
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="s">kind: Application</span>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a><span class="s">metadata:</span>
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a><span class="s">  name: guestbook-lab</span>
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a><span class="s">  namespace: argocd</span>
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a><span class="s">spec:</span>
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a><span class="s">  project: default</span>
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a><span class="s">  source:</span>
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a><span class="s">    repoURL: https://github.com/argoproj/argocd-example-apps.git</span>
+</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a><span class="s">    targetRevision: 53e28ff20cc530b9ada2173fbbd64d48338583ba</span>
+</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a><span class="s">    path: kustomize-guestbook</span>
+</span><span id="__span-3-13"><a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a><span class="s">    kustomize:</span>
+</span><span id="__span-3-14"><a id="__codelineno-3-14" name="__codelineno-3-14" href="#__codelineno-3-14"></a><span class="s">      images:</span>
+</span><span id="__span-3-15"><a id="__codelineno-3-15" name="__codelineno-3-15" href="#__codelineno-3-15"></a><span class="s">        - gcr.io/heptio-images/ks-guestbook-demo=nginxinc/nginx-unprivileged@sha256:44e36330f74d4f3a1d4e222acca9e23b401fb87811a7597024502bb759c4dd49</span>
+</span><span id="__span-3-16"><a id="__codelineno-3-16" name="__codelineno-3-16" href="#__codelineno-3-16"></a><span class="s">      patches:</span>
+</span><span id="__span-3-17"><a id="__codelineno-3-17" name="__codelineno-3-17" href="#__codelineno-3-17"></a><span class="s">        - target:</span>
+</span><span id="__span-3-18"><a id="__codelineno-3-18" name="__codelineno-3-18" href="#__codelineno-3-18"></a><span class="s">            kind: Deployment</span>
+</span><span id="__span-3-19"><a id="__codelineno-3-19" name="__codelineno-3-19" href="#__codelineno-3-19"></a><span class="s">            name: guestbook-ui</span>
+</span><span id="__span-3-20"><a id="__codelineno-3-20" name="__codelineno-3-20" href="#__codelineno-3-20"></a><span class="s">          patch: |-</span>
+</span><span id="__span-3-21"><a id="__codelineno-3-21" name="__codelineno-3-21" href="#__codelineno-3-21"></a><span class="s">            - op: replace</span>
+</span><span id="__span-3-22"><a id="__codelineno-3-22" name="__codelineno-3-22" href="#__codelineno-3-22"></a><span class="s">              path: /spec/template/spec/containers/0/ports/0/containerPort</span>
+</span><span id="__span-3-23"><a id="__codelineno-3-23" name="__codelineno-3-23" href="#__codelineno-3-23"></a><span class="s">              value: 8080</span>
+</span><span id="__span-3-24"><a id="__codelineno-3-24" name="__codelineno-3-24" href="#__codelineno-3-24"></a><span class="s">        - target:</span>
+</span><span id="__span-3-25"><a id="__codelineno-3-25" name="__codelineno-3-25" href="#__codelineno-3-25"></a><span class="s">            kind: Service</span>
+</span><span id="__span-3-26"><a id="__codelineno-3-26" name="__codelineno-3-26" href="#__codelineno-3-26"></a><span class="s">            name: guestbook-ui</span>
+</span><span id="__span-3-27"><a id="__codelineno-3-27" name="__codelineno-3-27" href="#__codelineno-3-27"></a><span class="s">          patch: |-</span>
+</span><span id="__span-3-28"><a id="__codelineno-3-28" name="__codelineno-3-28" href="#__codelineno-3-28"></a><span class="s">            - op: replace</span>
+</span><span id="__span-3-29"><a id="__codelineno-3-29" name="__codelineno-3-29" href="#__codelineno-3-29"></a><span class="s">              path: /spec/ports/0/targetPort</span>
+</span><span id="__span-3-30"><a id="__codelineno-3-30" name="__codelineno-3-30" href="#__codelineno-3-30"></a><span class="s">              value: 8080</span>
+</span><span id="__span-3-31"><a id="__codelineno-3-31" name="__codelineno-3-31" href="#__codelineno-3-31"></a><span class="s">  destination:</span>
+</span><span id="__span-3-32"><a id="__codelineno-3-32" name="__codelineno-3-32" href="#__codelineno-3-32"></a><span class="s">    server: https://kubernetes.default.svc</span>
+</span><span id="__span-3-33"><a id="__codelineno-3-33" name="__codelineno-3-33" href="#__codelineno-3-33"></a><span class="s">    namespace: guestbook-lab</span>
+</span><span id="__span-3-34"><a id="__codelineno-3-34" name="__codelineno-3-34" href="#__codelineno-3-34"></a><span class="s">  syncPolicy:</span>
+</span><span id="__span-3-35"><a id="__codelineno-3-35" name="__codelineno-3-35" href="#__codelineno-3-35"></a><span class="s">    automated:</span>
+</span><span id="__span-3-36"><a id="__codelineno-3-36" name="__codelineno-3-36" href="#__codelineno-3-36"></a><span class="s">      prune: true</span>
+</span><span id="__span-3-37"><a id="__codelineno-3-37" name="__codelineno-3-37" href="#__codelineno-3-37"></a><span class="s">      selfHeal: true</span>
+</span><span id="__span-3-38"><a id="__codelineno-3-38" name="__codelineno-3-38" href="#__codelineno-3-38"></a><span class="s">    syncOptions:</span>
+</span><span id="__span-3-39"><a id="__codelineno-3-39" name="__codelineno-3-39" href="#__codelineno-3-39"></a><span class="s">      - CreateNamespace=true</span>
+</span><span id="__span-3-40"><a id="__codelineno-3-40" name="__codelineno-3-40" href="#__codelineno-3-40"></a><span class="s">YAML</span>
+</span><span id="__span-3-41"><a id="__codelineno-3-41" name="__codelineno-3-41" href="#__codelineno-3-41"></a>
+</span><span id="__span-3-42"><a id="__codelineno-3-42" name="__codelineno-3-42" href="#__codelineno-3-42"></a>kubectl<span class="w"> </span>--context<span class="w"> </span>kind-gitops-lab<span class="w"> </span><span class="nb">wait</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-3-43"><a id="__codelineno-3-43" name="__codelineno-3-43" href="#__codelineno-3-43"></a><span class="w">  </span>--namespace<span class="w"> </span>argocd<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-3-44"><a id="__codelineno-3-44" name="__codelineno-3-44" href="#__codelineno-3-44"></a><span class="w">  </span>--for<span class="o">=</span><span class="nv">jsonpath</span><span class="o">=</span><span class="s1">'{.status.sync.status}'</span><span class="o">=</span>Synced<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-3-45"><a id="__codelineno-3-45" name="__codelineno-3-45" href="#__codelineno-3-45"></a><span class="w">  </span>--timeout<span class="o">=</span>300s<span class="w"> </span>application/guestbook-lab
+</span><span id="__span-3-46"><a id="__codelineno-3-46" name="__codelineno-3-46" href="#__codelineno-3-46"></a>kubectl<span class="w"> </span>--context<span class="w"> </span>kind-gitops-lab<span class="w"> </span><span class="nb">wait</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-3-47"><a id="__codelineno-3-47" name="__codelineno-3-47" href="#__codelineno-3-47"></a><span class="w">  </span>--namespace<span class="w"> </span>argocd<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-3-48"><a id="__codelineno-3-48" name="__codelineno-3-48" href="#__codelineno-3-48"></a><span class="w">  </span>--for<span class="o">=</span><span class="nv">jsonpath</span><span class="o">=</span><span class="s1">'{.status.health.status}'</span><span class="o">=</span>Healthy<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-3-49"><a id="__codelineno-3-49" name="__codelineno-3-49" href="#__codelineno-3-49"></a><span class="w">  </span>--timeout<span class="o">=</span>300s<span class="w"> </span>application/guestbook-lab
+</span><span id="__span-3-50"><a id="__codelineno-3-50" name="__codelineno-3-50" href="#__codelineno-3-50"></a>kubectl<span class="w"> </span>--context<span class="w"> </span>kind-gitops-lab<span class="w"> </span>get<span class="w"> </span>application<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-3-51"><a id="__codelineno-3-51" name="__codelineno-3-51" href="#__codelineno-3-51"></a><span class="w">  </span>--namespace<span class="w"> </span>argocd<span class="w"> </span>guestbook-lab
+</span></code></pre></div>
+<p>预期应用最终显示 <code>Synced</code> 和 <code>Healthy</code>。如需查看本机页面，可在一个终端运行：</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>kubectl<span class="w"> </span>--context<span class="w"> </span>kind-gitops-lab<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span>--namespace<span class="w"> </span>guestbook-lab<span class="w"> </span>port-forward<span class="w"> </span>service/kustomize-guestbook-ui<span class="w"> </span><span class="m">8080</span>:80
+</span></code></pre></div>
+<p>然后访问 <code>http://127.0.0.1:8080/</code>。端口转发只监听本机，不创建公网入口。</p>
+<h3 id="4">4. 观察漂移修复<a class="headerlink" href="#4" title="Permanent link">&para;</a></h3>
+<p>手工把副本数改为 2，等待协调器恢复 Git 中声明的 1：</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>kubectl<span class="w"> </span>--context<span class="w"> </span>kind-gitops-lab<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span>--namespace<span class="w"> </span>guestbook-lab<span class="w"> </span>scale<span class="w"> </span>deployment/kustomize-guestbook-ui<span class="w"> </span>--replicas<span class="o">=</span><span class="m">2</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>kubectl<span class="w"> </span>--context<span class="w"> </span>kind-gitops-lab<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">  </span>--namespace<span class="w"> </span>guestbook-lab<span class="w"> </span>get<span class="w"> </span>deployment<span class="w"> </span>kustomize-guestbook-ui<span class="w"> </span>--watch
+</span></code></pre></div>
+<p>看到副本数回到 1 后按 <span class="keys"><kbd class="key-control">Ctrl</kbd><span>+</span><kbd class="key-c">C</kbd></span> 结束观察。这说明手工命令不是持久期望状态；正式变更应修改 Git 并经过评审。</p>
+<h3 id="5">5. 清理<a class="headerlink" href="#5" title="Permanent link">&para;</a></h3>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>kind<span class="w"> </span>delete<span class="w"> </span>cluster<span class="w"> </span>--name<span class="w"> </span>gitops-lab
+</span></code></pre></div>
+<p>该命令只删除本实验的 <code>gitops-lab</code> 集群。不要把实验上下文或默认项目配置直接用于生产。</p>
+<details class="note">
+<summary>如何改用 Flux CD 完成同一练习</summary>
+<p>在临时集群安装固定版本 Flux 控制器，创建指向固定提交的 <code>GitRepository</code>，再创建引用 <code>guestbook</code> 路径的 <code>Kustomization</code>。观察 <code>Ready</code> 条件与资源漂移。若使用 <code>flux bootstrap</code>，应先创建自己的实验仓库，并在练习后回收写权限和部署密钥；不要对不受控的公共仓库执行 bootstrap。</p>
+</details>
+<h2 id="_9">生产实践<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<h3 id="_10">仓库与变更治理<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h3>
+<ul>
+<li>保护生产分支，要求评审、状态检查和提交签名或受信身份。</li>
+<li>用代码所有者规则约束关键目录；提交者与最终批准者按风险分离。</li>
+<li>环境配置引用镜像摘要，不让协调器在生产中解析可移动标签。</li>
+<li>渲染后的资源也要在 CI 中做模式校验、策略检查和服务端 dry-run；只检查模板语法不够。</li>
+<li>大规模自动更新应分批提出，避免一个机器人提交同时影响全部集群。</li>
+</ul>
+<h3 id="_11">机密与来源<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h3>
+<p>Git 历史不会因普通删除而消失，明文机密一旦提交必须立即轮换。推荐在 Git 中保存加密密文或外部机密引用，由受控控制器在目标环境解密或读取。密钥权限应与仓库读权限分离，使拿到 Git 副本的人不能直接还原生产机密。</p>
+<p>对 Git、Helm 和 OCI 来源固定提交、版本或摘要，并验证 TLS 与签名。私有仓库凭据使用只读、最小作用域和可轮换的身份；不同租户不要共享同一高权限部署密钥。</p>
+<h3 id="_12">权限与多租户<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h3>
+<ul>
+<li>每个协调器只管理明确的集群、命名空间和资源种类。</li>
+<li>限制团队可选的来源仓库、目标和集群级对象，不能只依赖目录约定。</li>
+<li>对 CRD、Webhook、RBAC、Namespace 和策略对象设置更严格审批，因为它们可扩大权限或影响全局。</li>
+<li>隔离不互信租户的渲染执行环境，防止模板插件读取控制器凭据或其他仓库。</li>
+<li>中央控制面若管理多个集群，应评估其被攻陷后的整体影响，并考虑按信任域拆分实例。</li>
+</ul>
+<h3 id="_13">发布安全与回退<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h3>
+<p>自动同步不等于一次性全量发布。生产变更可按以下路径推进：</p>
+<ol>
+<li>在低风险集群验证新摘要和配置。</li>
+<li>通过 Argo Rollouts、Flagger 或云原生流量机制执行金丝雀/蓝绿发布。</li>
+<li>依据服务级指标暂停、推进或回退，而不是只看 Pod 是否 Ready。</li>
+<li>分批更新地域或集群，保留故障隔离窗口。</li>
+</ol>
+<p>为破坏性变更设置同步顺序与显式门禁。数据库迁移优先采用向前和向后兼容的扩展/收缩流程；不要假设 <code>git revert</code> 可以逆转已经删除的数据。</p>
+<h3 id="_14">清理与防误删<a class="headerlink" href="#_14" title="Permanent link">&para;</a></h3>
+<p>启用自动清理前，应验证路径为空、渲染失败、仓库暂时不可用和分支删除时的行为。对 Namespace、持久卷、CRD 等高影响对象使用删除保护、最终确认或独立生命周期。先在非生产环境观察仅检测模式，再逐步启用自动修复和清理。</p>
+<h3 id="_15">可观测性与服务级目标<a class="headerlink" href="#_15" title="Permanent link">&para;</a></h3>
+<p>监控控制器不仅要看进程存活，还应覆盖：</p>
+<ul>
+<li>从合并到控制器发现新提交的时间。</li>
+<li>从发现到同步完成、从漂移到修复的时间。</li>
+<li>同步失败率、连续重试、队列深度和 API 限流。</li>
+<li>应用同步状态与健康状态的分布。</li>
+<li>Git、制品仓库、身份服务和目标集群连接错误。</li>
+<li>高风险资源删除、权限变化和来源验证失败。</li>
+</ul>
+<p>告警应携带提交、应用、集群、失败阶段和负责人。控制器日志进入 <a href="../logs-management/">日志管理</a>，指标与追踪按 <a href="../observability/">可观测性</a> 的方法关联到发布事件。</p>
+<h3 id="_16">控制器恢复<a class="headerlink" href="#_16" title="Permanent link">&para;</a></h3>
+<p>Git 可以重建期望状态，但不能重建所有运行时数据。应备份或能够重新生成：控制器配置、项目和租户边界、仓库凭据、集群注册信息、加密密钥及外部状态。定期在空集群演练 bootstrap，确认固定版本的控制器能从 Git 恢复，且恢复过程不会误接管生产资源。</p>
+<h2 id="_17">常见误区<a class="headerlink" href="#_17" title="Permanent link">&para;</a></h2>
+<h3 id="gitops_1">把自动同步等同于 GitOps<a class="headerlink" href="#gitops_1" title="Permanent link">&para;</a></h3>
+<p>若变更没有声明式来源、审计和持续协调，单纯由 webhook 触发脚本仍是普通自动部署。</p>
+<h3 id="ci-gitops">让 CI 直接改集群，再让 GitOps 接管<a class="headerlink" href="#ci-gitops" title="Permanent link">&para;</a></h3>
+<p>两个写入者会导致竞争和无法解释的漂移。CI 应发布制品并更新期望状态，由一个明确控制器负责应用。</p>
+<h3 id="_18">把明文机密放进私有仓库<a class="headerlink" href="#_18" title="Permanent link">&para;</a></h3>
+<p>私有仓库仍可能被克隆、备份、日志记录或误授权。必须加密或保存外部引用，并建立轮换流程。</p>
+<h3 id="_19">默认开启全局自动清理<a class="headerlink" href="#_19" title="Permanent link">&para;</a></h3>
+<p>错误路径或渲染结果可能删除大量资源。自动清理必须配合范围限制、保护对象、分批启用和恢复演练。</p>
+<h3 id="_20">认为回退提交一定安全<a class="headerlink" href="#_20" title="Permanent link">&para;</a></h3>
+<p>外部 API、消息、数据库迁移和已删除制品可能不可逆。回退前需验证数据兼容性和制品可用性。</p>
+<h3 id="_21">忽略字段所有权<a class="headerlink" href="#_21" title="Permanent link">&para;</a></h3>
+<p>水平自动扩缩器、Operator 和 GitOps 控制器若同时管理同一字段，会持续互相覆盖。应明确忽略规则或重新划分所有权，而不是延长协调间隔掩盖问题。</p>
+<h3 id="_22">直接跟踪上游主分支<a class="headerlink" href="#_22" title="Permanent link">&para;</a></h3>
+<p>移动分支会绕过本组织评审，使上游变化直接进入集群。应固定提交或经过验证的版本，再由受控变更更新。</p>
+<h2 id="_23">动手练习<a class="headerlink" href="#_23" title="Permanent link">&para;</a></h2>
+<ol>
+<li><strong>完成漂移实验</strong>：在最小实践中修改副本数，记录 Argo CD 检测和恢复所需时间；然后暂停自动同步，比较仅检测模式。</li>
+<li><strong>设计仓库职责</strong>：为应用开发者、平台团队和生产审批者画出读写矩阵。结果应明确谁能更新镜像摘要、修改集群级 RBAC 和批准生产变更。</li>
+<li><strong>演练失败变更</strong>：在自有实验仓库提交一个不存在的镜像摘要，观察“已同步”与“健康失败”的区别，再用一个新提交恢复。</li>
+<li><strong>验证清理边界</strong>：在临时命名空间增加一个由 Git 管理的 ConfigMap 和一个明确不归协调器管理的对象，删除前者的声明，确认只有预期对象被清理。</li>
+<li><strong>比较实现</strong>：用 Flux <code>GitRepository</code> 与 <code>Kustomization</code> 重做最小实践，记录来源状态、健康等待、漂移恢复和可视化排障路径的差异。</li>
+<li><strong>恢复控制面</strong>：删除实验集群后从固定版本和仓库重新引导，测量恢复时间并列出 Git 之外仍需恢复的身份与密钥材料。</li>
+</ol>
+<h2 id="_24">完成检查<a class="headerlink" href="#_24" title="Permanent link">&para;</a></h2>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能画出 GitOps 的观察、比较、行动控制环。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能区分同步状态、健康状态和运行时漂移。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能解释拉取式模型改变了哪些凭据与网络边界。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 已用 Argo CD 或 Flux CD 在临时集群完成一次声明式同步。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能比较 Argo CD 与 Flux CD 的交互模型、适用场景和迁移对象。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能说明自动修复和自动清理的风险与启用条件。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能为机密、集群级资源和多租户设计最小权限。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能用新提交回退配置，并识别无法由 Git 回退的数据变化。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 已定义合并到收敛、漂移到修复和同步失败的监控指标。</li>
+</ul>
+<h2 id="_25">官方延伸阅读<a class="headerlink" href="#_25" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="https://opengitops.dev/">OpenGitOps Principles</a>：GitOps 的厂商中立原则。</li>
+<li><a href="https://argo-cd.readthedocs.io/en/stable/">Argo CD 官方文档</a>：安装、Application、同步、项目与安全说明。</li>
+<li><a href="https://argo-cd.readthedocs.io/en/stable/operator-manual/security/">Argo CD 安全考虑</a>：控制器、来源与多租户风险。</li>
+<li><a href="https://fluxcd.io/flux/">Flux CD 官方文档</a>：来源、Kustomize、Helm、通知和 bootstrap 指南。</li>
+<li><a href="https://fluxcd.io/flux/security/">Flux 安全指南</a>：部署安全、租户隔离和来源验证。</li>
+<li><a href="https://kubernetes.io/docs/tasks/manage-kubernetes-objects/declarative-config/">Kubernetes 声明式管理</a>：声明式对象管理的基础语义。</li>
+<li><a href="https://kubernetes.io/docs/reference/using-api/server-side-apply/">Kubernetes Server-Side Apply</a>：字段管理和冲突机制。</li>
+</ul>
+
+
+  <nav class="md-tags" >
+    
+      
+      
+      
+      
+        <span class="md-tag">配置与状态</span>
+      
+    
+      
+      
+      
+      
+        <span class="md-tag">自动化交付</span>
+      
+    
+      
+      
+      
+      
+        <span class="md-tag">容器与平台</span>
+      
+    
+      
+      
+      
+      
+        <span class="md-tag">版本与协作</span>
+      
+    
+  </nav>
+
+
+
+
+
+
+
+
+  
+  
+
+
+
+  
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-circle-arrow-up" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16 12-4-4-4 4M12 16V8"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="页脚" >
+        
+          
+          <a href="../artifact-management/" class="md-footer__link md-footer__link--prev" aria-label="上一页: 制品管理">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                上一页
+              </span>
+              <div class="md-ellipsis">
+                制品管理
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../service-mesh/" class="md-footer__link md-footer__link--next" aria-label="下一页: 服务网格">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                下一页
+              </span>
+              <div class="md-ellipsis">
+                服务网格
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://zensical.org/" target="_blank" rel="noopener">
+      Zensical
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate":null,"base":"..","features":["announce.dismiss","content.action.edit","content.action.view","content.code.annotate","content.code.copy","content.code.select","content.footnote.tooltips","content.tabs.link","content.tooltips","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.path","navigation.sections","navigation.top","navigation.tracking","search.highlight","toc.follow"],"search":"../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"已复制","clipboard.copy":"复制","search.result.more.one":"在该页上还有 1 个符合条件的结果","search.result.more.other":"在该页上还有 # 个符合条件的结果","search.result.none":"没有找到符合条件的结果","search.result.one":"找到 1 个符合条件的结果","search.result.other":"# 个符合条件的结果","search.result.placeholder":"键入以开始搜索","search.result.term.missing":"缺少","select.version":"选择当前版本"},"version":null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.e886cdf1.min.js"></script>
+      
+    
+  </body>
+</html>

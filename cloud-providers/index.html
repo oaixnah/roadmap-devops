@@ -1,0 +1,2518 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="本章以共享责任、地域故障域、身份网络、数据生命周期和总成本为共同尺度，比较综合云与应用平台的适用边界，帮助团队以真实工作负载验证云选型并建立生产治理基线。">
+      
+      
+        <meta name="author" content="oaixnah">
+      
+      
+        <link rel="canonical" href="https://devops.roadmap.oaix.tech/cloud-providers/">
+      
+      
+        <link rel="prev" href="../networking-and-protocols/">
+      
+      
+        <link rel="next" href="../serverless/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/favicon.svg">
+      <meta name="generator" content="zensical-0.0.55">
+    
+    
+      
+        <title>云服务商 - DevOps Roadmap 中文手册</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../assets/stylesheets/modern/main.20815dad.min.css">
+      
+        
+          
+        
+        <link rel="stylesheet" href="../assets/stylesheets/modern/palette.dfe2e883.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+  
+
+
+  
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FLXQC4YQJF"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-FLXQC4YQJF');
+</script>
+
+  
+  
+
+
+<script type="text/javascript">
+    (function(c,l,a,r,i,t,y){
+        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+    })(window, document, "clarity", "script", "y3p2irnl2z");
+</script>
+
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-label="导航栏"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#_1" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href="./.." title="DevOps Roadmap 中文手册" class="md-header__button md-logo" aria-label="DevOps Roadmap 中文手册" data-md-component="logo">
+      
+  <img src="../assets/logo.svg" alt="DevOps Roadmap 中文手册">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer" aria-label="导航栏">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            DevOps Roadmap 中文手册
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              云服务商
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun-moon" viewBox="0 0 24 24"><path d="M12 2v2M14.837 16.385a6 6 0 1 1-7.223-7.222c.624-.147.97.66.715 1.248a4 4 0 0 0 5.26 5.259c.589-.255 1.396.09 1.248.715M16 12a4 4 0 0 0-4-4M19 5l-1.256 1.256M20 12h2"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search" aria-label="查找">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="查找">
+  <button type="button" class="md-search__button">
+    查找
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+    </div>
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="./.." title="DevOps Roadmap 中文手册" class="md-nav__button md-logo" aria-label="DevOps Roadmap 中文手册" data-md-component="logo">
+      
+  <img src="../assets/logo.svg" alt="DevOps Roadmap 中文手册">
+
+    </a>
+    DevOps Roadmap 中文手册
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  首页
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  基础能力
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  基础能力
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../learn-a-programming-language/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  学习一种编程语言
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../operating-system/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  操作系统
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../terminal-knowledge/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  终端知识
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../version-control-systems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  版本控制系统
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../vcs-hosting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  版本控制托管
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../containers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  容器
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  基础设施与云
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  基础设施与云
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../common-infrastructure-services/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  常见基础设施服务
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../networking-and-protocols/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  网络与协议
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  云服务商
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  云服务商
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        学习目标
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        前置知识
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        核心原理：云的抽象
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="核心原理：云的抽象">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        服务模型
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        共享责任模型
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        全局基础设施与故障域
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        通用能力地图
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        共同的设计原则
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="共同的设计原则">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        身份优先
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        网络不是唯一边界
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        数据生命周期
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        成本模型
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#aws" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        AWS
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#microsoft-azure" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Microsoft Azure
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#google-cloud" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Google Cloud
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#digitalocean" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        DigitalOcean
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#hetzner" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Hetzner
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#render" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Render
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#alibaba-cloud" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Alibaba Cloud
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#heroku" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Heroku
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_14" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        平台选型比较
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ip" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        最小实践：审计公开云 IP 数据
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_15" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        生产实践：落地基线
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="生产实践：落地基线">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_16" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        组织与身份
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_17" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        网络与数据
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_18" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        可靠性与运营
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_19" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        成本与退出
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_20" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        常见误区
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_21" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        动手练习
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_22" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        完成检查
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_23" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        官方延伸阅读
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../serverless/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  无服务器计算
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../provisioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  基础设施置备
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../configuration-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  配置管理
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  持续交付与运行
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  持续交付与运行
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ci-cd-tools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  CI/CD 工具
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../secret-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  机密管理
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../infrastructure-monitoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  基础设施监控
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../logs-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  日志管理
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../container-orchestration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  容器编排
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../observability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  可观测性
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  平台与架构治理
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  平台与架构治理
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../artifact-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  制品管理
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gitops/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  GitOps
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../service-mesh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  服务网格
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cloud-design-patterns/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  云设计模式
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        学习目标
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        前置知识
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        核心原理：云的抽象
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="核心原理：云的抽象">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        服务模型
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        共享责任模型
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        全局基础设施与故障域
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        通用能力地图
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        共同的设计原则
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="共同的设计原则">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        身份优先
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        网络不是唯一边界
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        数据生命周期
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        成本模型
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#aws" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        AWS
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#microsoft-azure" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Microsoft Azure
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#google-cloud" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Google Cloud
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#digitalocean" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        DigitalOcean
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#hetzner" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Hetzner
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#render" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Render
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#alibaba-cloud" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Alibaba Cloud
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#heroku" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Heroku
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_14" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        平台选型比较
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ip" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        最小实践：审计公开云 IP 数据
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_15" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        生产实践：落地基线
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="生产实践：落地基线">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_16" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        组织与身份
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_17" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        网络与数据
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_18" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        可靠性与运营
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_19" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        成本与退出
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_20" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        常见误区
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_21" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        动手练习
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_22" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        完成检查
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_23" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        官方延伸阅读
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+  <nav class="md-path" aria-label="导航栏" >
+    <ol class="md-path__list">
+      
+        
+  
+  
+    <li class="md-path__item">
+      <a href="./.." class="md-path__link">
+        
+  
+  <span class="md-ellipsis">
+    首页
+  </span>
+
+      </a>
+    </li>
+  
+
+      
+      
+        
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      <li class="md-path__item">
+        <a href="../common-infrastructure-services/" class="md-path__link">
+          
+  
+  <span class="md-ellipsis">
+    基础设施与云
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ol>
+  </nav>
+
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+<h1 id="_1">云服务商<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<p>云服务把机房、电力、服务器和大量平台能力封装为 API，但不会自动带来高可用、安全或低成本。工程团队仍要设计账号边界、身份权限、网络、数据保护、故障恢复和费用治理。本章不以产品数量衡量能力，而是建立一套可迁移的评估方法，并用同一组维度审视八类云平台。</p>
+<h2 id="_2">学习目标<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>完成本章后，你应当能够：</p>
+<ul>
+<li>用共享责任模型划分云服务商与使用方的安全和运维职责。</li>
+<li>区分区域、可用区、边缘位置和账号或项目等隔离边界。</li>
+<li>把计算、网络、存储、数据库、身份和可观测性映射为可比较的基础能力。</li>
+<li>说明 AWS、Azure、Google Cloud、DigitalOcean、Hetzner、Render、Alibaba Cloud 与 Heroku 的定位、优势和约束。</li>
+<li>根据团队能力、合规、地域、可用性、可迁移性和总成本选择平台。</li>
+<li>在不创建云资源、不提供凭据的情况下，运行一个只读云网络数据实验。</li>
+<li>为首个生产云工作负载制定身份、网络、备份、监控和成本基线。</li>
+</ul>
+<h2 id="_3">前置知识<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<ul>
+<li>理解 IP、DNS、TLS 和 HTTP，参见<a href="../networking-and-protocols/">网络与协议</a>。</li>
+<li>理解防火墙、负载均衡和反向代理，参见<a href="../common-infrastructure-services/">常见基础设施服务</a>。</li>
+<li>熟悉 Linux 或 Windows 进程、文件与权限，参见<a href="../operating-system/">操作系统</a>。</li>
+<li>容器知识有助于理解平台服务的制品与运行边界，参见<a href="../containers/">容器</a>。</li>
+</ul>
+<h2 id="_4">核心原理：云的抽象<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<h3 id="_5">服务模型<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>基础设施即服务（IaaS）</strong>提供虚拟机、磁盘、网络和负载均衡等原语。控制力最大，操作系统补丁、容量和较多高可用工作由使用方负责。</li>
+<li><strong>平台即服务（PaaS）</strong>接收代码或制品并管理运行时、部署和扩缩容。运维入口更少，但运行时限制、平台行为和迁移成本更明显。</li>
+<li><strong>函数即服务（FaaS）</strong>按事件运行短生命周期函数，是 Serverless 的一种形式，参见<a href="../serverless/">无服务器计算</a>。</li>
+<li><strong>软件即服务（SaaS）</strong>直接提供完成某项业务的应用，使用方主要管理数据、账号和配置。</li>
+</ul>
+<p>托管程度越高，团队需要维护的底层越少，但责任不会消失，只会移动。例如托管数据库免去操作系统补丁，却仍要求使用方设置网络访问、数据库账号、备份保留、参数、容量和恢复演练。</p>
+<h3 id="_6">共享责任模型<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
+<p>云服务商通常负责云<strong>本身</strong>的物理设施、底层硬件和所提供服务的基础运行；客户负责云<strong>中的</strong>身份、数据、配置和工作负载。具体分界随服务模型变化：</p>
+<table>
+<thead>
+<tr>
+<th>责任</th>
+<th>虚拟机</th>
+<th>托管数据库</th>
+<th>PaaS</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>物理设施与硬件</td>
+<td>服务商</td>
+<td>服务商</td>
+<td>服务商</td>
+</tr>
+<tr>
+<td>虚拟化与服务控制面</td>
+<td>服务商</td>
+<td>服务商</td>
+<td>服务商</td>
+</tr>
+<tr>
+<td>客户操作系统补丁</td>
+<td>客户</td>
+<td>服务商</td>
+<td>服务商</td>
+</tr>
+<tr>
+<td>网络与访问策略</td>
+<td>双方提供能力，客户正确配置</td>
+<td>双方提供能力，客户正确配置</td>
+<td>双方提供能力，客户正确配置</td>
+</tr>
+<tr>
+<td>应用、身份与数据</td>
+<td>客户</td>
+<td>客户</td>
+<td>客户</td>
+</tr>
+<tr>
+<td>备份策略与恢复验证</td>
+<td>客户</td>
+<td>客户，服务商执行部分机制</td>
+<td>客户，能力依平台而定</td>
+</tr>
+</tbody>
+</table>
+<p>“服务商提供加密、备份或日志功能”不等于这些功能已开启、范围正确或恢复可用。责任表应落实到每个服务和负责人，而不是停留在宣传图上。</p>
+<h3 id="_7">全局基础设施与故障域<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>区域（Region）</strong>是相对独立的地理部署范围，影响延迟、数据驻留、服务可用性和价格。</li>
+<li><strong>可用区（Availability Zone）</strong>通常是区域内具有独立基础设施的故障域。不同平台对网络距离和具体隔离不作完全相同的承诺。</li>
+<li><strong>边缘位置（Edge Location）</strong>靠近用户，常承载 CDN、DNS 和边缘计算，不等同于完整云区域。</li>
+<li><strong>账号、订阅、项目或资源组</strong>是控制面和治理边界。它们不是物理故障域，却会决定权限、配额、账单和策略的爆炸半径。</li>
+</ul>
+<p>多可用区主要防区域内单点；多区域可应对更大范围故障，但会显著增加数据复制、一致性、路由、部署和演练成本。业务恢复点目标（RPO）与恢复时间目标（RTO）应先于架构数量决定。</p>
+<h3 id="_8">通用能力地图<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
+<p>比较云平台时，先把产品名归入以下能力，而不是建立难以维护的一一名称表：</p>
+<ul>
+<li><strong>计算</strong>：虚拟机、容器、托管 Kubernetes、批处理、函数和应用平台。</li>
+<li><strong>网络</strong>：虚拟私有网络、子网、路由、公网地址、NAT、私网连接、DNS、CDN、负载均衡和防火墙。</li>
+<li><strong>存储</strong>：对象、块和文件存储。三者在访问协议、一致性、扩展方式与计费上不同。</li>
+<li><strong>数据</strong>：关系数据库、键值、文档、缓存、分析仓库和消息服务。</li>
+<li><strong>身份</strong>：人类单点登录、工作负载身份、角色、策略、组织层级和短期凭据。</li>
+<li><strong>运营</strong>：日志、指标、追踪、审计、配置历史、备份、配额和支持。</li>
+<li><strong>治理</strong>：资源标签、预算、组织策略、合规证明、区域限制和基础设施即代码接口。</li>
+</ul>
+<h2 id="_9">共同的设计原则<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h2>
+<h3 id="_10">身份优先<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h3>
+<p>根账号或租户所有者只用于紧急管理，启用抗钓鱼多因素认证并离线保存恢复手段。日常人员通过企业身份提供商联合登录，工作负载通过实例角色、托管身份或短期令牌访问云 API。不要把长期访问密钥写入镜像、代码仓库或 CI 变量。</p>
+<p>权限从可执行任务反推，并分离生产与非生产环境。权限边界、服务控制策略或组织策略可限制管理员误操作，但配置前要验证紧急恢复路径。所有控制面操作应进入不可由普通工作负载篡改的审计日志。</p>
+<h3 id="_11">网络不是唯一边界<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h3>
+<p>私有子网减少直接暴露，但不能替代身份认证。设计时明确南北向和东西向流量、DNS 解析、出站路径、私有服务端点及跨网络路由。默认拒绝不必要入站和出站，避免把整个互联网或整个企业网段永久放入管理端口规则。</p>
+<p>云元数据服务可能向工作负载提供身份令牌。应使用平台支持的加强版本、限制访问跳数，并防止服务器端请求伪造（SSRF）访问元数据地址。</p>
+<h3 id="_12">数据生命周期<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h3>
+<p>按敏感度、驻留要求、访问频率和恢复目标选择数据服务。明确静态与传输加密、密钥控制方、版本、保留、归档和删除机制。备份要跨越主要故障边界，并通过定期恢复证明可用；“控制台显示备份成功”不是恢复测试。</p>
+<h3 id="_13">成本模型<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h3>
+<p>总拥有成本不只是实例小时费，还包括：</p>
+<ul>
+<li>公网、跨区域和跨可用区数据传输。</li>
+<li>NAT 网关、负载均衡、公网 IPv4 和私有连接。</li>
+<li>存储容量、请求次数、操作类型、快照与日志保留。</li>
+<li>数据库高可用副本、备份、预置吞吐和许可。</li>
+<li>支持计划、合规、迁移、培训与 24 小时值班成本。</li>
+<li>承诺折扣未用满的浪费，以及按需资源的价格波动。</li>
+</ul>
+<p>上线前建立预算和异常检测，资源必须带负责人、环境、成本中心和过期时间标签。先测量稳定基线，再购买预留或承诺用量；不要为猜测中的增长提前锁定长期容量。</p>
+<h2 id="aws">AWS<a class="headerlink" href="#aws" title="Permanent link">&para;</a></h2>
+<p><strong>重点掌握</strong>。Amazon Web Services（AWS）提供覆盖广泛的 IaaS 与托管服务。常见基础能力包括 EC2 计算、VPC 网络、S3 对象存储、Elastic Load Balancing、RDS 托管关系数据库、EKS 或 ECS 容器平台、Lambda 函数、IAM 身份权限，以及 CloudWatch 和 CloudTrail 运营能力。</p>
+<p>AWS 账号是重要的权限、配额和账单隔离边界，通常由 Organizations 组织并用控制策略建立护栏。区域内的可用区用于高可用部署；服务是否区域级、可用区级或全局级必须逐项确认。IAM 策略同时存在身份策略、资源策略、权限边界和组织策略，最终权限评估复杂，生产变更要使用策略模拟、访问分析和审计日志验证。</p>
+<p>适合场景包括需要广泛服务组合、全球区域覆盖、成熟生态或细粒度基础设施控制的组织。约束是产品与计费维度多，正确治理需要专门能力；跨可用区、NAT 与数据出口成本尤其需要建模。避免把所有服务默认部署在一个账号和默认 VPC 中。</p>
+<h2 id="microsoft-azure">Microsoft Azure<a class="headerlink" href="#microsoft-azure" title="Permanent link">&para;</a></h2>
+<p><strong>替代方案</strong>。Microsoft Azure 常见能力包括 Virtual Machines、Virtual Network、Blob Storage、Azure Load Balancer 或 Application Gateway、Azure SQL Database、AKS、Azure Functions、Microsoft Entra ID、Azure Monitor 和 Activity Log。</p>
+<p>Azure 资源组织常见层级为租户、管理组、订阅、资源组和资源。订阅是权限、账单和配额的重要边界；资源组是生命周期与管理边界，不等同于网络或故障隔离。角色访问控制（RBAC）、Policy、托管身份和管理组共同承担治理。删除锁可以降低误删风险，但也会影响自动化清理，应纳入变更流程。</p>
+<p>Azure 适合已采用 Microsoft Entra ID、Windows Server、SQL Server、Microsoft 365 或混合云管理体系的团队，也提供完整的 Linux 和开源服务。选型时检查目标区域的服务和可用区支持，因为同名服务的功能、配额和 SKU 可能因区域不同。许可权益和企业协议可能改善成本，但不应掩盖架构与运营复杂度。</p>
+<h2 id="google-cloud">Google Cloud<a class="headerlink" href="#google-cloud" title="Permanent link">&para;</a></h2>
+<p><strong>替代方案</strong>。Google Cloud 常见能力包括 Compute Engine、Virtual Private Cloud、Cloud Storage、Cloud Load Balancing、Cloud SQL、Google Kubernetes Engine（GKE）、Cloud Run、Cloud Run functions（原 Cloud Functions）、Identity and Access Management，以及 Cloud Logging 和 Cloud Monitoring。</p>
+<p>其资源层级通常由组织、文件夹、项目和资源构成。项目是 API 启用、IAM、配额和账单归集的重要边界。Google Cloud VPC 是全局资源，子网具有区域属性，这与一些平台的区域型虚拟网络不同。服务账号和工作负载身份联合允许应用获取短期凭据，应避免创建长期服务账号密钥。</p>
+<p>Google Cloud 在数据分析、机器学习、Kubernetes 和全球网络产品方面具有完整组合，适合希望使用托管容器与数据平台的团队。评估时仍需检查区域服务矩阵、配额、出口流量和组织策略。项目数量过少会扩大权限和配额影响，过多又会增加网络、账单与策略管理成本，需要标准化项目工厂。</p>
+<h2 id="digitalocean">DigitalOcean<a class="headerlink" href="#digitalocean" title="Permanent link">&para;</a></h2>
+<p><strong>按需学习</strong>。DigitalOcean 以相对简洁的开发者体验提供 Droplets 虚拟机、VPC、Volumes、Spaces 对象存储、Load Balancers、Managed Databases、DigitalOcean Kubernetes 和 App Platform。</p>
+<p>它适合小型团队、常规 Web 服务、开发测试和希望快速获得虚拟机或托管基础能力的场景。较少的产品层级可以降低初期学习成本，但区域数量、企业治理、特定托管服务和高级合规能力通常不如大型综合云丰富。选择前验证目标区域、数据库引擎版本、私网能力、备份恢复、日志接口、服务限制和技术支持级别。</p>
+<p>“界面简单”不等于无需治理。团队仍需隔离项目、保护 API 令牌、限制防火墙规则、启用监控和备份，并计算 Spaces CDN、快照与数据传输成本。</p>
+<h2 id="hetzner">Hetzner<a class="headerlink" href="#hetzner" title="Permanent link">&para;</a></h2>
+<p><strong>按需学习</strong>。Hetzner 提供云服务器、专用服务器、网络、负载均衡、卷、对象存储及相关托管产品，常因计算和存储性价比受到关注。它适合能够自行管理较多操作系统、数据库和平台组件，并且其地域与合规范围满足要求的团队。</p>
+<p>相对于大型综合云，托管中间件、全球区域、企业组织治理和原生生态可能更有限。这意味着较低账单可能伴随更多自建运维、备件方案、跨区容灾和集成工作。应分别评估 Cloud 与专用服务器的交付、网络、快照、故障处理和计费边界，不要只比较 vCPU 与内存单价。</p>
+<p>若在其上自建 Kubernetes、数据库或对象层，团队需要承担版本升级、备份、恢复、安全公告和 24 小时故障响应，这些人工成本应进入总成本模型。</p>
+<h2 id="render">Render<a class="headerlink" href="#render" title="Permanent link">&para;</a></h2>
+<p><strong>按需学习</strong>。Render 是面向应用交付的平台服务，提供 Web Services、Private Services、Background Workers、Cron Jobs、Static Sites、托管 PostgreSQL、Key Value 等能力。典型流程从 Git 仓库或容器镜像构建和部署应用，平台管理入口、证书和部分运行基础设施。</p>
+<p>它适合希望减少集群与虚拟机运维的产品团队、原型和中小型 Web 应用。需要重点验证实例休眠或扩缩策略、区域、构建与运行资源、持久磁盘限制、私有网络、数据库高可用、备份、日志保留和带宽计费。应用应使用环境变量或平台机密注入配置，把可写状态放入明确的持久服务，而不是依赖实例本地文件系统。</p>
+<p>迁移成本主要来自平台构建配置、服务编排和托管数据。保留标准容器镜像、数据库备份导出和平台外的基础配置记录，可以改善退出能力。</p>
+<h2 id="alibaba-cloud">Alibaba Cloud<a class="headerlink" href="#alibaba-cloud" title="Permanent link">&para;</a></h2>
+<p><strong>按需学习</strong>。Alibaba Cloud（阿里云）提供 Elastic Compute Service（ECS）、Virtual Private Cloud（VPC）、Object Storage Service（OSS）、Server Load Balancer（SLB）、Relational Database Service（RDS）、Container Service for Kubernetes（ACK）、函数计算、Resource Access Management（RAM）及日志服务等能力。</p>
+<p>它在中国大陆业务、当地网络接入和区域生态中常被评估，也提供其他国际区域。涉及中国大陆公开网站时，域名备案、跨境网络、数据合规和主体要求需要法律与合规团队确认，不能把技术配置当作合规结论。</p>
+<p>账号、资源目录、RAM 角色和资源组应形成清晰治理边界。使用 ECS 实例 RAM 角色或其他临时凭据机制，避免在实例中保存 AccessKey。不同地域的服务可用性、网络质量、计费和监管要求可能不同；跨境复制或日志汇聚前必须先完成数据分类和合规评估。</p>
+<h2 id="heroku">Heroku<a class="headerlink" href="#heroku" title="Permanent link">&para;</a></h2>
+<p><strong>按需学习</strong>。Heroku 是以应用和流水线为中心的平台即服务。代码构建为 slug 或通过容器部署，应用运行在 dyno 中，并通过 add-ons 使用数据库、缓存和其他托管能力。配置变量、Release Phase、Review Apps 和 Pipelines 支持十二要素应用式交付。</p>
+<p>Heroku 适合希望把精力集中在应用、接受平台约束并重视快速交付的团队。dyno 文件系统是临时的，应用必须把持久数据放在外部服务；长任务、连接数、构建时间、区域、网络和运行时均受平台能力限制。扩容简单不代表数据库、第三方 API 或费用能够同步扩展。</p>
+<p>选型前比较 dyno 与 add-on 的合计费用、数据计划、备份、维护窗口、日志排放、私有网络和合规能力。为降低绑定，应维护可重复构建的源代码、标准依赖声明、可导出的数据和平台配置清单，但不要为假设中的迁移复制一整套未使用基础设施。</p>
+<h2 id="_14">平台选型比较<a class="headerlink" href="#_14" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>平台</th>
+<th>主要抽象</th>
+<th>常见优势</th>
+<th>重点约束</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>AWS</td>
+<td>综合 IaaS 与托管服务</td>
+<td>服务广度、区域与生态</td>
+<td>IAM 和计费复杂度、出口与网络费用</td>
+</tr>
+<tr>
+<td>Azure</td>
+<td>综合云与企业平台</td>
+<td>Microsoft 身份、混合环境与企业集成</td>
+<td>层级和 SKU 复杂、区域能力差异</td>
+</tr>
+<tr>
+<td>Google Cloud</td>
+<td>综合云与托管数据或容器平台</td>
+<td>数据、Kubernetes、全球网络</td>
+<td>服务区域、配额与出口成本</td>
+</tr>
+<tr>
+<td>DigitalOcean</td>
+<td>简化云基础设施与应用平台</td>
+<td>上手直接、常规 Web 能力完整</td>
+<td>区域、治理和高级托管服务范围</td>
+</tr>
+<tr>
+<td>Hetzner</td>
+<td>云与专用基础设施</td>
+<td>计算或存储性价比、自主管理</td>
+<td>区域和托管生态较窄、更多自运维</td>
+</tr>
+<tr>
+<td>Render</td>
+<td>应用平台</td>
+<td>从代码到服务路径短</td>
+<td>平台限制、区域、运行和数据迁移</td>
+</tr>
+<tr>
+<td>Alibaba Cloud</td>
+<td>综合云</td>
+<td>中国大陆及亚洲生态、产品覆盖</td>
+<td>地域差异、跨境网络与合规治理</td>
+</tr>
+<tr>
+<td>Heroku</td>
+<td>应用 PaaS</td>
+<td>交付体验、应用与附加服务模型</td>
+<td>平台约束、规模成本、区域与退出路径</td>
+</tr>
+</tbody>
+</table>
+<p>表格只能初筛，不能代替验证。对候选平台执行一个限定时间的试点，使用同一工作负载验收：</p>
+<ol>
+<li>目标用户所在区域的端到端延迟和可用性。</li>
+<li>身份联合、工作负载短期凭据、审计日志和最小权限。</li>
+<li>多故障域部署、备份恢复和控制面故障时的操作能力。</li>
+<li>基础设施即代码、CI/CD、监控和日志导出接口。</li>
+<li>正常、峰值和故障转移三种负载下的月成本。</li>
+<li>数据导出、DNS 切换和替换专有服务所需的真实工作量。</li>
+</ol>
+<p>多云只有在明确需求下才合理，例如并购现实、法规隔离或某项不可替代服务。为了抽象而抽象到所有云的最小公分母，往往同时失去托管价值并增加身份、网络、数据复制和运维复杂度。</p>
+<h2 id="ip">最小实践：审计公开云 IP 数据<a class="headerlink" href="#ip" title="Permanent link">&para;</a></h2>
+<p>云网络规则有时需要识别服务商公布的地址段。下面以 AWS 官方公开的 <code>ip-ranges.json</code> 为例，执行只读下载和本地分析，不需要账号、凭据，也不会创建或修改云资源。</p>
+<p>需要 <code>curl</code>、<code>jq</code> 和 <code>mktemp</code>：</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="nv">workdir</span><span class="o">=</span><span class="s2">"</span><span class="k">$(</span>mktemp<span class="w"> </span>-d<span class="k">)</span><span class="s2">"</span><span class="w"> </span><span class="o">||</span><span class="w"> </span><span class="nb">exit</span><span class="w"> </span><span class="m">1</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>curl<span class="w"> </span>--fail<span class="w"> </span>--silent<span class="w"> </span>--show-error<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span>--output<span class="w"> </span><span class="s2">"</span><span class="nv">$workdir</span><span class="s2">/ip-ranges.json"</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span>https://ip-ranges.amazonaws.com/ip-ranges.json
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>jq<span class="w"> </span>-e<span class="w"> </span><span class="s1">'.syncToken and .createDate and .prefixes and .ipv6_prefixes'</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="w">  </span><span class="s2">"</span><span class="nv">$workdir</span><span class="s2">/ip-ranges.json"</span><span class="w"> </span>&gt;/dev/null
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>jq<span class="w"> </span>-r<span class="w"> </span><span class="s1">'.prefixes[].region, .ipv6_prefixes[].region'</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="w">  </span><span class="s2">"</span><span class="nv">$workdir</span><span class="s2">/ip-ranges.json"</span><span class="w"> </span><span class="se">\</span>
+</span><span id="__span-0-11"><a id="__codelineno-0-11" name="__codelineno-0-11" href="#__codelineno-0-11"></a><span class="w">  </span><span class="p">|</span><span class="w"> </span>sort<span class="w"> </span>-u<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-0-12"><a id="__codelineno-0-12" name="__codelineno-0-12" href="#__codelineno-0-12"></a><span class="w">  </span><span class="p">|</span><span class="w"> </span>sed<span class="w"> </span>-n<span class="w"> </span><span class="s1">'1,20p'</span>
+</span><span id="__span-0-13"><a id="__codelineno-0-13" name="__codelineno-0-13" href="#__codelineno-0-13"></a>
+</span><span id="__span-0-14"><a id="__codelineno-0-14" name="__codelineno-0-14" href="#__codelineno-0-14"></a>jq<span class="w"> </span>-r<span class="w"> </span><span class="s1">'</span>
+</span><span id="__span-0-15"><a id="__codelineno-0-15" name="__codelineno-0-15" href="#__codelineno-0-15"></a><span class="s1">  [</span>
+</span><span id="__span-0-16"><a id="__codelineno-0-16" name="__codelineno-0-16" href="#__codelineno-0-16"></a><span class="s1">    (.prefixes[] | select(.region == "us-east-1") | .service),</span>
+</span><span id="__span-0-17"><a id="__codelineno-0-17" name="__codelineno-0-17" href="#__codelineno-0-17"></a><span class="s1">    (.ipv6_prefixes[] | select(.region == "us-east-1") | .service)</span>
+</span><span id="__span-0-18"><a id="__codelineno-0-18" name="__codelineno-0-18" href="#__codelineno-0-18"></a><span class="s1">  ]</span>
+</span><span id="__span-0-19"><a id="__codelineno-0-19" name="__codelineno-0-19" href="#__codelineno-0-19"></a><span class="s1">  | group_by(.)</span>
+</span><span id="__span-0-20"><a id="__codelineno-0-20" name="__codelineno-0-20" href="#__codelineno-0-20"></a><span class="s1">  | map({service: .[0], prefix_count: length})</span>
+</span><span id="__span-0-21"><a id="__codelineno-0-21" name="__codelineno-0-21" href="#__codelineno-0-21"></a><span class="s1">  | sort_by(-.prefix_count)</span>
+</span><span id="__span-0-22"><a id="__codelineno-0-22" name="__codelineno-0-22" href="#__codelineno-0-22"></a><span class="s1">  | .[]</span>
+</span><span id="__span-0-23"><a id="__codelineno-0-23" name="__codelineno-0-23" href="#__codelineno-0-23"></a><span class="s1">  | "\(.service)\t\(.prefix_count)"</span>
+</span><span id="__span-0-24"><a id="__codelineno-0-24" name="__codelineno-0-24" href="#__codelineno-0-24"></a><span class="s1">'</span><span class="w"> </span><span class="s2">"</span><span class="nv">$workdir</span><span class="s2">/ip-ranges.json"</span>
+</span></code></pre></div>
+<p>验证结束后清理临时目录：</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>rm<span class="w"> </span>--<span class="w"> </span><span class="s2">"</span><span class="nv">$workdir</span><span class="s2">/ip-ranges.json"</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>rmdir<span class="w"> </span>--<span class="w"> </span><span class="s2">"</span><span class="nv">$workdir</span><span class="s2">"</span>
+</span></code></pre></div>
+<p>这里逐项删除刚创建的文件和空目录，不递归删除其他内容。所有命令应在同一个 Shell 中执行；清理前可用 <code>printf '%s\n' "$workdir"</code> 再次确认路径。</p>
+<p>实验说明三个生产事实：</p>
+<ul>
+<li>云地址范围会变化，不能把一次下载结果永久复制到防火墙。</li>
+<li>服务标签与区域标签需要按发布格式解析，字符串猜测不可靠。</li>
+<li>即使来源是官方 HTTPS，也应在自动化中验证结构、记录更新时间，并在生成规则前执行变更审查。</li>
+</ul>
+<div class="admonition warning">
+<p class="admonition-title">IP 清单不是工作负载身份</p>
+<p>云服务地址段可能被众多租户共享，也可能包含超出目标服务的地址。允许整个服务商网段不能证明请求来自你的资源。优先使用私有端点、双向 TLS、签名请求或平台工作负载身份。</p>
+</div>
+<h2 id="_15">生产实践：落地基线<a class="headerlink" href="#_15" title="Permanent link">&para;</a></h2>
+<h3 id="_16">组织与身份<a class="headerlink" href="#_16" title="Permanent link">&para;</a></h3>
+<ul>
+<li>生产和非生产使用独立账号、订阅或项目，账单汇总但权限与配额隔离。</li>
+<li>紧急账号启用强多因素认证、告警和定期演练；日常操作使用联合身份与临时会话。</li>
+<li>工作负载使用角色或托管身份，不分发长期云 API 密钥。</li>
+<li>控制面审计日志集中到独立安全边界，限制删除并校验持续写入。</li>
+</ul>
+<h3 id="_17">网络与数据<a class="headerlink" href="#_17" title="Permanent link">&para;</a></h3>
+<ul>
+<li>建立经过地址规划的虚拟网络，避免未来并网时网段重叠。</li>
+<li>公开入口与私有工作负载分层；数据库不因“方便调试”获取公网地址。</li>
+<li>对象存储默认阻止公开访问，公开内容通过明确的存储桶、CDN 和策略交付。</li>
+<li>数据按等级加密并记录密钥所有者；高风险密钥的管理权限与数据访问权限分离。</li>
+<li>备份跨主要故障边界保存，按 RPO/RTO 定期执行自动化和人工恢复演练。</li>
+</ul>
+<h3 id="_18">可靠性与运营<a class="headerlink" href="#_18" title="Permanent link">&para;</a></h3>
+<ul>
+<li>关键服务跨故障域部署，检查负载均衡、NAT、DNS、队列和数据库的独立性。</li>
+<li>记录服务配额并在接近上限前告警；扩容计划要包含提高配额所需时间。</li>
+<li>用<a href="../provisioning/">基础设施置备</a>管理可重复资源，用<a href="../configuration-management/">配置管理</a>管理必要的系统状态。</li>
+<li>收集应用和平台的指标、日志与追踪，并设置外部探测，参见<a href="../observability/">可观测性</a>。</li>
+<li>每个资源都有负责人、环境、数据等级和成本标签；临时环境自动过期。</li>
+</ul>
+<h3 id="_19">成本与退出<a class="headerlink" href="#_19" title="Permanent link">&para;</a></h3>
+<ul>
+<li>按团队和服务分配费用，建立预算告警和异常检测，但不要自动删除未知生产资源来止损。</li>
+<li>定期识别闲置磁盘、快照、公网 IP、过大实例和重复日志；优化前确认恢复与保留要求。</li>
+<li>记录专有服务依赖、数据导出格式、最大可接受停机和 DNS 切换步骤。</li>
+<li>每年至少做一次恢复或迁移桌面演练；只有业务需要时才执行昂贵的完整多云演练。</li>
+</ul>
+<h2 id="_20">常见误区<a class="headerlink" href="#_20" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>认为上云后服务商负责一切安全</strong>：客户配置的公开存储、过宽角色和泄露凭据仍由客户负责。</li>
+<li><strong>把可用区当作完整灾难恢复</strong>：区域级控制面、身份、代码错误和共享数据库仍可能同时影响多个区。</li>
+<li><strong>用默认网络承载全部环境</strong>：地址冲突、权限混用和横向移动风险会随规模放大。</li>
+<li><strong>只比较虚拟机价格</strong>：网络出口、托管数据、日志、支持和人工值班可能占更大比例。</li>
+<li><strong>给应用保存长期访问密钥</strong>：应使用工作负载身份和短期凭据，减少泄露后的有效窗口。</li>
+<li><strong>认为托管服务无需备份演练</strong>：误删、逻辑损坏、保留配置错误和账号封禁都需要客户预案。</li>
+<li><strong>把多云等同于高可用</strong>：没有跨云数据、身份、部署和演练，多一个控制台只会增加复杂度。</li>
+<li><strong>过早购买长期承诺</strong>：错误规格和架构变化会把折扣变成沉没成本。</li>
+<li><strong>因为 PaaS 简单就忽略限制</strong>：文件系统、连接、休眠、构建和区域约束必须在试点中验证。</li>
+</ul>
+<h2 id="_21">动手练习<a class="headerlink" href="#_21" title="Permanent link">&para;</a></h2>
+<ol>
+<li>选择一个虚构的三层 Web 系统，为计算、数据库、对象存储、DNS、密钥和日志分别填写“服务商责任、团队责任、验证证据”。结果中不得出现无人负责的备份恢复。</li>
+<li>在 AWS、Azure 和 Google Cloud 官方区域列表中为两处用户群选择候选区域。记录延迟、服务可用性、数据驻留和双区域传输费用，而不是只选地理距离最近者。</li>
+<li>完成公开 IP 数据实验，比较两个 AWS 区域的服务前缀数量，并说明为什么结果不能直接当作允许全部入站的规则。</li>
+<li>为 DigitalOcean 或 Hetzner 上的同一小型服务估算计算、磁盘、备份、负载均衡、出口流量和 20 小时人工运维的月成本，再与 Render 或 Heroku 方案比较。</li>
+<li>为 Alibaba Cloud 上的中国大陆业务列出需要向网络、法务和安全负责人确认的问题。不要自行给出备案或跨境数据的法律结论。</li>
+<li>设计云账号或项目层级，至少隔离生产、非生产、安全日志和共享网络，并标注谁可以授予管理员权限。</li>
+</ol>
+<h2 id="_22">完成检查<a class="headerlink" href="#_22" title="Permanent link">&para;</a></h2>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能根据 IaaS、PaaS 和 FaaS 解释责任边界如何移动。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能区分区域、可用区、边缘位置与账号或项目边界。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能从计算、网络、存储、数据、身份、运营和治理比较平台。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能说明 AWS、Azure、Google Cloud 的资源治理层级和主要约束。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能说明 DigitalOcean、Hetzner 的简化能力与自运维取舍。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能说明 Render、Heroku 的应用平台模型与退出风险。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能说明 Alibaba Cloud 的地域优势及需单独评估的网络与合规问题。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 已运行只读公开 IP 数据实验，且未创建云资源或提供凭据。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能为生产云环境列出身份、网络、数据、可靠性、成本和退出基线。</li>
+</ul>
+<h2 id="_23">官方延伸阅读<a class="headerlink" href="#_23" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html">AWS Well-Architected Framework</a></li>
+<li><a href="https://aws.amazon.com/compliance/shared-responsibility-model/">AWS 共享责任模型</a></li>
+<li><a href="https://learn.microsoft.com/azure/well-architected/">Microsoft Azure Well-Architected Framework</a></li>
+<li><a href="https://learn.microsoft.com/azure/security/fundamentals/shared-responsibility">Microsoft Azure 共享责任</a></li>
+<li><a href="https://cloud.google.com/architecture/framework">Google Cloud Architecture Framework</a></li>
+<li><a href="https://cloud.google.com/resource-manager/docs/cloud-platform-resource-hierarchy">Google Cloud 资源层级</a></li>
+<li><a href="https://docs.digitalocean.com/">DigitalOcean 文档</a></li>
+<li><a href="https://docs.hetzner.com/">Hetzner 文档</a></li>
+<li><a href="https://render.com/docs">Render 文档</a></li>
+<li><a href="https://www.alibabacloud.com/help/">Alibaba Cloud 文档</a></li>
+<li><a href="https://devcenter.heroku.com/">Heroku Dev Center</a></li>
+</ul>
+
+
+  <nav class="md-tags" >
+    
+      
+      
+      
+      
+        <span class="md-tag">云与架构</span>
+      
+    
+      
+      
+      
+      
+        <span class="md-tag">安全治理</span>
+      
+    
+      
+      
+      
+      
+        <span class="md-tag">可靠性工程</span>
+      
+    
+  </nav>
+
+
+
+
+
+
+
+
+  
+  
+
+
+
+  
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-circle-arrow-up" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16 12-4-4-4 4M12 16V8"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="页脚" >
+        
+          
+          <a href="../networking-and-protocols/" class="md-footer__link md-footer__link--prev" aria-label="上一页: 网络与协议">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                上一页
+              </span>
+              <div class="md-ellipsis">
+                网络与协议
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../serverless/" class="md-footer__link md-footer__link--next" aria-label="下一页: 无服务器计算">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                下一页
+              </span>
+              <div class="md-ellipsis">
+                无服务器计算
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://zensical.org/" target="_blank" rel="noopener">
+      Zensical
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate":null,"base":"..","features":["announce.dismiss","content.action.edit","content.action.view","content.code.annotate","content.code.copy","content.code.select","content.footnote.tooltips","content.tabs.link","content.tooltips","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.path","navigation.sections","navigation.top","navigation.tracking","search.highlight","toc.follow"],"search":"../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"已复制","clipboard.copy":"复制","search.result.more.one":"在该页上还有 1 个符合条件的结果","search.result.more.other":"在该页上还有 # 个符合条件的结果","search.result.none":"没有找到符合条件的结果","search.result.one":"找到 1 个符合条件的结果","search.result.other":"# 个符合条件的结果","search.result.placeholder":"键入以开始搜索","search.result.term.missing":"缺少","select.version":"选择当前版本"},"version":null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.e886cdf1.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -1,0 +1,2443 @@
+
+<!doctype html>
+<html lang="zh" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="本章讲解配置管理的期望状态、幂等收敛、推送拉取模型、清单、事实和变量层级，比较 Chef、Ansible、Salt 与 Puppet，并通过本地实践验证分批、可审计的主机配置变更。">
+      
+      
+        <meta name="author" content="oaixnah">
+      
+      
+        <link rel="canonical" href="https://devops.roadmap.oaix.tech/configuration-management/">
+      
+      
+        <link rel="prev" href="../provisioning/">
+      
+      
+        <link rel="next" href="../ci-cd-tools/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/favicon.svg">
+      <meta name="generator" content="zensical-0.0.55">
+    
+    
+      
+        <title>配置管理 - DevOps Roadmap 中文手册</title>
+      
+    
+    
+      
+        
+      
+      <link rel="stylesheet" href="../assets/stylesheets/modern/main.20815dad.min.css">
+      
+        
+          
+        
+        <link rel="stylesheet" href="../assets/stylesheets/modern/palette.dfe2e883.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,500,500i,700,700i%7CJetBrains+Mono:400,400i,700,700i&amp;display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../stylesheets/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_scope.pathname.endsWith("/")||(__md_scope=new URL(__md_scope.pathname+"/",location)),__md_hash=e=>[...e].reduce(((e,t)=>(e<<5)-e+t.charCodeAt(0)),0),__md_get=(e,t=localStorage,_=__md_scope)=>JSON.parse(t.getItem(_.pathname+"."+e)),__md_set=(e,t,_=localStorage,a=__md_scope)=>{try{_.setItem(a.pathname+"."+e,JSON.stringify(t))}catch(e){}},document.documentElement.setAttribute("data-platform",navigator.platform)</script>
+    
+      
+  
+
+
+  
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-FLXQC4YQJF"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-FLXQC4YQJF');
+</script>
+
+  
+  
+
+
+<script type="text/javascript">
+    (function(c,l,a,r,i,t,y){
+        c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
+        t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
+        y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
+    })(window, document, "clarity", "script", "y3p2irnl2z");
+</script>
+
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer" aria-label="导航栏"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#_1" class="md-skip">
+          跳转至
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="页眉">
+    <a href="./.." title="DevOps Roadmap 中文手册" class="md-header__button md-logo" aria-label="DevOps Roadmap 中文手册" data-md-component="logo">
+      
+  <img src="../assets/logo.svg" alt="DevOps Roadmap 中文手册">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer" aria-label="导航栏">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-menu" viewBox="0 0 24 24"><path d="M4 5h16M4 12h16M4 19h16"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            DevOps Roadmap 中文手册
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              配置管理
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun-moon" viewBox="0 0 24 24"><path d="M12 2v2M14.837 16.385a6 6 0 1 1-7.223-7.222c.624-.147.97.66.715 1.248a4 4 0 0 0 5.26 5.259c.589-.255 1.396.09 1.248.715M16 12a4 4 0 0 0-4-4M19 5l-1.256 1.256M20 12h2"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-moon" viewBox="0 0 24 24"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search" aria-label="查找">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-search" viewBox="0 0 24 24"><path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog" aria-label="查找">
+  <button type="button" class="md-search__button">
+    查找
+  </button>
+</div>
+      
+    
+    <div class="md-header__source">
+      
+    </div>
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="导航栏" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="./.." title="DevOps Roadmap 中文手册" class="md-nav__button md-logo" aria-label="DevOps Roadmap 中文手册" data-md-component="logo">
+      
+  <img src="../assets/logo.svg" alt="DevOps Roadmap 中文手册">
+
+    </a>
+    DevOps Roadmap 中文手册
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="./.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  首页
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  基础能力
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  基础能力
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../learn-a-programming-language/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  学习一种编程语言
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../operating-system/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  操作系统
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../terminal-knowledge/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  终端知识
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../version-control-systems/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  版本控制系统
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../vcs-hosting/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  版本控制托管
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../containers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  容器
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  基础设施与云
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  基础设施与云
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../common-infrastructure-services/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  常见基础设施服务
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../networking-and-protocols/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  网络与协议
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cloud-providers/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  云服务商
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../serverless/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  无服务器计算
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../provisioning/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  基础设施置备
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  配置管理
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="././" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  配置管理
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        学习目标
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        前置知识
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        配置管理的职责边界
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        核心原理
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="核心原理">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        期望状态与收敛
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        资源关系与通知
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        推送、拉取与事件模型
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        清单、事实与变量
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        漂移与持续收敛
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#chef" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Chef
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ansible" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Ansible
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#salt" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Salt
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#puppet" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Puppet
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        选型比较
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ansible_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        最小实践：本机 Ansible 幂等收敛
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="最小实践：本机 Ansible 幂等收敛">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        1. 创建清单
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        2. 检查并执行
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        3. 清理
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        生产实践
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="生产实践">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        代码与测试
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_14" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        安全性
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_15" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        分批与恢复
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_16" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        可观测性与维护
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_17" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        常见误区
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_18" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        动手练习
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_19" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        完成检查
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_20" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        官方延伸阅读
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  持续交付与运行
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  持续交付与运行
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ci-cd-tools/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  CI/CD 工具
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../secret-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  机密管理
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../infrastructure-monitoring/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  基础设施监控
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../logs-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  日志管理
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../container-orchestration/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  容器编排
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../observability/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  可观测性
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+        
+          
+          <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  平台与架构治理
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_5">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+  平台与架构治理
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../artifact-management/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  制品管理
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../gitops/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  GitOps
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../service-mesh/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  服务网格
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../cloud-design-patterns/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  云设计模式
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  
+                    
+                    
+                    
+                      
+                    
+                    
+                      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+                      <div class="md-sidebar-button__wrapper">
+                        <label class="md-sidebar-button" for="__toc"></label>
+                      </div>
+                    
+                  
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--secondary" aria-label="目录">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      目录
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#_2" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        学习目标
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_3" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        前置知识
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_4" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        配置管理的职责边界
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_5" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        核心原理
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="核心原理">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_6" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        期望状态与收敛
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_7" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        资源关系与通知
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_8" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        推送、拉取与事件模型
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_9" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        清单、事实与变量
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_10" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        漂移与持续收敛
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#chef" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Chef
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ansible" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Ansible
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#salt" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Salt
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#puppet" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Puppet
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_11" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        选型比较
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#ansible_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        最小实践：本机 Ansible 幂等收敛
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="最小实践：本机 Ansible 幂等收敛">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#1" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        1. 创建清单
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#2" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        2. 检查并执行
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#3" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        3. 清理
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_12" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        生产实践
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="生产实践">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#_13" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        代码与测试
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_14" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        安全性
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_15" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        分批与恢复
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#_16" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        可观测性与维护
+      </span>
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_17" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        常见误区
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_18" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        动手练习
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_19" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        完成检查
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#_20" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        官方延伸阅读
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+  <nav class="md-path" aria-label="导航栏" >
+    <ol class="md-path__list">
+      
+        
+  
+  
+    <li class="md-path__item">
+      <a href="./.." class="md-path__link">
+        
+  
+  <span class="md-ellipsis">
+    首页
+  </span>
+
+      </a>
+    </li>
+  
+
+      
+      
+        
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+      <li class="md-path__item">
+        <a href="../common-infrastructure-services/" class="md-path__link">
+          
+  
+  <span class="md-ellipsis">
+    基础设施与云
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ol>
+  </nav>
+
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+<h1 id="_1">配置管理<a class="headerlink" href="#_1" title="Permanent link">&para;</a></h1>
+<p>置备完成的服务器仍需要用户、软件包、配置文件、服务和安全基线。逐台 SSH 修改会产生无法解释的差异，也难以在扩容或灾难恢复时重建。配置管理（Configuration Management）把主机期望状态写成版本化代码，通过重复收敛消除漂移。本章讲清收敛、幂等、推送与拉取模型，并比较 Chef、Ansible、Salt 和 Puppet。</p>
+<h2 id="_2">学习目标<a class="headerlink" href="#_2" title="Permanent link">&para;</a></h2>
+<p>完成本章后，你应当能够：</p>
+<ul>
+<li>划分配置管理、基础设施置备、镜像构建、应用发布和机密管理的边界。</li>
+<li>解释期望状态、收敛、幂等、资源依赖、事实数据与漂移。</li>
+<li>设计静态或动态清单、环境分组、变量优先级和分批执行策略。</li>
+<li>说明 Chef 的 resources、recipes、cookbooks、Ohai 与 client-server 模型。</li>
+<li>使用 Ansible inventory、playbook、module、role、handler 与 check mode。</li>
+<li>说明 Salt 的 master/minion、states、grains、pillar、requisites 与事件系统。</li>
+<li>说明 Puppet 的 resources、manifests、classes、modules、catalog、Facter 与 Hiera。</li>
+<li>在本机运行一个无提权的 Ansible 幂等实践，并用第二次执行结果证明收敛。</li>
+<li>根据规模、网络、平台、团队能力、安全和迁移成本选择工具。</li>
+</ul>
+<h2 id="_3">前置知识<a class="headerlink" href="#_3" title="Permanent link">&para;</a></h2>
+<ul>
+<li>熟悉 Linux 或 Windows 的用户、权限、软件包和服务，参见<a href="../operating-system/">操作系统</a>。</li>
+<li>能使用 SSH 或 WinRM 等远程协议，SSH 原理参见<a href="../networking-and-protocols/">网络与协议</a>。</li>
+<li>理解 Git 评审和版本历史，参见<a href="../version-control-systems/">版本控制系统</a>。</li>
+<li>已有服务器或云资源通常由<a href="../provisioning/">基础设施置备</a>创建。</li>
+</ul>
+<h2 id="_4">配置管理的职责边界<a class="headerlink" href="#_4" title="Permanent link">&para;</a></h2>
+<p>配置管理适合管理操作系统及中间件状态，例如：</p>
+<ul>
+<li>软件包存在且版本符合策略。</li>
+<li>用户、组、目录和权限正确。</li>
+<li>配置文件由模板生成且语法有效。</li>
+<li>服务已启用、运行，并在配置变化后受控重启。</li>
+<li>安全基线、日志代理和监控代理持续满足要求。</li>
+</ul>
+<p>不宜把所有工作都塞入配置管理：</p>
+<ul>
+<li>虚拟网络、数据库实例和负载均衡通常交给<a href="../provisioning/">基础设施置备</a>。</li>
+<li>大型二进制和系统依赖可在镜像构建阶段安装，以缩短扩容时间。</li>
+<li>应用版本、流量切换和回滚通常由 <a href="../ci-cd-tools/">CI/CD 工具</a>负责。</li>
+<li>凭据应由<a href="../secret-management/">机密管理</a>系统提供，配置工具只在授权运行时短暂取用。</li>
+<li>容器内部通常通过重建镜像更新，而不是进入运行容器执行长期配置收敛。</li>
+</ul>
+<p>边界并非绝对。关键是同一对象只有一个权威所有者，并记录交接契约。例如 IaC 创建主机和最小启动身份，配置管理安装代理，应用流水线部署版本；三者不能同时修改同一个服务单元。</p>
+<h2 id="_5">核心原理<a class="headerlink" href="#_5" title="Permanent link">&para;</a></h2>
+<h3 id="_6">期望状态与收敛<a class="headerlink" href="#_6" title="Permanent link">&para;</a></h3>
+<p>配置代码声明资源应处于的状态。工具读取主机事实与当前状态，构建资源关系，执行必要变化，再验证结果。第一次运行可能产生变化，第二次在输入和环境不变时应报告无变化，这就是收敛与幂等的可观察证据。</p>
+<pre class="mermaid"><code>flowchart LR
+    C[版本化配置代码] --&gt; T[测试与策略检查]
+    I[清单、分组与事实] --&gt; E[计算目标配置]
+    V[受控变量与机密引用] --&gt; E
+    T --&gt; E
+    E --&gt; N1[节点 A 收敛]
+    E --&gt; N2[节点 B 收敛]
+    N1 --&gt; R[结果、日志与指标]
+    N2 --&gt; R
+    R --&gt; D{仍有漂移或失败？}
+    D --&gt;|是| Q[停止推广并调查]
+    D --&gt;|否| B[继续下一批]</code></pre>
+<p>幂等不是“命令执行成功”。反复使用 <code>shell: echo ... &gt;&gt; file</code> 每次都会追加内容，即使退出码始终为零。优先使用理解资源状态的模块，例如 package、file、user 和 service；必须执行命令时，增加准确的 <code>creates</code>、<code>unless</code>、<code>onlyif</code> 或状态检查，并明确何时算变化。</p>
+<h3 id="_7">资源关系与通知<a class="headerlink" href="#_7" title="Permanent link">&para;</a></h3>
+<p>配置资源存在顺序关系：软件包先于配置文件，配置文件变化后才通知服务重载。好的模型表达“因为文件改变，所以服务需要动作”，而不是每次运行都重启服务。重启属于可能影响业务的副作用，应合并通知、分批执行并先做配置语法检查。</p>
+<p>循环依赖通常意味着职责划分错误。不要仅通过增加全局顺序解决；先检查资源是否应拆分为独立阶段，或通过稳定接口解耦。</p>
+<h3 id="_8">推送、拉取与事件模型<a class="headerlink" href="#_8" title="Permanent link">&para;</a></h3>
+<ul>
+<li><strong>推送（Push）</strong>：控制节点主动连接目标并执行，例如典型 Ansible。无需常驻客户端，适合按变更触发；控制节点需要网络可达且要处理并发和中断。</li>
+<li><strong>拉取（Pull）</strong>：节点代理定期向服务端取策略并自行收敛，例如常见 Chef Infra Client 或 Puppet Agent。适合大规模持续纠偏和间歇联网节点；需要部署代理、证书与控制服务。</li>
+<li><strong>事件驱动</strong>：消息或事件触发目标快速执行，例如 Salt 事件系统。响应及时，但控制面安全和事件风暴需要治理。</li>
+</ul>
+<p>这些不是绝对分类。Ansible 可用 pull 模式，Salt 可无主运行，Chef 可本地运行，Puppet 也可手工触发。选型看组织采用的主要运行模式与控制面，不看单一命令是否存在。</p>
+<h3 id="_9">清单、事实与变量<a class="headerlink" href="#_9" title="Permanent link">&para;</a></h3>
+<p>清单（Inventory）描述目标节点及分组，可来自静态文件、云 API、CMDB 或服务发现。主机名、环境和角色标签应稳定且有唯一来源；动态清单需要缓存、超时和失败策略，不能在返回空列表时把“没有目标”误判为成功。</p>
+<p>事实（Facts）是操作系统、地址、内存和平台等观察数据。Chef 使用 Ohai，Ansible 收集 facts，Salt 使用 grains，Puppet 使用 Facter。事实便于跨平台分支，但会增加启动开销，也可能暴露网络和主机信息。只收集需要的数据，不让不可控事实决定高风险权限。</p>
+<p>变量通常来自默认值、角色、环境、主机和运行参数。优先级越复杂，越难解释最终配置。保持来源少而明确，提供可查询的解析结果；机密与普通变量分离，避免出现在差异输出和日志中。</p>
+<h3 id="_10">漂移与持续收敛<a class="headerlink" href="#_10" title="Permanent link">&para;</a></h3>
+<p>手工修改、包自动升级和其他工具都会造成漂移。定期收敛可恢复期望状态，但也可能在事故中覆盖紧急修复。生产流程应要求紧急修改有工单、期限和回写配置代码的责任人。</p>
+<p>观察模式、check mode 或报告模式可发现潜在变化，但不是完美预测：命令型资源、自定义模块和运行时条件可能无法准确模拟。对关键配置结合文件完整性、服务指标和端到端验证，而不是只信任工具报告。</p>
+<h2 id="chef">Chef<a class="headerlink" href="#chef" title="Permanent link">&para;</a></h2>
+<p><strong>按需学习</strong>。Chef Infra 以 resource 描述包、文件、模板、服务等状态，recipe 组合资源，cookbook 封装 recipes、templates、files、attributes 和自定义资源。Chef Infra Client 在节点上编译并收敛 run list；Chef Infra Server 保存策略与节点信息，也可使用本地模式执行。</p>
+<p>Chef 执行通常分为编译与收敛阶段。recipe 中的 Ruby 代码在何时求值会影响资源顺序和动态值，不能把所有 Ruby 表达式都当作收敛时执行。通知分立即、延迟等时机，常用于“模板变化后重启服务”；多个延迟通知可在运行末尾合并。</p>
+<p>关键组件和实践：</p>
+<ul>
+<li><strong>Ohai</strong>收集节点自动属性，例如平台、网络和内存。</li>
+<li><strong>Custom Resources</strong>把重复模式封装为具有明确属性和动作的领域资源。</li>
+<li><strong>Policyfiles</strong>锁定 cookbook 版本、依赖和 run list，使不同节点执行同一策略制品。</li>
+<li><strong>Test Kitchen</strong>在临时实例中测试 cookbook，Chef InSpec 验证收敛后的系统控制项。</li>
+<li><strong>Chef Vault 或 encrypted data bags</strong>属于特定机密分发方案，仍需评估密钥、节点撤权和轮换；大型环境通常与专用机密系统集成。</li>
+</ul>
+<p>Chef 适合已经使用 Ruby 生态、需要丰富自定义资源和节点持续拉取的大规模主机环境。运维成本包括 Chef Server、代理升级、证书、cookbook 依赖和 Ruby 调试。应使用策略锁定版本，避免生产节点自动取得未测试 cookbook。</p>
+<h2 id="ansible">Ansible<a class="headerlink" href="#ansible" title="Permanent link">&para;</a></h2>
+<p><strong>重点掌握</strong>。Ansible 常从控制节点通过 SSH 管理 Linux 或网络设备，通过 WinRM 或 SSH 管理 Windows。inventory 定义目标，play 把主机组映射到 tasks，module 执行有状态操作，role 与 collection 提供复用和分发边界。</p>
+<p>Playbook 使用 YAML 表达，但每个 task 调用模块。优先使用完全限定集合名，例如 <code>ansible.builtin.copy</code>，避免不同 collection 出现同名模块。Handler 只在被通知时运行，适合配置变化后的重载；默认在 play 后期执行，若后续任务必须依赖新配置，可在明确位置刷新 handler，但要考虑失败恢复。</p>
+<p>常见能力包括：</p>
+<ul>
+<li><strong>inventory 与动态 inventory 插件</strong>：按环境和角色组织主机。</li>
+<li><strong>facts 与自定义 facts</strong>：支持平台差异和条件，但不要滥用复杂条件。</li>
+<li><strong>templates</strong>：通过 Jinja 生成配置；对不可信值进行适当引用与格式校验。</li>
+<li><strong>roles 与 collections</strong>：组织 defaults、tasks、handlers、modules 和依赖，并固定版本。</li>
+<li><strong>check mode 与 diff mode</strong>：预览支持这些模式的模块；不能视作实际执行的绝对保证。</li>
+<li><strong>Ansible Vault</strong>：加密仓库中的静态变量文件，不是动态机密生命周期系统；Vault 密码和解密后的值仍需保护。</li>
+</ul>
+<p>Ansible 默认推送、无需目标常驻代理，上手和临时编排直接。规模扩大后要治理控制节点高可用、SSH 连接、forks、执行队列、凭据、审计和长任务中断。使用 <code>serial</code>、失败比例与批次健康检查滚动变更，不要一次重启整个集群。</p>
+<h2 id="salt">Salt<a class="headerlink" href="#salt" title="Permanent link">&para;</a></h2>
+<p><strong>替代方案</strong>。Salt 常由 Salt Master 管理 Salt Minion，通过消息传输和公钥认证执行远程命令、下发状态和处理事件；也可使用 masterless 模式。Salt State（SLS）以 YAML 和 Jinja 等方式描述状态模块，Highstate 汇总节点应应用的目标状态。</p>
+<p>核心概念包括：</p>
+<ul>
+<li><strong>execution modules</strong>执行即时功能，<strong>state modules</strong>描述可收敛状态。临时命令不能替代长期 state。</li>
+<li><strong>grains</strong>是 minion 提供的相对静态事实，适合平台与角色信息；不能存放机密，也不应被当作不可伪造授权身份。</li>
+<li><strong>pillar</strong>向目标 minion 提供分层配置和敏感数据。敏感 pillar 仍会在 master 与授权 minion 解密可见，需要保护 external pillar、缓存和日志。</li>
+<li><strong>requisites</strong>用 <code>require</code>、<code>watch</code>、<code>onchanges</code> 等表达依赖和变化通知。</li>
+<li><strong>top file</strong>把环境和目标匹配到 states；匹配规则错误可能扩大执行范围。</li>
+<li><strong>event bus 与 reactor</strong>根据事件触发响应，适合自动修复或编排，但必须防止事件循环、伪造和过宽权限。</li>
+</ul>
+<p>Salt 的并行远程执行和事件能力适合大量节点、快速命令与持续配置结合的环境。代价是 master 或消息控制面、密钥接受、版本兼容和 Jinja 渲染安全。接受新 minion key 前核对身份，限制谁能发布命令和读取 job cache；高风险 reactor 先以观察或人工审批模式验证。</p>
+<h2 id="puppet">Puppet<a class="headerlink" href="#puppet" title="Permanent link">&para;</a></h2>
+<p><strong>替代方案</strong>。Puppet 使用声明式 manifests 定义 resources、classes 和关系，modules 封装代码、模板与数据。Puppet Server 根据节点 facts 和分类编译 catalog，Puppet Agent 在节点上应用 catalog 并发送报告；也可使用 <code>puppet apply</code> 本地执行。</p>
+<p>Puppet 默认按 manifest 中的声明顺序应用没有其他关系的资源，但自动关系或显式关系会改变这一顺序，不能把源码位置当作依赖契约。通过引用、箭头或 <code>require</code>、<code>before</code>、<code>notify</code>、<code>subscribe</code> 显式表达必要关系。<code>notify</code> 和 <code>subscribe</code> 支持 refresh 事件，例如配置变化后重启服务。应避免大量阶段和全局顺序，它们会削弱声明式依赖图。</p>
+<p>关键组件包括：</p>
+<ul>
+<li><strong>Facter</strong>收集节点 facts，可增加受控自定义事实。</li>
+<li><strong>Hiera</strong>按层级分离配置数据与 manifests，便于环境、地点、角色和节点覆盖。</li>
+<li><strong>Environment 与 Code Manager 或部署流程</strong>管理代码版本，生产环境不应直接跟随未测试分支。</li>
+<li><strong>PuppetDB</strong>保存 catalog、facts 和报告数据，支持查询与导出资源；其中包含基础设施敏感信息，需要访问控制与保留策略。</li>
+<li><strong>report 与 noop</strong>支持观察变更和运行结果，但自定义 provider 的模拟能力仍需验证。</li>
+</ul>
+<p>Puppet 适合希望使用成熟声明模型、代理周期拉取和集中报告的大规模主机环境。成本包括 Puppet Server、CA、代理、环境发布、PuppetDB 和语言学习。证书自动签名必须严格限制，否则未授权节点可能获得 catalog 中的敏感配置。</p>
+<h2 id="_11">选型比较<a class="headerlink" href="#_11" title="Permanent link">&para;</a></h2>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>Chef</th>
+<th>Ansible</th>
+<th>Salt</th>
+<th>Puppet</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>常见主模式</td>
+<td>代理拉取</td>
+<td>无代理推送</td>
+<td>Master/minion 与事件</td>
+<td>代理拉取</td>
+</tr>
+<tr>
+<td>配置表达</td>
+<td>Ruby DSL</td>
+<td>YAML Playbook 与模块</td>
+<td>YAML/Jinja SLS</td>
+<td>Puppet 声明语言</td>
+</tr>
+<tr>
+<td>节点事实</td>
+<td>Ohai</td>
+<td>Ansible facts</td>
+<td>grains</td>
+<td>Facter</td>
+</tr>
+<tr>
+<td>配置数据</td>
+<td>attributes、data bags 等</td>
+<td>inventory/group/host vars</td>
+<td>pillar</td>
+<td>Hiera</td>
+</tr>
+<tr>
+<td>突出能力</td>
+<td>自定义资源、策略与测试生态</td>
+<td>入口直接、编排与广泛模块</td>
+<td>高并发远程执行、事件系统</td>
+<td>声明式 catalog、持续报告</td>
+</tr>
+<tr>
+<td>主要运营成本</td>
+<td>Server、代理、Ruby 与 cookbook</td>
+<td>控制节点、连接、执行队列</td>
+<td>Master、密钥、消息与版本</td>
+<td>Server、CA、代理、PuppetDB</td>
+</tr>
+</tbody>
+</table>
+<p>按以下问题选择：</p>
+<ol>
+<li><strong>网络方向</strong>：控制节点能否主动连接每台主机？不能时，代理拉取或中继模型可能更适合。跨隔离区不能为了工具方便永久开放宽泛管理端口。</li>
+<li><strong>节点规模与变化速度</strong>：少量主机和按需变更可从 Ansible 开始；大量节点持续纠偏可比较 Chef 或 Puppet；需要高速远程执行和事件响应可评估 Salt。</li>
+<li><strong>操作系统与设备</strong>：验证目标 Linux、Windows、网络设备和中间件模块的真实质量，不只看支持列表。</li>
+<li><strong>团队能力</strong>：Ruby、YAML/Jinja、Puppet DSL 和控制面运营经验会直接影响故障恢复时间。</li>
+<li><strong>安全与审计</strong>：比较证书、短期身份、节点撤权、机密集成、执行审批、日志完整性和控制面高可用。</li>
+<li><strong>测试与发布</strong>：候选工具必须证明语法测试、临时实例收敛、第二次无变更、失败恢复、分批推广和报告查询。</li>
+<li><strong>迁移成本</strong>：自定义 resource、module、state、class 和数据层级都形成资产。先迁移高价值基线，不要一次重写全部遗留配置。</li>
+</ol>
+<p>工具组合需要明确边界。例如 Ansible 可做一次性引导，再由 Puppet Agent 持续收敛；但不要让两者同时管理同一文件和服务。长期存在两套工具会增加培训和控制面成本，应有退出条件。</p>
+<h2 id="ansible_1">最小实践：本机 Ansible 幂等收敛<a class="headerlink" href="#ansible_1" title="Permanent link">&para;</a></h2>
+<p>该实验只连接本机、使用当前用户、不提权，并且只写入实验目录下的 <code>build/</code>。需要已经从可信渠道安装 <code>ansible-core</code>。</p>
+<h3 id="1">1. 创建清单<a class="headerlink" href="#1" title="Permanent link">&para;</a></h3>
+<p>在空目录创建 <code>inventory.ini</code>：</p>
+<div class="language-ini highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="k">[lab]</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="na">localhost ansible_connection</span><span class="o">=</span><span class="s">local</span>
+</span></code></pre></div>
+<p>创建 <code>playbook.yml</code>：</p>
+<div class="language-yaml highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nn">---</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Converge a safe local configuration</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">  </span><span class="nt">hosts</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">lab</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a><span class="w">  </span><span class="nt">gather_facts</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">  </span><span class="nt">vars</span><span class="p">:</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">    </span><span class="nt">lab_directory</span><span class="p">:</span><span class="w"> </span><span class="s">"{{</span><span class="nv"> </span><span class="s">playbook_dir</span><span class="nv"> </span><span class="s">}}/build"</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="w">  </span><span class="nt">tasks</span><span class="p">:</span>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Ensure the lab directory exists</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="w">      </span><span class="nt">ansible.builtin.file</span><span class="p">:</span>
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a><span class="w">        </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="s">"{{</span><span class="nv"> </span><span class="s">lab_directory</span><span class="nv"> </span><span class="s">}}"</span>
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a><span class="w">        </span><span class="nt">state</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">directory</span>
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a><span class="w">        </span><span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="s">"0750"</span>
+</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>
+</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Render the handbook configuration</span>
+</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a><span class="w">      </span><span class="nt">ansible.builtin.template</span><span class="p">:</span>
+</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a><span class="w">        </span><span class="nt">src</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">handbook.conf.j2</span>
+</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="w">        </span><span class="nt">dest</span><span class="p">:</span><span class="w"> </span><span class="s">"{{</span><span class="nv"> </span><span class="s">lab_directory</span><span class="nv"> </span><span class="s">}}/handbook.conf"</span>
+</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="w">        </span><span class="nt">mode</span><span class="p">:</span><span class="w"> </span><span class="s">"0640"</span>
+</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="w">      </span><span class="nt">notify</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Report configuration change</span>
+</span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a>
+</span><span id="__span-1-23"><a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Read the rendered configuration</span>
+</span><span id="__span-1-24"><a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a><span class="w">      </span><span class="nt">ansible.builtin.slurp</span><span class="p">:</span>
+</span><span id="__span-1-25"><a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a><span class="w">        </span><span class="nt">src</span><span class="p">:</span><span class="w"> </span><span class="s">"{{</span><span class="nv"> </span><span class="s">lab_directory</span><span class="nv"> </span><span class="s">}}/handbook.conf"</span>
+</span><span id="__span-1-26"><a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a><span class="w">      </span><span class="nt">register</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rendered_configuration</span>
+</span><span id="__span-1-27"><a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a><span class="w">      </span><span class="nt">changed_when</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+</span><span id="__span-1-28"><a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a>
+</span><span id="__span-1-29"><a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Assert the expected environment was rendered</span>
+</span><span id="__span-1-30"><a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a><span class="w">      </span><span class="nt">ansible.builtin.assert</span><span class="p">:</span>
+</span><span id="__span-1-31"><a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a><span class="w">        </span><span class="nt">that</span><span class="p">:</span>
+</span><span id="__span-1-32"><a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a><span class="w">          </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">"'environment=development'</span><span class="nv"> </span><span class="s">in</span><span class="nv"> </span><span class="s">(rendered_configuration.content</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">b64decode)"</span>
+</span><span id="__span-1-33"><a id="__codelineno-1-33" name="__codelineno-1-33" href="#__codelineno-1-33"></a><span class="w">        </span><span class="nt">quiet</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</span><span id="__span-1-34"><a id="__codelineno-1-34" name="__codelineno-1-34" href="#__codelineno-1-34"></a>
+</span><span id="__span-1-35"><a id="__codelineno-1-35" name="__codelineno-1-35" href="#__codelineno-1-35"></a><span class="w">  </span><span class="nt">handlers</span><span class="p">:</span>
+</span><span id="__span-1-36"><a id="__codelineno-1-36" name="__codelineno-1-36" href="#__codelineno-1-36"></a><span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Report configuration change</span>
+</span><span id="__span-1-37"><a id="__codelineno-1-37" name="__codelineno-1-37" href="#__codelineno-1-37"></a><span class="w">      </span><span class="nt">ansible.builtin.debug</span><span class="p">:</span>
+</span><span id="__span-1-38"><a id="__codelineno-1-38" name="__codelineno-1-38" href="#__codelineno-1-38"></a><span class="w">        </span><span class="nt">msg</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Configuration changed; a production service would be validated and reloaded here.</span>
+</span></code></pre></div>
+<p>创建模板 <code>handbook.conf.j2</code>：</p>
+<div class="language-jinja highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="x"># Managed by Ansible. Local handbook lab only.</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="x">environment=development</span>
+</span><span id="__span-2-3"><a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="x">listen_address=127.0.0.1</span>
+</span></code></pre></div>
+<p>模板中没有机密，监听地址明确为环回地址。实际服务模板应对变量执行适合目标格式的引用和校验。</p>
+<h3 id="2">2. 检查并执行<a class="headerlink" href="#2" title="Permanent link">&para;</a></h3>
+<p>先检查语法，再执行第一次收敛：</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>ansible-playbook<span class="w"> </span>--inventory<span class="w"> </span>inventory.ini<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="w">  </span>playbook.yml<span class="w"> </span>--syntax-check
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>ansible-playbook<span class="w"> </span>--inventory<span class="w"> </span>inventory.ini<span class="w"> </span>playbook.yml
+</span></code></pre></div>
+<p>在全新目录直接运行完整 check mode 会遇到一个典型限制：<code>file</code> 模块只预测目录将被创建，不会真的创建它，后续 <code>template</code> 或 <code>slurp</code> 因而可能找不到路径。第一次收敛后再运行 check mode，并执行第二次实际收敛：</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>ansible-playbook<span class="w"> </span>--inventory<span class="w"> </span>inventory.ini<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="w">  </span>playbook.yml<span class="w"> </span>--check<span class="w"> </span>--diff
+</span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
+</span><span id="__span-4-4"><a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>ansible-playbook<span class="w"> </span>--inventory<span class="w"> </span>inventory.ini<span class="w"> </span>playbook.yml
+</span></code></pre></div>
+<p>第一次运行应创建目录和文件，并触发 handler。随后的 check mode 和第二次实际运行都应显示 <code>changed=0</code>，handler 不再执行。这比“Playbook 没报错”更直接地证明幂等，也说明 check mode 不能完整模拟有前后依赖的首次收敛。</p>
+<p>验证权限和内容：</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>ls<span class="w"> </span>-ld<span class="w"> </span>build<span class="w"> </span>build/handbook.conf
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>ansible<span class="w"> </span>localhost<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">  </span>--inventory<span class="w"> </span>inventory.ini<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="w">  </span>--module-name<span class="w"> </span>ansible.builtin.slurp<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">  </span>--args<span class="w"> </span><span class="s2">"{\"src\":\"</span><span class="nv">$PWD</span><span class="s2">/build/handbook.conf\"}"</span>
+</span></code></pre></div>
+<h3 id="3">3. 清理<a class="headerlink" href="#3" title="Permanent link">&para;</a></h3>
+<p>确认当前目录是专用实验目录，再删除唯一生成物：</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>rm<span class="w"> </span>--<span class="w"> </span>./build/handbook.conf
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>rmdir<span class="w"> </span>--<span class="w"> </span>./build
+</span></code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">不要把本机成功直接推广到全部主机</p>
+<p>本实验没有软件包、服务重启、提权、网络中断和平台差异。生产变更先在临时实例验证，再以小批次执行，并让健康指标决定是否继续。</p>
+</div>
+<h2 id="_12">生产实践<a class="headerlink" href="#_12" title="Permanent link">&para;</a></h2>
+<h3 id="_13">代码与测试<a class="headerlink" href="#_13" title="Permanent link">&para;</a></h3>
+<ul>
+<li>格式化并执行语法、lint 和单元测试；在临时虚拟机或容器中执行两次收敛，第二次必须无意外变化。</li>
+<li>测试所有支持的操作系统版本、升级路径和失败恢复，不只测试全新机器。</li>
+<li>模板生成后先运行目标软件的配置检查命令，再原子替换并通知重载。</li>
+<li>role、cookbook、formula、module 和 collection 固定版本及依赖，升级通过评审提交。</li>
+<li>删除测试同样重要：移除用户、包或配置时检查数据保留、服务依赖和回滚能力。</li>
+</ul>
+<h3 id="_14">安全性<a class="headerlink" href="#_14" title="Permanent link">&para;</a></h3>
+<ul>
+<li>控制节点、Chef Server、Salt Master、Puppet Server 和 CA 都是高价值控制面，隔离网络、强认证、最小权限并集中审计。</li>
+<li>使用短期 SSH 证书、Kerberos、mTLS 或受控代理身份；不在清单和仓库保存私钥与密码。</li>
+<li>提权只授予必要命令和目标；审查模块实际调用，避免为了方便给自动化无限制 <code>sudo</code>。</li>
+<li>机密在目标节点只以最小权限落盘或直接注入进程，diff 和日志对相关任务关闭并限制调试权限。</li>
+<li>动态清单、facts、grains 和节点分类都不是天然可信授权源，高风险目标范围要由受控系统确认。</li>
+<li>第三方模块与模板按软件供应链管理，固定来源、检查签名或校验和并扫描漏洞。</li>
+</ul>
+<h3 id="_15">分批与恢复<a class="headerlink" href="#_15" title="Permanent link">&para;</a></h3>
+<ul>
+<li>按故障域和服务容量选择 canary 与批大小；每批完成后检查应用而不只是工具退出码。</li>
+<li>设置最大失败比例和停止条件。失败时停止推广，保留已成功节点的状态，决定回滚或向前修复。</li>
+<li>服务重启前确认负载均衡已摘流并等待连接排空；不要同时重启共享依赖的所有副本。</li>
+<li>配置与应用版本保持兼容窗口。回滚配置时，旧应用和新应用都应能在窗口内运行。</li>
+<li>对控制面不可用设计降级：代理应继续使用最后一个有效 catalog 或策略，不能因暂时失联破坏现有服务。</li>
+</ul>
+<h3 id="_16">可观测性与维护<a class="headerlink" href="#_16" title="Permanent link">&para;</a></h3>
+<ul>
+<li>采集运行成功率、变化资源数、失败资源、执行时长、未响应节点、版本分布和漂移持续时间。</li>
+<li>将运行 ID、配置提交、目标批次和变更单写入结构化审计，避免记录机密值。</li>
+<li>对长期 <code>changed</code> 的资源告警，它通常表示不幂等、外部竞争写或不稳定输入。</li>
+<li>节点报告要进入可查询系统并设置保留期限；控制面数据库、CA 与配置仓库定期备份和恢复演练。</li>
+<li>定期删除退役节点、过期证书、废弃环境变量和无所有者代码，减少错误目标与攻击面。</li>
+</ul>
+<h2 id="_17">常见误区<a class="headerlink" href="#_17" title="Permanent link">&para;</a></h2>
+<ul>
+<li><strong>把 Shell 脚本包装进工具就称为幂等</strong>：没有状态检查的命令仍会重复产生副作用。</li>
+<li><strong>每次运行都重启服务</strong>：应只在配置确实变化且校验通过后通知重载或重启。</li>
+<li><strong>一次推送全部生产节点</strong>：错误配置会同时消耗全部冗余，应按故障域和容量分批。</li>
+<li><strong>认为 check 或 noop 与真实执行完全相同</strong>：自定义命令、外部 API 和运行时条件可能无法模拟。</li>
+<li><strong>在变量文件中保存明文机密</strong>：即便仓库私有，克隆、日志和备份也会扩大泄露面。</li>
+<li><strong>依赖 IP 或自报 facts 决定管理员权限</strong>：应使用经过认证的节点身份和受控分类数据。</li>
+<li><strong>多工具共同管理同一文件</strong>：持续覆盖会产生永久漂移和重启循环，必须指定唯一所有者。</li>
+<li><strong>把配置管理当应用发布系统</strong>：它能复制文件和重启服务，却不一定提供流量切换、制品证明和安全回滚。</li>
+<li><strong>自动接受所有代理证书或 Salt key</strong>：未授权节点可能获得敏感 catalog、pillar 或执行能力。</li>
+<li><strong>只测试新装，不测试升级和删除</strong>：真实事故更常发生在已有状态、版本跨度和数据保留上。</li>
+</ul>
+<h2 id="_18">动手练习<a class="headerlink" href="#_18" title="Permanent link">&para;</a></h2>
+<ol>
+<li>完成本机 Ansible 实验，保留两次执行摘要，确认第二次 <code>changed=0</code>。</li>
+<li>修改模板增加一个经变量传入的 <code>log_level</code>，只允许 <code>info</code>、<code>warning</code> 或 <code>error</code>。使用 <code>assert</code> 在写文件前拒绝非法值。</li>
+<li>添加一个校验 handler，但不要启动真实服务：配置变化时执行只读检查并仅输出消息。证明无变化时 handler 不执行。</li>
+<li>为三个 Web 节点设计 <code>serial: 1</code> 的滚动流程，写出摘流、配置校验、重载、健康检查、回流和停止条件。</li>
+<li>分别把 Ansible facts、Chef Ohai、Salt grains 和 Puppet Facter 映射到同一个“按操作系统选择包名”场景，说明为何这些数据不能单独授予高风险权限。</li>
+<li>选择 Chef、Salt 或 Puppet，为“安装 Web Server、写配置、配置变化后重载”写伪代码或实验配置，并验证第二次收敛无变化。</li>
+<li>列出当前系统中应由 IaC、镜像、配置管理、应用部署和机密系统分别拥有的对象，解决所有重复所有权。</li>
+</ol>
+<h2 id="_19">完成检查<a class="headerlink" href="#_19" title="Permanent link">&para;</a></h2>
+<ul class="task-list">
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能区分配置管理与置备、镜像、应用发布和机密管理。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能解释期望状态、收敛、幂等、依赖、通知和漂移。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能比较推送、拉取和事件驱动模型的网络与运营成本。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能说明 inventory、facts 与变量层级，并限制其安全边界。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能说明 Chef resources、recipes、cookbooks、Ohai、Policyfiles 和测试方式。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能说明 Ansible inventory、playbook、module、role、handler、check 与 diff mode。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能说明 Salt states、grains、pillar、requisites 和 event reactor。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能说明 Puppet manifests、classes、modules、catalog、Facter 与 Hiera。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 已在本机运行 Ansible 实验，并确认第二次执行 <code>changed=0</code>。</li>
+<li class="task-list-item"><label class="task-list-control"><input type="checkbox" disabled/><span class="task-list-indicator"></span></label> 能为生产配置变更设计测试、分批、安全、恢复和可观测性措施。</li>
+</ul>
+<h2 id="_20">官方延伸阅读<a class="headerlink" href="#_20" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="https://docs.chef.io/chef_overview/">Chef Infra 文档</a></li>
+<li><a href="https://docs.chef.io/resources/">Chef Infra Resources</a></li>
+<li><a href="https://kitchen.ci/docs/getting-started/introduction/">Chef Test Kitchen 文档</a></li>
+<li><a href="https://docs.ansible.com/ansible-core/devel/index.html">Ansible Core 文档</a></li>
+<li><a href="https://docs.ansible.com/ansible/latest/tips_tricks/ansible_tips_tricks.html">Ansible Playbook 最佳实践</a></li>
+<li><a href="https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_checkmode.html">Ansible Check 与 Diff Mode</a></li>
+<li><a href="https://docs.saltproject.io/">Salt Project 文档</a></li>
+<li><a href="https://docs.saltproject.io/en/latest/topics/tutorials/starting_states.html">Salt State System</a></li>
+<li><a href="https://help.puppet.com/core/current/Content/PuppetCore/puppet_language.htm">Puppet Language 文档</a></li>
+<li><a href="https://help.puppet.com/core/current/Content/PuppetCore/subsystem_catalog_compilation.htm">Puppet Catalog 编译</a></li>
+<li><a href="https://help.puppet.com/core/current/Content/PuppetCore/hiera_intro.htm">Hiera 文档</a></li>
+</ul>
+
+
+  <nav class="md-tags" >
+    
+      
+      
+      
+      
+        <span class="md-tag">配置与状态</span>
+      
+    
+      
+      
+      
+      
+        <span class="md-tag">自动化交付</span>
+      
+    
+      
+      
+      
+      
+        <span class="md-tag">基础能力</span>
+      
+    
+  </nav>
+
+
+
+
+
+
+
+
+  
+  
+
+
+
+  
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-circle-arrow-up" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m16 12-4-4-4 4M12 16V8"/></svg>
+  回到页面顶部
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="页脚" >
+        
+          
+          <a href="../provisioning/" class="md-footer__link md-footer__link--prev" aria-label="上一页: 基础设施置备">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                上一页
+              </span>
+              <div class="md-ellipsis">
+                基础设施置备
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../ci-cd-tools/" class="md-footer__link md-footer__link--next" aria-label="下一页: CI&#x2f;CD 工具">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                下一页
+              </span>
+              <div class="md-ellipsis">
+                CI/CD 工具
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://zensical.org/" target="_blank" rel="noopener">
+      Zensical
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate":null,"base":"..","features":["announce.dismiss","content.action.edit","content.action.view","content.code.annotate","content.code.copy","content.code.select","content.footnote.tooltips","content.tabs.link","content.tooltips","navigation.footer","navigation.indexes","navigation.instant","navigation.instant.prefetch","navigation.path","navigation.sections","navigation.top","navigation.tracking","search.highlight","toc.follow"],"search":"../assets/javascripts/workers/search.7d14d953.min.js","tags":null,"translations":{"clipboard.copied":"已复制","clipboard.copy":"复制","search.result.more.one":"在该页上还有 1 个符合条件的结果","search.result.more.other":"在该页上还有 # 个符合条件的结果","search.result.none":"没有找到符合条件的结果","search.result.one":"找到 1 个符合条件的结果","search.result.other":"# 个符合条件的结果","search.result.placeholder":"键入以开始搜索","search.result.term.missing":"缺少","select.version":"选择当前版本"},"version":null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.e886cdf1.min.js"></script>
+      
+    
+  </body>
+</html>
