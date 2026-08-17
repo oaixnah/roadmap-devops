@@ -10,7 +10,7 @@ tags:
 
 DevOps 工作中的许多“应用故障”，实际发生在名称解析、路由、连接、TLS 或邮件认证层。掌握协议的目标不是背端口号，而是能够沿分层模型提出假设，用协议工具收集证据，并在不降低安全性的前提下定位问题。本章同时覆盖 Web、远程访问、文件传输和完整的邮件投递链路。
 
-## 学习目标
+## 学习目标 {#learning-objectives}
 
 完成本章后，你应当能够：
 
@@ -23,13 +23,13 @@ DevOps 工作中的许多“应用故障”，实际发生在名称解析、路�
 - 说明 SPF、DomainKeys、DKIM 与 DMARC 各自验证什么，以及标识符对齐为何重要。
 - 在本机建立受信任的最小 TLS 服务，并用 `curl` 与 OpenSSL 验证它。
 
-## 前置知识
+## 前置知识 {#prerequisites}
 
 - 熟悉进程、文件权限和基本命令行操作，参见[操作系统](operating-system.md)与[终端知识](terminal-knowledge.md)。
 - 若需要理解代理和负载均衡所处位置，先阅读[常见基础设施服务](common-infrastructure-services.md)。
 - 本章不要求先有云账号，也不会要求连接真实邮件账号。
 
-## 核心原理：OSI 模型与排障方法
+## 核心原理：OSI 模型与排障方法 {#core-principles-osi-model-and-troubleshooting}
 
 开放系统互连模型（OSI Model）把通信抽象为七层。它适合建立共同语言，但 TCP/IP 实现并不会严格按七个独立模块运行。
 
@@ -59,11 +59,11 @@ sequenceDiagram
     S-->>C: HTTP 响应
 ```
 
-## DNS
+## DNS {#dns}
 
 域名系统（Domain Name System，DNS）是分层、委派且大量依赖缓存的命名系统。典型查询经过本机存根解析器、递归解析器，再按根、顶级域和权威服务器的委派找到答案。递归解析器通常替客户端完成后续查询并缓存结果。
 
-### 常用记录
+### 常用记录 {#common-records}
 
 - `A` 与 `AAAA`：分别把名称映射到 IPv4 和 IPv6 地址。
 - `CNAME`：把一个名称别名指向另一个规范名称。它通常不能与同名的其他数据共存，根域是否支持类似能力取决于 DNS 服务商的扁平化实现。
@@ -79,7 +79,7 @@ TTL 决定缓存答案可复用多久，不保证变更在精确秒数后全球�
 
 DNSSEC 为 DNS 数据提供来源真实性和完整性验证，但不加密查询内容。加密 DNS 传输可使用 DNS over TLS 或 DNS over HTTPS，二者与 DNSSEC 解决的问题不同。
 
-### 安全排查
+### 安全排查 {#security-troubleshooting}
 
 使用 `dig` 时同时观察答案、权威服务器、状态与 TTL：
 
@@ -92,11 +92,11 @@ dig +trace www.example.com
 
 `NXDOMAIN` 表示名称不存在，`NOERROR` 且答案为空可能表示名称存在但没有所查询类型。不要把任何 DNS 失败都归结为“还在传播”；先直接查询权威服务器并检查委派、DNSSEC 和记录类型。
 
-## HTTP
+## HTTP {#http}
 
 超文本传输协议（HTTP）是请求与响应协议。HTTP/1.1 以文本形式表达报文并可复用 TCP 连接；HTTP/2 在单连接上复用二进制流并压缩头部；HTTP/3 在 QUIC 之上运行，减少传输层队头阻塞。版本改变传输方式，但方法、状态码、Header 和缓存等语义仍由 HTTP 规范定义。
 
-### 方法、安全性与幂等性
+### 方法、安全性与幂等性 {#methods-safety-and-idempotency}
 
 - `GET` 获取表示，语义上安全且幂等，不应触发业务状态变更。
 - `HEAD` 与 `GET` 类似但不返回响应正文，适合检查元数据。
@@ -108,19 +108,19 @@ dig +trace www.example.com
 
 “幂等”表示相同请求执行一次和多次的预期服务端效果相同，不表示没有日志、计费或时间变化，也不表示网络库可以无条件重试。调用方还要判断请求是否已经到达服务端。
 
-### 状态码和头部
+### 状态码和头部 {#status-codes-and-headers}
 
 `1xx` 表示临时信息，`2xx` 表示已处理，`3xx` 表示重定向或缓存验证，`4xx` 表示客户端请求不能按当前形式完成，`5xx` 表示服务端未能履行有效请求。监控时应保留具体状态码：`401`、`403`、`404`、`409`、`429`、`500`、`502`、`503` 和 `504` 的修复方向不同。
 
 重要 Header 包括 `Host`、`Content-Type`、`Content-Length`、`Authorization`、`Cookie`、`Set-Cookie`、`Cache-Control`、`ETag`、`Location`、`Retry-After` 和 `Vary`。Header 名称不区分大小写，但值的语义由各字段规范决定。代理转发与缓存细节参见[常见基础设施服务](common-infrastructure-services.md)。
 
-## HTTPS、SSL 与 TLS
+## HTTPS、SSL 与 TLS {#https-ssl-and-tls}
 
 HTTPS 是在 TLS 保护下传输 HTTP。TLS 提供传输加密、完整性保护和对端身份认证；它不自动证明网站业务可信，也不替代应用授权。
 
 SSL 2.0 和 SSL 3.0 已废弃。工程交流中仍会看到“SSL 证书”或“SSL 终止”，通常实际指 TLS。新系统应使用当前受支持的 TLS 版本和算法，不能通过启用旧 SSL 来兼容过时客户端。
 
-### TLS 握手要点
+### TLS 握手要点 {#tls-handshake-essentials}
 
 1. 客户端发送支持的 TLS 版本、密码套件、随机数、密钥协商参数，以及服务器名称指示（SNI）和应用层协议协商（ALPN）。
 2. 服务端选择参数并返回证书链和密钥协商消息。
@@ -132,7 +132,7 @@ TLS 1.3 简化了握手并移除多项旧算法。会话恢复能减少延迟，
 !!! warning "不要用跳过校验修复证书问题"
     `curl -k`、关闭主机名校验或信任任意证书只会隐藏身份验证失败。应修复系统时间、完整证书链、SAN 主机名、信任根或代理拦截配置。
 
-## SSH
+## SSH {#ssh}
 
 安全外壳协议（Secure Shell，SSH）在不可信网络上提供加密的远程登录、命令执行、端口转发和文件传输。客户端先验证服务器主机密钥，再由服务端验证用户身份。这两个方向不可混为一谈。
 
@@ -146,7 +146,7 @@ TLS 1.3 简化了握手并移除多项旧算法。会话恢复能减少延迟，
 - 谨慎启用代理转发和端口转发；转发的认证代理可能被远端进程滥用。
 - 维护主机密钥轮换流程，避免重建主机后让所有人忽略指纹变化。
 
-## FTP 与 SFTP
+## FTP 与 SFTP {#ftp-and-sftp}
 
 FTP 使用独立的控制连接和数据连接。主动模式由服务器连接客户端数据端口，容易被客户端 NAT 或防火墙阻断；被动模式由客户端连接服务端公布的数据端口，服务端需要配置并放行受控端口范围。传统 FTP 的用户名、密码和内容都是明文。
 
@@ -160,7 +160,7 @@ FTPS 是 FTP 加 TLS，仍保留 FTP 的双连接模型；它与 SFTP 不是同�
 - 用校验和或签名验证完整性，并定义重复文件的幂等处理规则。
 - 独立记录谁在何时上传、下载或删除了什么，不在日志中泄露文件内容。
 
-## 允许列表与灰名单
+## 允许列表与灰名单 {#allowlists-and-greylists}
 
 “白名单”通常指允许列表（Allowlist）：只有明确列出的身份、地址、域名或操作被允许，其余拒绝。相比开放后再逐项阻止，它更接近最小权限，但维护成本会随动态地址、第三方依赖和规模增长。
 
@@ -170,7 +170,7 @@ FTPS 是 FTP 加 TLS，仍保留 FTP 的双连接模型；它与 SFTP 不是同�
 
 在访问控制语境中，“灰名单”有时泛指需要额外验证或限制的中间状态。设计和文档必须明确具体动作，不能只写颜色名称。
 
-## 邮件协议全景
+## 邮件协议全景 {#email-protocol-landscape}
 
 邮件系统把提交、服务器间传输、存储和读取分开。发送成功响应通常只表示下一跳服务器已接受消息，并不保证收件人最终看见邮件。
 
@@ -185,7 +185,7 @@ flowchart LR
     DNS -.发布 SPF、DKIM、DMARC.-> MX
 ```
 
-### SMTP
+### SMTP {#smtp}
 
 简单邮件传输协议（SMTP）负责提交和转发邮件。服务器之间通常在 TCP `25` 端口传输；客户端提交通常使用 `587` 配合 STARTTLS，或使用 `465` 的隐式 TLS。端口是常见约定而非安全结论，必须根据服务端策略验证加密和认证。
 
@@ -193,7 +193,7 @@ SMTP 是存储转发协议。临时失败用 `4xx`，发送方应按退避策略
 
 STARTTLS 是在明文连接上协商升级 TLS。若客户端把它当作“可选”，降级攻击或配置错误可能使邮件明文传输。服务器间强制 TLS 可结合 MTA-STS 或 DANE 等机制，但部署前需要理解 DNSSEC 和兼容性边界。
 
-### IMAP 与 POP3S
+### IMAP 与 POP3S {#imap-and-pop3s}
 
 互联网消息访问协议（IMAP）以服务器邮箱为中心，支持文件夹、状态同步、多设备访问和按需下载。常见安全端口是隐式 TLS 的 `993`；`143` 可使用 STARTTLS，但不应在公网发送明文凭据。
 
@@ -201,11 +201,11 @@ STARTTLS 是在明文连接上协商升级 TLS。若客户端把它当作“可�
 
 不要仅凭端口认定连接安全。客户端要验证服务端证书和主机名，服务端应禁用明文认证或要求认证只发生在 TLS 建立之后。更现代的客户端认证可使用 OAuth 2.0 短期令牌，减少长期密码暴露。
 
-## SPF、DomainKeys、DKIM 与 DMARC
+## SPF、DomainKeys、DKIM 与 DMARC {#spf-domainkeys-dkim-and-dmarc}
 
 这些机制主要降低发件域伪造并建立可验证身份，不负责加密邮件正文，也不能证明邮件内容无恶意。
 
-### SPF
+### SPF {#spf}
 
 发件人策略框架（Sender Policy Framework，SPF）由域所有者在 DNS TXT 中声明哪些主机可使用该域作为 SMTP 信封发件地址发送邮件。接收方根据实际连接的发送 IP、`MAIL FROM` 域或空退信时的 HELO 域计算结果。
 
@@ -217,7 +217,7 @@ SPF 不直接验证用户在邮件客户端看到的 `From` 头。邮件转发�
 example.com. 3600 IN TXT "v=spf1 include:_spf.mail-provider.example -all"
 ```
 
-### DomainKeys 与 DKIM
+### DomainKeys 与 DKIM {#domainkeys-and-dkim}
 
 DomainKeys 是较早的域级邮件签名方案，现已被 DomainKeys Identified Mail（DKIM）取代。遇到遗留系统的 `DomainKey-Signature` 或 `_domainkey` 配置时，应区分历史 DomainKeys 与现代 `DKIM-Signature`；新部署应使用 DKIM，不要新建 DomainKeys 实现。
 
@@ -229,7 +229,7 @@ DKIM 发送方使用私钥对选定邮件头和正文摘要签名，并在 `DKIM
 selector1._domainkey.example.com. 3600 IN TXT "v=DKIM1; k=rsa; p=BASE64_PUBLIC_KEY_PLACEHOLDER"
 ```
 
-### DMARC
+### DMARC {#dmarc}
 
 基于域的消息认证、报告与一致性（DMARC）把 SPF 或 DKIM 的结果与用户可见 `From` 域进行**对齐**。一封邮件只需至少一条对齐路径通过：
 
@@ -256,7 +256,7 @@ _dmarc.example.com. 3600 IN TXT "v=DMARC1; p=none; rua=mailto:dmarc-reports@exam
 !!! warning "报告地址也需要治理"
     DMARC 聚合报告可能量大，并包含发送基础设施信息。失败报告还可能包含邮件头、正文和个人信息，很多接收方因此限制或不发送；常规监控应优先使用聚合报告。应使用专用邮箱和自动解析流程，设定保留期限与访问权限。示例地址不可用于真实报告。
 
-### 三种机制如何协作
+### 三种机制如何协作 {#how-the-three-mechanisms-work-together}
 
 | 机制 | 主要验证对象 | 数据位置 | 典型限制 |
 | --- | --- | --- | --- |
@@ -266,29 +266,29 @@ _dmarc.example.com. 3600 IN TXT "v=DMARC1; p=none; rua=mailto:dmarc-reports@exam
 
 三者不能代替垃圾邮件信誉、恶意附件扫描、用户认证或端到端加密。S/MIME 和 OpenPGP 等内容签名或加密属于另一层问题。
 
-## 选型比较
+## 选型比较 {#selection-comparison}
 
-### 文件传输
+### 文件传输 {#file-transfer}
 
 新系统优先选择 SFTP、HTTPS 对象上传或受控 API。SFTP 适合目录式批量交换和既有 SSH 身份体系；HTTPS API 更容易表达细粒度业务验证、幂等性和状态。只有对方协议固定时才保留 FTP/FTPS，并隔离网关、限制被动端口和强制 TLS。
 
-### 远程管理
+### 远程管理 {#remote-administration}
 
 少量主机可使用加固后的 SSH；大规模环境应结合短期 SSH 证书、堡垒机或基于身份的会话服务，减少长期密钥和公网管理端口。需要批量执行时，不要把手工 SSH 当作配置管理，参见[配置管理](configuration-management.md)。
 
-### 邮箱读取
+### 邮箱读取 {#mailbox-access}
 
 需要多设备、服务器文件夹和状态同步时选择 IMAP over TLS。只需把邮件下载给受控单用途程序且服务商支持时，才考虑 POP3S。自动化处理还可评估供应商 API，但要比较开放标准可迁移性、限流和长期令牌风险。
 
-### 名称和传输安全
+### 名称和传输安全 {#naming-and-transport-security}
 
 公网站点通常需要权威 DNS、自动化证书和 HTTPS。DNS 服务商选型应比较 Anycast 覆盖、DNSSEC、变更审计、API 权限、查询日志和故障转移能力。TLS 由云入口还是自管代理终止，要根据信任边界、证书控制、性能和端到端加密要求决定。
 
-## 最小实践：本机 TLS 服务
+## 最小实践：本机 TLS 服务 {#minimal-practice-local-tls-service}
 
 该实验使用 OpenSSL 生成只用于 `localhost` 的临时自签发证书，服务仅监听环回地址。`curl` 显式信任这张实验根证书，而不是跳过校验。
 
-### 1. 生成证书
+### 1. 生成证书 {#generate-certificate}
 
 在空目录执行：
 
@@ -309,7 +309,7 @@ openssl x509 -in localhost.crt -noout \
 
 证书有效期只有一天，私钥权限受 `umask` 限制。自签发证书只适合实验或明确受控的内部信任体系。
 
-### 2. 启动服务
+### 2. 启动服务 {#start-service}
 
 在第一个终端运行：
 
@@ -338,7 +338,7 @@ openssl s_client \
 
 应看到 `Verify return code: 0 (ok)`。将 `-verify_hostname localhost` 改为其他名称，或让 `curl` 不再提供 `--cacert`，验证应失败，这正是身份校验在发挥作用。`-servername` 负责发送 SNI，`-verify_hostname` 才明确要求 `s_client` 校验目标主机名。
 
-### 3. 清理
+### 3. 清理 {#cleanup}
 
 在第一个终端按 `Ctrl+C` 停止服务，然后删除临时材料：
 
@@ -346,9 +346,9 @@ openssl s_client \
 rm -f localhost.key localhost.crt
 ```
 
-## 生产实践
+## 生产实践 {#production-practices}
 
-### 安全性
+### 安全性 {#security}
 
 - 所有管理、文件和邮件认证连接强制使用受支持的 TLS 或 SSH 配置，禁用明文回退。
 - 自动化证书签发、部署、续期和吊销；对到期时间、握手失败和异常签发设置告警。
@@ -357,7 +357,7 @@ rm -f localhost.key localhost.crt
 - 网络允许列表与应用身份认证叠加，不以源 IP 代替用户或服务身份。
 - 邮件域从监控策略逐步收紧 DMARC，避免未经盘点直接拒绝合法第三方邮件。
 
-### 可靠性
+### 可靠性 {#reliability}
 
 - 同时测试 IPv4 和 IPv6。只监控 `A` 记录会漏掉错误的 `AAAA` 路径。
 - DNS 与证书切换保留重叠窗口；旧地址、旧密钥或旧证书在缓存和在途消息耗尽前不要过早删除。
@@ -365,13 +365,13 @@ rm -f localhost.key localhost.crt
 - 监控应从多个网络位置执行 DNS、TCP、TLS 和应用层探测，以区分局部网络故障和全局故障。
 - 邮件队列设置容量和最老消息年龄告警；只看“当前发送成功率”会遗漏持续积压。
 
-### 可观测性
+### 可观测性 {#observability}
 
 按层保存恰当证据：DNS 响应码和延迟、TCP 建连时间与重传、TLS 版本和失败原因、HTTP 状态及延迟、SSH 认证事件、SMTP 队列与退信分类、DKIM/SPF/DMARC 结果。日志字段应结构化，但认证信息、邮件正文和个人数据需要最小采集与脱敏。
 
 抓包可能包含凭据、Cookie 和业务内容。只在授权范围内采集，缩小过滤条件，限制文件权限与保留时间；结束后及时删除。
 
-## 常见误区
+## 常见误区 {#common-misconceptions}
 
 - **把 OSI 层当作严格实现结构**：它是定位和沟通模型，QUIC 等协议会跨越传统边界。
 - **认为能 `ping` 就代表服务正常**：ICMP 可达不能证明 DNS 名称、TCP 端口、TLS 或应用路由正常。
@@ -385,7 +385,7 @@ rm -f localhost.key localhost.crt
 - **混用 DomainKeys 与 DKIM**：DomainKeys 是历史方案，新系统应实现并轮换 DKIM。
 - **直接把 DMARC 改成 `p=reject`**：未盘点的合法发送平台和邮件列表可能立即被拒收。
 
-## 动手练习
+## 动手练习 {#hands-on-exercises}
 
 1. 对 `www.example.com` 分别查询 `A`、`AAAA`、`CAA` 和权威 `NS`，记录每个答案的 TTL，并说明变更时哪个管理方负责。
 2. 使用 `curl --verbose https://www.example.com/` 记录协商出的 HTTP 版本、TLS 版本和证书主机名。不要使用 `-k`。
@@ -394,7 +394,7 @@ rm -f localhost.key localhost.crt
 5. 选择你控制的测试域，仅使用只读 DNS 查询检查 MX、SPF、DKIM 选择器和 DMARC。画出 SPF 与 DKIM 各自参与 DMARC 对齐的标识符；不要在练习中修改生产 DNS。
 6. 为 HTTP `POST /orders` 设计幂等键处理流程，说明客户端超时后如何安全重试，以及服务端保存去重结果多久。
 
-## 完成检查
+## 完成检查 {#completion-checklist}
 
 - [ ] 能用 OSI 模型逐层说明 DNS、TCP、TLS 和 HTTP 的证据。
 - [ ] 能解释递归解析、权威服务器、常用 DNS 记录与 TTL。
@@ -408,7 +408,7 @@ rm -f localhost.key localhost.crt
 - [ ] 能分别说明 SPF、DomainKeys、DKIM 和 DMARC，并解释标识符对齐。
 - [ ] 已完成本机 TLS 实验并得到成功的证书验证结果。
 
-## 官方延伸阅读
+## 官方延伸阅读 {#official-further-reading}
 
 - [RFC 1122：Internet Hosts Communication Layers](https://www.rfc-editor.org/rfc/rfc1122)
 - [RFC 1034：Domain Names Concepts and Facilities](https://www.rfc-editor.org/rfc/rfc1034)

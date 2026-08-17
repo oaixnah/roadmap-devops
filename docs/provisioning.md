@@ -10,7 +10,7 @@ tags:
 
 手工点击控制台可以快速验证想法，却很难回答“谁改了什么、能否在另一个环境重建、失败后如何恢复”。基础设施即代码（Infrastructure as Code，IaC）把云资源及其关系表达为可审查、可测试、可重复执行的代码。本章围绕状态、依赖图、计划、漂移和生命周期讲解置备，并比较 AWS CDK、CloudFormation、Pulumi 与 Terraform。
 
-## 学习目标
+## 学习目标 {#learning-objectives}
 
 完成本章后，你应当能够：
 
@@ -23,14 +23,14 @@ tags:
 - 在本机运行不调用云 API 的 Terraform 最小实践，并检查计划与幂等结果。
 - 根据云范围、团队语言、治理、状态运维和迁移成本选择工具。
 
-## 前置知识
+## 前置知识 {#prerequisites}
 
 - 理解云资源、身份、网络、区域和共享责任，参见[云服务商](cloud-providers.md)。
 - 熟悉 Git 分支、评审和变更历史，参见[版本控制系统](version-control-systems.md)。
 - 能阅读至少一种编程语言或配置语言，参见[学习一种编程语言](learn-a-programming-language.md)。
 - 配置主机内部状态属于下一章[配置管理](configuration-management.md)，两者可组合但不应混淆。
 
-## IaC 管理什么
+## IaC 管理什么 {#what-iac-manages}
 
 基础设施置备通常负责生命周期较长、由控制面 API 管理的资源，例如虚拟网络、子网、负载均衡、数据库、队列、身份角色和 Kubernetes 集群。相邻能力包括：
 
@@ -41,9 +41,9 @@ tags:
 
 边界可以重叠，但资源所有权必须唯一。例如 Terraform 创建虚拟机，Ansible 配置系统；不要让两者同时争夺同一防火墙规则或服务配置。对频繁替换的计算节点，优先把大部分配置放入版本化镜像，减少启动时长和收敛失败面。
 
-## 核心原理：执行模型
+## 核心原理：执行模型 {#core-principles-execution-model}
 
-### 期望状态与资源图
+### 期望状态与资源图 {#desired-state-and-resource-graph}
 
 声明式 IaC 描述“最终应存在什么”。工具读取代码和必要状态，查询远端 API，构建依赖图，再计算创建、更新、替换或删除操作。显式引用通常自动形成依赖，只有无法从数据流推导时才应手工增加依赖。
 
@@ -62,13 +62,13 @@ flowchart LR
 
 依赖图允许无依赖资源并行，提高速度；错误依赖会导致竞争，过多手工依赖则降低并行度并隐藏真正的数据关系。资源“已创建”也不一定“业务已就绪”，因此应用层验证不能只依赖控制面成功响应。
 
-### 幂等与不可变替换
+### 幂等与不可变替换 {#idempotency-and-immutable-replacement}
 
 理想情况下，同一代码对已满足期望的环境再次执行不会产生变更，这称为幂等。云 API 的最终一致性、默认值、集合排序或提供商缺陷可能制造永久差异，需要定位根因，而不是每次忽略计划。
 
 有些属性可原地更新，有些只能替换资源。数据库、网段和持久磁盘的替换尤其危险。计划必须清楚标示 `create`、`update`、`replace` 和 `delete`，并用生命周期保护、删除策略、先建后删或显式迁移降低数据损失与停机风险。生命周期规则是最后护栏，不是跳过备份和评审的理由。
 
-### 状态
+### 状态 {#state}
 
 IaC 工具需要把代码中的逻辑地址关联到远端资源 ID。CloudFormation 由 AWS 维护栈状态；Terraform 和 Pulumi 通常使用本地或远端后端保存状态及元数据。
 
@@ -82,7 +82,7 @@ IaC 工具需要把代码中的逻辑地址关联到远端资源 ID。CloudForma
 
 状态不能随意手工编辑。移动或重命名资源时使用工具提供的 `moved`、导入或状态迁移功能，并先备份和在非生产环境演练。
 
-### 漂移
+### 漂移 {#drift}
 
 漂移（Drift）是远端实际配置与代码或栈记录不一致。它可能来自控制台热修复、其他自动化、服务默认值变化或外部系统。检测漂移前先规定处置策略：
 
@@ -93,7 +93,7 @@ IaC 工具需要把代码中的逻辑地址关联到远端资源 ID。CloudForma
 
 频繁定时执行 `apply` 可能把故障现场覆盖掉。更稳妥的是定期只读计划或原生漂移检测，产生可审查告警，再由负责人决定修复。
 
-## 模块、环境与仓库结构
+## 模块、环境与仓库结构 {#modules-environments-and-repository-structure}
 
 模块封装一组有明确输入、输出和生命周期的资源。好模块表达业务能力，例如“带日志与加密的对象存储”，而不是把每个资源包装一遍。输入应有类型、描述和校验，输出只暴露调用方需要的稳定接口。
 
@@ -101,7 +101,7 @@ IaC 工具需要把代码中的逻辑地址关联到远端资源 ID。CloudForma
 
 不要创建一个包含全部公司的巨型状态：它会扩大锁冲突、计划耗时、权限和故障爆炸半径。也不要拆成每个资源一个状态，否则跨栈依赖和发布顺序会失控。按团队所有权、变更频率、权限边界和故障域划分，并通过稳定输出或参数服务传递必要信息。
 
-## AWS CloudFormation
+## AWS CloudFormation {#aws-cloudformation}
 
 **重点掌握（AWS 原生场景）**。AWS CloudFormation 使用 JSON 或 YAML 模板声明 AWS 资源，以栈（Stack）为部署和生命周期单元。模板主要包含 `Parameters`、`Mappings`、`Conditions`、`Resources`、`Outputs` 和可选的转换；`Resources` 是核心。
 
@@ -120,7 +120,7 @@ CloudFormation 根据资源引用推导依赖，并通过栈事件展示执行�
 
 CloudFormation 的优势是 AWS 原生托管状态、权限与审计集成，以及新服务通常有原生资源类型。约束是仅面向 AWS，模板规模较大时抽象与测试成本上升，回滚时间和资源支持差异需要实际验证。
 
-## AWS CDK
+## AWS CDK {#aws-cdk}
 
 **替代方案（AWS 原生场景）**。AWS Cloud Development Kit（AWS CDK）允许使用 TypeScript、JavaScript、Python、Java、C#、Go 等语言定义 constructs。CDK 应用经 `synth` 生成 CloudFormation 模板，最终仍由 CloudFormation 创建和维护资源。
 
@@ -132,7 +132,7 @@ CDK 中许多值在合成时未知，以 token 表示，部署时由 CloudFormat
 
 CDK 适合 AWS 团队希望用熟悉语言、测试和 construct 库表达基础设施。通用语言也允许网络调用、随机值和任意副作用；基础设施代码应保持确定性，不在合成阶段创建资源或读取未固定外部数据。
 
-## Pulumi
+## Pulumi {#pulumi}
 
 **替代方案**。Pulumi 使用 TypeScript、JavaScript、Python、Go、C#、Java 或 YAML 等方式定义云资源。Pulumi 引擎执行程序获得资源图，provider 与云 API 交互，状态由 Pulumi Cloud 或自管后端保存。`pulumi preview` 展示计划，`pulumi up` 执行变更。
 
@@ -142,7 +142,7 @@ Pulumi Config 管理环境配置，`--secret` 值在配置和状态中以所选�
 
 Stacks 隔离不同环境，组件资源封装可复用组合，Policy as Code 可执行治理。Pulumi 适合希望复用通用语言、包管理和测试生态，或同时管理多云与 SaaS API 的团队。约束包括语言依赖供应链、程序确定性、Pulumi 状态运营，以及团队必须同时理解编程语言和资源生命周期。
 
-## Terraform
+## Terraform {#terraform}
 
 **重点掌握（通用场景）**。Terraform 使用 HashiCorp Configuration Language（HCL）声明资源，通过 provider 调用云、SaaS 或基础设施 API。核心对象包括：
 
@@ -160,7 +160,7 @@ Terraform state 将资源地址映射到远端 ID。团队环境使用支持锁�
 
 Terraform 适合多平台、成熟 provider 生态和偏好声明式 HCL 的团队。需要评估 provider 质量、许可与使用方式、状态后端、模块治理和升级工作。若组织采用兼容生态中的其他实现，也应单独验证状态、provider 与命令行为，不能假设完全互换。
 
-## 选型比较
+## 选型比较 {#selection-comparison}
 
 | 维度 | CloudFormation | AWS CDK | Pulumi | Terraform |
 | --- | --- | --- | --- | --- |
@@ -181,11 +181,11 @@ Terraform 适合多平台、成熟 provider 生态和偏好声明式 HCL 的团�
 
 一个组织可以在明确边界内使用多种工具，例如 CDK 管理 AWS 产品栈、Terraform 管理跨云共享服务。但同一资源只能有一个所有者，并应记录工具间输出契约，避免循环依赖。
 
-## 最小实践：本地 Terraform 状态
+## 最小实践：本地 Terraform 状态 {#minimal-practice-local-terraform-state}
 
 该实验使用 Terraform 内置的 `terraform_data` 资源，只创建当前目录中的状态文件，不安装 provider、不访问云 API，也不需要凭据。建议使用 Terraform `1.6` 或更高且低于 `2.0` 的兼容版本。
 
-### 1. 编写配置
+### 1. 编写配置 {#write-configuration}
 
 在空目录创建 `main.tf`：
 
@@ -226,7 +226,7 @@ output "validated_model" {
 }
 ```
 
-### 2. 校验并保存计划
+### 2. 校验并保存计划 {#validate-and-save-plan}
 
 ```bash
 terraform init
@@ -243,7 +243,7 @@ terraform apply handbook.tfplan
 terraform output -json
 ```
 
-### 3. 验证幂等与校验
+### 3. 验证幂等与校验 {#verify-idempotency-and-validation}
 
 ```bash
 terraform plan -detailed-exitcode
@@ -259,7 +259,7 @@ terraform plan -var='environment=production'
 
 本实验有意不允许 `production`，命令应输出变量校验错误。
 
-### 4. 销毁与清理
+### 4. 销毁与清理 {#destroy-and-clean-up}
 
 ```bash
 terraform destroy && \
@@ -272,23 +272,23 @@ terraform destroy && \
 !!! warning "本地状态只适合实验"
     `terraform.tfstate` 未提供团队锁、集中审计和独立备份。生产环境使用经过批准的远端后端，并把状态视为敏感数据。不要把状态文件或保存的计划提交到 Git。
 
-## 生产实践：变更流程
+## 生产实践：变更流程 {#production-practices-change-workflow}
 
-### 提交前
+### 提交前 {#before-commit}
 
 - 固定 CLI、provider、模块和语言依赖版本，验证来源与校验和。
 - 执行格式化、语法、类型、单元和静态安全检查。
 - 对网络全开放、未加密存储、公开数据、长期密钥和无删除保护等规则执行策略检查。
 - 在临时环境测试模块，包括创建、更新、替换、销毁和失败恢复。
 
-### 计划与审批
+### 计划与审批 {#plan-and-approval}
 
 - CI 使用只读规划身份生成计划，不让不受信任的拉取请求取得生产凭据。
 - 计划绑定提交摘要、工具版本、依赖锁和目标环境，过期后重新生成。
 - 评审者重点查看删除、替换、权限扩大、公开访问、跨区和预估成本变化。
 - 高风险数据库、网络和身份变更需要服务负责人及安全或数据负责人审批。
 
-### 执行与验证
+### 执行与验证 {#apply-and-verify}
 
 - 受保护流水线使用短期工作负载身份应用已审批计划，禁止个人长期密钥。
 - 同一状态同一时间只允许一次写操作；环境级部署锁不能替代状态后端锁。
@@ -296,7 +296,7 @@ terraform destroy && \
 - 执行后运行 DNS、网络、权限和应用健康验证，并观察错误率和延迟。
 - 保存计划摘要、执行日志、审批和状态版本，但对机密字段脱敏并设置保留期限。
 
-### 恢复
+### 恢复 {#recovery}
 
 IaC 回滚不是简单执行旧代码：如果数据库已迁移、对象已删除或资源名不可复用，旧配置可能无法恢复。每项高风险变更都要说明：
 
@@ -306,7 +306,7 @@ IaC 回滚不是简单执行旧代码：如果数据库已迁移、对象已删�
 - 状态损坏或锁遗留时如何恢复。
 - 控制面不可用时业务能否继续，以及哪些操作必须暂停。
 
-## 安全与可维护性
+## 安全与可维护性 {#security-and-maintainability}
 
 - IaC 仓库不保存云密钥、私钥、状态和包含机密的计划文件。扫描只能作为最后防线。
 - 使用 OIDC 或平台工作负载身份让 CI 获取短期角色；规划和应用角色权限分离。
@@ -316,7 +316,7 @@ IaC 回滚不是简单执行旧代码：如果数据库已迁移、对象已删�
 - 估算每次计划的成本变化，但把估算视为决策输入，不保证与账单完全一致。
 - 对 IaC 指标进行监控：计划失败率、应用时长、回滚次数、漂移数量和模块版本分布。
 
-## 常见误区
+## 常见误区 {#common-misconceptions}
 
 - **把 IaC 当作控制台操作的文本备份**：真正价值来自可重复执行、状态关联、评审、测试和治理。
 - **计划后再次无参数执行**：重新生成的计划可能与审批内容不同，应应用同一已保存制品或平台锁定的变更集。
@@ -329,7 +329,7 @@ IaC 回滚不是简单执行旧代码：如果数据库已迁移、对象已删�
 - **用 IaC 自动修复所有运行时故障**：持续重建可能覆盖证据或扩大事故，应先区分配置漂移与服务故障。
 - **认为删除后一定可由旧代码恢复**：持久数据、唯一名称和外部依赖可能不可逆，必须有备份和恢复验证。
 
-## 动手练习
+## 动手练习 {#hands-on-exercises}
 
 1. 完成 Terraform 本地实验，保存首次创建计划并应用，再确认第二次计划退出码为 `0`。
 2. 给实验增加一个 `owner` 变量，要求非空且不超过 40 个字符。分别用合法和非法值验证，不要在变量中写邮箱或个人信息。
@@ -338,7 +338,7 @@ IaC 回滚不是简单执行旧代码：如果数据库已迁移、对象已删�
 5. 分别用 CloudFormation、AWS CDK、Pulumi 和 Terraform 的官方文档设计同一个加密对象存储。比较代码之外的状态、预览、策略、测试和删除保护流程。
 6. 编写一份高风险数据库替换的变更清单，必须包含备份验证、兼容窗口、已审批计划、停止条件和恢复责任人。
 
-## 完成检查
+## 完成检查 {#completion-checklist}
 
 - [ ] 能区分置备、镜像构建、配置管理、应用部署和编排。
 - [ ] 能解释期望状态、依赖图、幂等、状态、漂移和资源替换。
@@ -350,7 +350,7 @@ IaC 回滚不是简单执行旧代码：如果数据库已迁移、对象已删�
 - [ ] 能为 IaC 设计安全的计划、审批、执行、验证和恢复流程。
 - [ ] 能根据范围、团队、治理、状态和迁移成本选择工具。
 
-## 官方延伸阅读
+## 官方延伸阅读 {#official-further-reading}
 
 - [AWS CloudFormation User Guide](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/Welcome.html)
 - [CloudFormation 安全最佳实践](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/security-best-practices.html)

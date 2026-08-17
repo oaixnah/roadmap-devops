@@ -10,7 +10,7 @@ tags:
 
 云服务把机房、电力、服务器和大量平台能力封装为 API，但不会自动带来高可用、安全或低成本。工程团队仍要设计账号边界、身份权限、网络、数据保护、故障恢复和费用治理。本章不以产品数量衡量能力，而是建立一套可迁移的评估方法，并用同一组维度审视八类云平台。
 
-## 学习目标
+## 学习目标 {#learning-objectives}
 
 完成本章后，你应当能够：
 
@@ -22,16 +22,16 @@ tags:
 - 在不创建云资源、不提供凭据的情况下，运行一个只读云网络数据实验。
 - 为首个生产云工作负载制定身份、网络、备份、监控和成本基线。
 
-## 前置知识
+## 前置知识 {#prerequisites}
 
 - 理解 IP、DNS、TLS 和 HTTP，参见[网络与协议](networking-and-protocols.md)。
 - 理解防火墙、负载均衡和反向代理，参见[常见基础设施服务](common-infrastructure-services.md)。
 - 熟悉 Linux 或 Windows 进程、文件与权限，参见[操作系统](operating-system.md)。
 - 容器知识有助于理解平台服务的制品与运行边界，参见[容器](containers.md)。
 
-## 核心原理：云的抽象
+## 核心原理：云的抽象 {#core-principles-cloud-abstractions}
 
-### 服务模型
+### 服务模型 {#service-models}
 
 - **基础设施即服务（IaaS）**提供虚拟机、磁盘、网络和负载均衡等原语。控制力最大，操作系统补丁、容量和较多高可用工作由使用方负责。
 - **平台即服务（PaaS）**接收代码或制品并管理运行时、部署和扩缩容。运维入口更少，但运行时限制、平台行为和迁移成本更明显。
@@ -40,7 +40,7 @@ tags:
 
 托管程度越高，团队需要维护的底层越少，但责任不会消失，只会移动。例如托管数据库免去操作系统补丁，却仍要求使用方设置网络访问、数据库账号、备份保留、参数、容量和恢复演练。
 
-### 共享责任模型
+### 共享责任模型 {#shared-responsibility-model}
 
 云服务商通常负责云**本身**的物理设施、底层硬件和所提供服务的基础运行；客户负责云**中的**身份、数据、配置和工作负载。具体分界随服务模型变化：
 
@@ -55,7 +55,7 @@ tags:
 
 “服务商提供加密、备份或日志功能”不等于这些功能已开启、范围正确或恢复可用。责任表应落实到每个服务和负责人，而不是停留在宣传图上。
 
-### 全局基础设施与故障域
+### 全局基础设施与故障域 {#global-infrastructure-and-failure-domains}
 
 - **区域（Region）**是相对独立的地理部署范围，影响延迟、数据驻留、服务可用性和价格。
 - **可用区（Availability Zone）**通常是区域内具有独立基础设施的故障域。不同平台对网络距离和具体隔离不作完全相同的承诺。
@@ -64,7 +64,7 @@ tags:
 
 多可用区主要防区域内单点；多区域可应对更大范围故障，但会显著增加数据复制、一致性、路由、部署和演练成本。业务恢复点目标（RPO）与恢复时间目标（RTO）应先于架构数量决定。
 
-### 通用能力地图
+### 通用能力地图 {#common-capability-map}
 
 比较云平台时，先把产品名归入以下能力，而不是建立难以维护的一一名称表：
 
@@ -76,25 +76,25 @@ tags:
 - **运营**：日志、指标、追踪、审计、配置历史、备份、配额和支持。
 - **治理**：资源标签、预算、组织策略、合规证明、区域限制和基础设施即代码接口。
 
-## 共同的设计原则
+## 共同的设计原则 {#common-design-principles}
 
-### 身份优先
+### 身份优先 {#identity-first}
 
 根账号或租户所有者只用于紧急管理，启用抗钓鱼多因素认证并离线保存恢复手段。日常人员通过企业身份提供商联合登录，工作负载通过实例角色、托管身份或短期令牌访问云 API。不要把长期访问密钥写入镜像、代码仓库或 CI 变量。
 
 权限从可执行任务反推，并分离生产与非生产环境。权限边界、服务控制策略或组织策略可限制管理员误操作，但配置前要验证紧急恢复路径。所有控制面操作应进入不可由普通工作负载篡改的审计日志。
 
-### 网络不是唯一边界
+### 网络不是唯一边界 {#the-network-is-not-the-only-boundary}
 
 私有子网减少直接暴露，但不能替代身份认证。设计时明确南北向和东西向流量、DNS 解析、出站路径、私有服务端点及跨网络路由。默认拒绝不必要入站和出站，避免把整个互联网或整个企业网段永久放入管理端口规则。
 
 云元数据服务可能向工作负载提供身份令牌。应使用平台支持的加强版本、限制访问跳数，并防止服务器端请求伪造（SSRF）访问元数据地址。
 
-### 数据生命周期
+### 数据生命周期 {#data-lifecycle}
 
 按敏感度、驻留要求、访问频率和恢复目标选择数据服务。明确静态与传输加密、密钥控制方、版本、保留、归档和删除机制。备份要跨越主要故障边界，并通过定期恢复证明可用；“控制台显示备份成功”不是恢复测试。
 
-### 成本模型
+### 成本模型 {#cost-model}
 
 总拥有成本不只是实例小时费，还包括：
 
@@ -107,7 +107,7 @@ tags:
 
 上线前建立预算和异常检测，资源必须带负责人、环境、成本中心和过期时间标签。先测量稳定基线，再购买预留或承诺用量；不要为猜测中的增长提前锁定长期容量。
 
-## AWS
+## AWS {#aws}
 
 **重点掌握**。Amazon Web Services（AWS）提供覆盖广泛的 IaaS 与托管服务。常见基础能力包括 EC2 计算、VPC 网络、S3 对象存储、Elastic Load Balancing、RDS 托管关系数据库、EKS 或 ECS 容器平台、Lambda 函数、IAM 身份权限，以及 CloudWatch 和 CloudTrail 运营能力。
 
@@ -115,7 +115,7 @@ AWS 账号是重要的权限、配额和账单隔离边界，通常由 Organizat
 
 适合场景包括需要广泛服务组合、全球区域覆盖、成熟生态或细粒度基础设施控制的组织。约束是产品与计费维度多，正确治理需要专门能力；跨可用区、NAT 与数据出口成本尤其需要建模。避免把所有服务默认部署在一个账号和默认 VPC 中。
 
-## Microsoft Azure
+## Microsoft Azure {#microsoft-azure}
 
 **替代方案**。Microsoft Azure 常见能力包括 Virtual Machines、Virtual Network、Blob Storage、Azure Load Balancer 或 Application Gateway、Azure SQL Database、AKS、Azure Functions、Microsoft Entra ID、Azure Monitor 和 Activity Log。
 
@@ -123,7 +123,7 @@ Azure 资源组织常见层级为租户、管理组、订阅、资源组和资�
 
 Azure 适合已采用 Microsoft Entra ID、Windows Server、SQL Server、Microsoft 365 或混合云管理体系的团队，也提供完整的 Linux 和开源服务。选型时检查目标区域的服务和可用区支持，因为同名服务的功能、配额和 SKU 可能因区域不同。许可权益和企业协议可能改善成本，但不应掩盖架构与运营复杂度。
 
-## Google Cloud
+## Google Cloud {#google-cloud}
 
 **替代方案**。Google Cloud 常见能力包括 Compute Engine、Virtual Private Cloud、Cloud Storage、Cloud Load Balancing、Cloud SQL、Google Kubernetes Engine（GKE）、Cloud Run、Cloud Run functions（原 Cloud Functions）、Identity and Access Management，以及 Cloud Logging 和 Cloud Monitoring。
 
@@ -131,7 +131,7 @@ Azure 适合已采用 Microsoft Entra ID、Windows Server、SQL Server、Microso
 
 Google Cloud 在数据分析、机器学习、Kubernetes 和全球网络产品方面具有完整组合，适合希望使用托管容器与数据平台的团队。评估时仍需检查区域服务矩阵、配额、出口流量和组织策略。项目数量过少会扩大权限和配额影响，过多又会增加网络、账单与策略管理成本，需要标准化项目工厂。
 
-## DigitalOcean
+## DigitalOcean {#digitalocean}
 
 **按需学习**。DigitalOcean 以相对简洁的开发者体验提供 Droplets 虚拟机、VPC、Volumes、Spaces 对象存储、Load Balancers、Managed Databases、DigitalOcean Kubernetes 和 App Platform。
 
@@ -139,7 +139,7 @@ Google Cloud 在数据分析、机器学习、Kubernetes 和全球网络产品�
 
 “界面简单”不等于无需治理。团队仍需隔离项目、保护 API 令牌、限制防火墙规则、启用监控和备份，并计算 Spaces CDN、快照与数据传输成本。
 
-## Hetzner
+## Hetzner {#hetzner}
 
 **按需学习**。Hetzner 提供云服务器、专用服务器、网络、负载均衡、卷、对象存储及相关托管产品，常因计算和存储性价比受到关注。它适合能够自行管理较多操作系统、数据库和平台组件，并且其地域与合规范围满足要求的团队。
 
@@ -147,7 +147,7 @@ Google Cloud 在数据分析、机器学习、Kubernetes 和全球网络产品�
 
 若在其上自建 Kubernetes、数据库或对象层，团队需要承担版本升级、备份、恢复、安全公告和 24 小时故障响应，这些人工成本应进入总成本模型。
 
-## Render
+## Render {#render}
 
 **按需学习**。Render 是面向应用交付的平台服务，提供 Web Services、Private Services、Background Workers、Cron Jobs、Static Sites、托管 PostgreSQL、Key Value 等能力。典型流程从 Git 仓库或容器镜像构建和部署应用，平台管理入口、证书和部分运行基础设施。
 
@@ -155,7 +155,7 @@ Google Cloud 在数据分析、机器学习、Kubernetes 和全球网络产品�
 
 迁移成本主要来自平台构建配置、服务编排和托管数据。保留标准容器镜像、数据库备份导出和平台外的基础配置记录，可以改善退出能力。
 
-## Alibaba Cloud
+## Alibaba Cloud {#alibaba-cloud}
 
 **按需学习**。Alibaba Cloud（阿里云）提供 Elastic Compute Service（ECS）、Virtual Private Cloud（VPC）、Object Storage Service（OSS）、Server Load Balancer（SLB）、Relational Database Service（RDS）、Container Service for Kubernetes（ACK）、函数计算、Resource Access Management（RAM）及日志服务等能力。
 
@@ -163,7 +163,7 @@ Google Cloud 在数据分析、机器学习、Kubernetes 和全球网络产品�
 
 账号、资源目录、RAM 角色和资源组应形成清晰治理边界。使用 ECS 实例 RAM 角色或其他临时凭据机制，避免在实例中保存 AccessKey。不同地域的服务可用性、网络质量、计费和监管要求可能不同；跨境复制或日志汇聚前必须先完成数据分类和合规评估。
 
-## Heroku
+## Heroku {#heroku}
 
 **按需学习**。Heroku 是以应用和流水线为中心的平台即服务。代码构建为 slug 或通过容器部署，应用运行在 dyno 中，并通过 add-ons 使用数据库、缓存和其他托管能力。配置变量、Release Phase、Review Apps 和 Pipelines 支持十二要素应用式交付。
 
@@ -171,7 +171,7 @@ Heroku 适合希望把精力集中在应用、接受平台约束并重视快速�
 
 选型前比较 dyno 与 add-on 的合计费用、数据计划、备份、维护窗口、日志排放、私有网络和合规能力。为降低绑定，应维护可重复构建的源代码、标准依赖声明、可导出的数据和平台配置清单，但不要为假设中的迁移复制一整套未使用基础设施。
 
-## 平台选型比较
+## 平台选型比较 {#platform-selection-comparison}
 
 | 平台 | 主要抽象 | 常见优势 | 重点约束 |
 | --- | --- | --- | --- |
@@ -195,7 +195,7 @@ Heroku 适合希望把精力集中在应用、接受平台约束并重视快速�
 
 多云只有在明确需求下才合理，例如并购现实、法规隔离或某项不可替代服务。为了抽象而抽象到所有云的最小公分母，往往同时失去托管价值并增加身份、网络、数据复制和运维复杂度。
 
-## 最小实践：审计公开云 IP 数据
+## 最小实践：审计公开云 IP 数据 {#minimal-practice-audit-public-cloud-ip-data}
 
 云网络规则有时需要识别服务商公布的地址段。下面以 AWS 官方公开的 `ip-ranges.json` 为例，执行只读下载和本地分析，不需要账号、凭据，也不会创建或修改云资源。
 
@@ -246,16 +246,16 @@ rmdir -- "$workdir"
 !!! warning "IP 清单不是工作负载身份"
     云服务地址段可能被众多租户共享，也可能包含超出目标服务的地址。允许整个服务商网段不能证明请求来自你的资源。优先使用私有端点、双向 TLS、签名请求或平台工作负载身份。
 
-## 生产实践：落地基线
+## 生产实践：落地基线 {#production-practices-implementation-baseline}
 
-### 组织与身份
+### 组织与身份 {#organization-and-identity}
 
 - 生产和非生产使用独立账号、订阅或项目，账单汇总但权限与配额隔离。
 - 紧急账号启用强多因素认证、告警和定期演练；日常操作使用联合身份与临时会话。
 - 工作负载使用角色或托管身份，不分发长期云 API 密钥。
 - 控制面审计日志集中到独立安全边界，限制删除并校验持续写入。
 
-### 网络与数据
+### 网络与数据 {#network-and-data}
 
 - 建立经过地址规划的虚拟网络，避免未来并网时网段重叠。
 - 公开入口与私有工作负载分层；数据库不因“方便调试”获取公网地址。
@@ -263,7 +263,7 @@ rmdir -- "$workdir"
 - 数据按等级加密并记录密钥所有者；高风险密钥的管理权限与数据访问权限分离。
 - 备份跨主要故障边界保存，按 RPO/RTO 定期执行自动化和人工恢复演练。
 
-### 可靠性与运营
+### 可靠性与运营 {#reliability-and-operations}
 
 - 关键服务跨故障域部署，检查负载均衡、NAT、DNS、队列和数据库的独立性。
 - 记录服务配额并在接近上限前告警；扩容计划要包含提高配额所需时间。
@@ -271,14 +271,14 @@ rmdir -- "$workdir"
 - 收集应用和平台的指标、日志与追踪，并设置外部探测，参见[可观测性](observability.md)。
 - 每个资源都有负责人、环境、数据等级和成本标签；临时环境自动过期。
 
-### 成本与退出
+### 成本与退出 {#cost-and-exit}
 
 - 按团队和服务分配费用，建立预算告警和异常检测，但不要自动删除未知生产资源来止损。
 - 定期识别闲置磁盘、快照、公网 IP、过大实例和重复日志；优化前确认恢复与保留要求。
 - 记录专有服务依赖、数据导出格式、最大可接受停机和 DNS 切换步骤。
 - 每年至少做一次恢复或迁移桌面演练；只有业务需要时才执行昂贵的完整多云演练。
 
-## 常见误区
+## 常见误区 {#common-misconceptions}
 
 - **认为上云后服务商负责一切安全**：客户配置的公开存储、过宽角色和泄露凭据仍由客户负责。
 - **把可用区当作完整灾难恢复**：区域级控制面、身份、代码错误和共享数据库仍可能同时影响多个区。
@@ -290,7 +290,7 @@ rmdir -- "$workdir"
 - **过早购买长期承诺**：错误规格和架构变化会把折扣变成沉没成本。
 - **因为 PaaS 简单就忽略限制**：文件系统、连接、休眠、构建和区域约束必须在试点中验证。
 
-## 动手练习
+## 动手练习 {#hands-on-exercises}
 
 1. 选择一个虚构的三层 Web 系统，为计算、数据库、对象存储、DNS、密钥和日志分别填写“服务商责任、团队责任、验证证据”。结果中不得出现无人负责的备份恢复。
 2. 在 AWS、Azure 和 Google Cloud 官方区域列表中为两处用户群选择候选区域。记录延迟、服务可用性、数据驻留和双区域传输费用，而不是只选地理距离最近者。
@@ -299,7 +299,7 @@ rmdir -- "$workdir"
 5. 为 Alibaba Cloud 上的中国大陆业务列出需要向网络、法务和安全负责人确认的问题。不要自行给出备案或跨境数据的法律结论。
 6. 设计云账号或项目层级，至少隔离生产、非生产、安全日志和共享网络，并标注谁可以授予管理员权限。
 
-## 完成检查
+## 完成检查 {#completion-checklist}
 
 - [ ] 能根据 IaaS、PaaS 和 FaaS 解释责任边界如何移动。
 - [ ] 能区分区域、可用区、边缘位置与账号或项目边界。
@@ -311,7 +311,7 @@ rmdir -- "$workdir"
 - [ ] 已运行只读公开 IP 数据实验，且未创建云资源或提供凭据。
 - [ ] 能为生产云环境列出身份、网络、数据、可靠性、成本和退出基线。
 
-## 官方延伸阅读
+## 官方延伸阅读 {#official-further-reading}
 
 - [AWS Well-Architected Framework](https://docs.aws.amazon.com/wellarchitected/latest/framework/welcome.html)
 - [AWS 共享责任模型](https://aws.amazon.com/compliance/shared-responsibility-model/)
